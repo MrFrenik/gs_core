@@ -82,8 +82,8 @@ int32_t main(int32_t argc, char** argv)
     struct {const char* read_path; const char* write_path;} templates[] = 
     {
         {.read_path = "templates/proc/win/cl.bat", .write_path = "proc/win/cl.bat"},
-        {.read_path = "templates/app.h", .write_path = PROJ_HDR},
-        {.read_path = "templates/app.c", .write_path = PROJ_SRC},
+        {.read_path = "templates/app.h", .write_path = "source/app.h"},
+        {.read_path = "templates/app.c", .write_path = "source/app.c"},
         {.read_path = "templates/unity.c", .write_path = "source/unity.c"},
         {NULL}
     };

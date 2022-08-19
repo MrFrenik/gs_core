@@ -88,8 +88,3 @@ cl /w /MTd /MP -Zi -D _WINSOCKAPI_ /DEBUG:FULL /Fe%name%.exe %src_all% %inc% ^
 %os_libs% %tp_libs_dbg%
 
 popd 
-
-
-
-
-

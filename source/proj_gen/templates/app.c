@@ -72,14 +72,3 @@ gs_main(int32_t argc, char** argv)
     desc.shutdown = %APP%_shutdown;
     return desc;
 }
-
-
-
-
-
-
-
-
-
-
-

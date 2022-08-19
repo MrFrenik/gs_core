@@ -23,15 +23,3 @@ GS_API_DECL void
 %APP%_shutdown(); 
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
