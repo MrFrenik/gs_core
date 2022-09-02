@@ -100,9 +100,9 @@ int32_t main(int32_t argc, char** argv)
 void write_template_to_disk(const char* read_path, const char* write_path)
 {
     FILE* fp = NULL; 
-    char* contents = gs_platform_read_file_contents(read_path, "r", NULL); 
+    char* contents = gs_platform_read_file_contents(read_path, "rb", NULL); 
     gs_println("write path: %s", write_path);
-    fp = fopen(write_path, "w");
+    fp = fopen(write_path, "wb");
     gs_assert(fp); 
 
     // Lex through contents, look for %APP% identifier to replace
