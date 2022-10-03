@@ -1,22 +1,22 @@
 @echo off
-rmdir /Q /S bin\%APP%
-mkdir bin\%APP%
-pushd bin\%APP%
+rmdir /Q /S bin\editor
+mkdir bin\editor
+pushd bin\editor
 
 rem GS_Core
 set gs_core=..\..\..\gs_core
 
 rem Name
-set proj_name=%APP%
+set proj_name=%APP%_editor
 
 rem Root Dir
-set root=..\..\
+set root=..\..
 
 rem Include directories 
 set inc=/I %gs_core%\third_party\include\ /I %root%\source\ /I %gs_core%\source\
 
 rem Source files
-set src_main=%root%\source\unity.c
+set src_main=%root%\source\editor\unity.c
 
 rem All source together
 set src_all=%src_main%
@@ -56,22 +56,15 @@ set tp_libs=%gs_core%\third_party\libs\win\rel\Bullet3Collision.lib ^
 rem Link options
 set l_options=/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib 
 
-rem Reflection Dirs
-set in_dir="%root%/source" 
-set out_dir="%root%/source/generated" 
-
-rem Run Reflection
-%gs_core%\bin\reflection\reflection.exe %in_dir% %out_dir% %proj_name%
-
 rem Compile Release
 rem cl /MP /FS /Ox /W0 /Fe%proj_name%.exe %src_all% %inc% ^
 rem /EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib /NODEFAULTLIB:LIBCMT ^
 rem %os_libs% %tp_libs%
 
 rem Compile Debug
-cl /w /MTd /MP -Zi -D _WINSOCKAPI_ -D GS_APP_STANDALONE /DEBUG:FULL ^
-/Fe%proj_name%.exe %src_all% %inc% /EHsc /link /SUBSYSTEM:CONSOLE ^
-/NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib ^
+cl /w /MTd /MP -Zi -D _WINSOCKAPI_ /DEBUG:FULL /Fe%proj_name%.exe %src_all% %inc% ^
+/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:libcmtd.lib ^
+/NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib ^
 %os_libs% %tp_libs_dbg%
 
 popd 

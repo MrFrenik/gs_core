@@ -1,7 +1,8 @@
 #ifndef %APP%_H
 #define %APP%_H
 
-#include "core/core.h"
+// Core Includes
+#include <core/core.h>
 
 typedef struct %APP%_s
 { 

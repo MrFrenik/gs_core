@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: core_object.c
+    * File: gs_core_object.c
 
     All Rights Reserved
 
@@ -34,12 +34,67 @@
 
 =================================================================================================================*/ 
 
-#include "core_object.h"
+#include "gs_core.h"
+
+// Global meta registry from core
+#define META() gs_core_instance()->meta 
+
+GS_API_DECL gs_core_meta_registry_t* 
+gs_core_meta_registry_new()
+{ 
+    if (META())
+    {
+        return META();
+    }
+
+    gs_core_meta_registry_t* meta = gs_malloc_init(gs_core_meta_registry_t);
+
+    // Reserve space for enough elements (should be in a config just in case)
+    gs_slot_array_reserve(meta->info, GS_CORE_REFL_CLASS_MAX);
+    gs_hash_table_reserve(meta->registry.classes, uint64_t, gs_meta_class_t, GS_CORE_REFL_CLASS_MAX);
+
+    // Insert null info
+    for (uint32_t i = 0; i < GS_CORE_REFL_CLASS_MAX; ++i)
+    {
+        gs_core_meta_info_t empty = gs_default_val();
+        gs_slot_array_insert(meta->info, empty);
+    } 
+
+    return meta;
+}
+
+GS_API_DECL gs_core_meta_registry_t* 
+gs_core_meta_registry_instance()
+{
+    return META();
+}
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_meta_obj_info(const gs_core_obj_t* obj)
+{
+    uint32_t id = gs_core_obj_id(obj);
+    gs_assert(gs_slot_array_handle_valid(META()->info, id));
+    return gs_slot_array_getp(META()->info, id);
+}
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_meta_obj_info_w_cls_id(uint32_t cls_id)
+{
+    gs_assert(gs_slot_array_handle_valid(META()->info, cls_id));
+    return gs_slot_array_getp(META()->info, cls_id);
+}
+
+GS_API_DECL gs_core_obj_t*
+gs_core_meta_static_ref_w_cls_id(uint32_t id)
+{
+    gs_assert(gs_slot_array_handle_valid(META()->info, id));
+    return gs_slot_array_getp(META()->info, id)->instance;
+}
 
 //===[ Object Internal / Defaults ]===//
 
 GS_API_DECL bool
-core_info_base_of_internal(const core_meta_info_t* info, uint32_t compare)
+gs_core_info_base_of_internal(const gs_core_meta_info_t* info, uint32_t compare)
 {
     if (!info || !compare) return false;
 
@@ -47,7 +102,7 @@ core_info_base_of_internal(const core_meta_info_t* info, uint32_t compare)
     if (info->cid == compare) return true;
 
     // While has base
-    const core_meta_info_t* base = info->base;
+    const gs_core_meta_info_t* base = info->base;
     while (base)
     {
         if (base->cid == compare) return true;
@@ -58,9 +113,9 @@ core_info_base_of_internal(const core_meta_info_t* info, uint32_t compare)
 } 
 
 GS_API_DECL gs_result 
-core_obj_serialize_default(gs_byte_buffer_t* buffer, const core_obj_t* obj)
+gs_core_obj_serialize_impl(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj)
 { 
-    const gs_meta_class_t* cls = core_obj_cls(obj);
+    const gs_meta_class_t* cls = gs_core_obj_cls(obj);
 
     //====[ Body ====//
 
@@ -118,9 +173,9 @@ core_obj_serialize_default(gs_byte_buffer_t* buffer, const core_obj_t* obj)
 }
 
 GS_API_DECL gs_result 
-core_obj_deserialize_default(gs_byte_buffer_t* buffer, core_obj_t* obj)
+gs_core_obj_deserialize_impl(gs_byte_buffer_t* buffer, gs_core_obj_t* obj)
 {
-    const gs_meta_class_t* cls = core_obj_cls(obj); 
+    const gs_meta_class_t* cls = gs_core_obj_cls(obj); 
 
     //====[ Body ====//
 
@@ -190,9 +245,9 @@ core_obj_deserialize_default(gs_byte_buffer_t* buffer, core_obj_t* obj)
 } 
 
 GS_API_DECL gs_result
-core_obj_net_serialize_default(gs_byte_buffer_t* buffer, const core_obj_t* obj)
+gs_core_obj_net_serialize_impl(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj)
 {
-    const gs_meta_class_t* cls = core_obj_cls(obj);
+    const gs_meta_class_t* cls = gs_core_obj_cls(obj);
 
     //====[ Body ====// 
 
@@ -241,7 +296,7 @@ core_obj_net_serialize_default(gs_byte_buffer_t* buffer, const core_obj_t* obj)
 }
 
 GS_API_DECL gs_result
-core_obj_net_deserialize_default(gs_byte_buffer_t* buffer, core_obj_t* obj)
+gs_core_obj_net_deserialize_impl(gs_byte_buffer_t* buffer, gs_core_obj_t* obj)
 {
     return GS_RESULT_SUCCESS;
 }
@@ -249,11 +304,11 @@ core_obj_net_deserialize_default(gs_byte_buffer_t* buffer, core_obj_t* obj)
 //====[ Debug ]====//
 
 GS_API_DECL void
-core_obj_print(const core_obj_t* obj)
+gs_core_obj_print(const gs_core_obj_t* obj)
 {
-    if (!obj || !obj->id) return; 
+    if (!obj || !gs_core_obj_id(obj)) return; 
 
-    const gs_meta_class_t* cls = core_obj_cls(obj);
+    const gs_meta_class_t* cls = gs_core_obj_cls(obj);
 
     gs_println("cls: %s", cls->name);
 
@@ -384,8 +439,8 @@ core_obj_print(const core_obj_t* obj)
 
             case GS_META_PROPERTY_TYPE_OBJ:
             {
-                const core_obj_t* v = gs_meta_getvp(obj, core_obj_t, prop);
-                core_obj_print(v);
+                const gs_core_obj_t* v = gs_meta_getvp(obj, gs_core_obj_t, prop);
+                gs_core_obj_print(v);
             } break; 
         }
     }

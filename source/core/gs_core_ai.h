@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: core_ai.cpp
+    * File: gs_core_ai.h
 
     All Rights Reserved
 
@@ -34,28 +34,39 @@
 
 =================================================================================================================*/ 
 
-// Core includes
-#include "core_ai.h"
+#ifndef GS_CORE_AI_H
+#define GS_CORE_AI_H
 
-// Third Party includes
-#include "recast/Recast/Include/Recast.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-static core_ai_t* g_ai = nullptr; 
+#include "gs_core_gs.h"
 
-GS_API_DECL core_ai_t* core_ai_new()
+typedef struct gs_core_ai_s
 {
-    if (g_ai) return g_ai;
+    void* user_data;
+} gs_core_ai_t; 
 
-    core_ai_t* ai = gs_malloc_init(core_ai_t);
-    g_ai = ai;
+GS_API_DECL gs_core_ai_t* 
+gs_core_ai_new();
 
-    return ai;
+GS_API_DECL gs_core_ai_t* 
+gs_core_ai_instance();
+
+#ifdef __cplusplus
 }
+#endif 
 
-GS_API_DECL core_ai_t* core_ai_instance() 
-{
-    return g_ai;
-}
+#endif // GS_CORE_AI_H
+
+
+
+
+
+
+
+
 
 
 

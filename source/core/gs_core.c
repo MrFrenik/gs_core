@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: core_ai.h
+    * File: gs_core.c
 
     All Rights Reserved
 
@@ -32,46 +32,78 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-=================================================================================================================*/ 
+=================================================================================================================*/
 
-#ifndef CORE_AI_H
-#define CORE_AI_H
+#include "core/gs_core.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+// Global instance
+gs_core_t* g_core; 
 
-#include "core_gs.h"
-
-typedef struct core_ai_t
+GS_API_DECL gs_core_t* 
+gs_core_new()
 {
-    void* user_data;
-} core_ai_t; 
+    gs_core_t* core = gs_malloc_init(gs_core_t);
 
-GS_API_DECL core_ai_t* 
-core_ai_new();
+    // Set instance
+    g_core = core;
 
-GS_API_DECL core_ai_t* 
-core_ai_instance();
+    // Init all gs structures
+    core->cb = gs_command_buffer_new();
+    core->gsi = gs_immediate_draw_new();
+    core->gui = gs_gui_new(gs_platform_main_window()); 
 
-#ifdef __cplusplus
+    // Construct meta registry
+    core->meta = gs_core_meta_registry_new(); 
+
+    // Register meta information
+    gs_core_meta_register();
+
+    // Assets
+    core->assets = gs_core_assets_new(
+        gs_platform_dir_exists("./assets") ? "./assets" : gs_platform_dir_exists("../assets") ? "../assets" : "../../assets");
+
+    // Physics
+    core->physics = gs_core_physics_new(); 
+
+    // Entities
+    core->entities = gs_core_entities_new(); 
+
+    // Networking
+    core->network = gs_core_network_new();
+
+    // AI
+    core->ai = gs_core_ai_new();
+
+    // Graphics
+    core->gfx = gs_core_graphics_new();
+
+    return core;
 }
-#endif 
 
-#endif // CORE_AI_H
+GS_API_DECL void
+gs_core_free(gs_core_t* core)
+{ 
+    // Free gs structures
+    gs_immediate_draw_free(&core->gsi);
+    gs_command_buffer_free(&core->cb);
+    gs_gui_free(&core->gui);
 
+    // Shutdown network
+    gs_core_network_shutdown();
 
+    gs_free(core);
+}
 
+GS_API_DECL gs_core_t* 
+gs_core_instance()
+{
+    return g_core;
+}
 
-
-
-
-
-
-
-
-
-
-
+GS_API_DECL void
+gs_core_instance_set(gs_core_t* core)
+{
+    g_core = core;
+}
 
 

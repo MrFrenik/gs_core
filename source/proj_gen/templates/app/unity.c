@@ -1,0 +1,3 @@
+
+#include %GENERATED_SOURCE_PATH%
+#include %APP_SOURCE_PATH%

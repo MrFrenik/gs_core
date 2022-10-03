@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: core_unity.c
+    * File: gs_core_unity.c
 
     All Rights Reserved
 
@@ -34,12 +34,13 @@
 
 =================================================================================================================*/ 
 
-#include "core_config.c" 
-#include "core_asset.c" 
-#include "core_graphics.c"
-#include "core_entity.c"
-#include "core_object.c"
-#include "core_network.c" 
-#include "core.c"
+#include "gs_core_config.c" 
+#include "gs_core_asset.c" 
+#include "gs_core_graphics.c"
+#include "gs_core_entity.c"
+#include "gs_core_object.c"
+#include "gs_core_network.c" 
+#include "gs_core.c"
+#include "core/generated/gs_core_generated.c"
 
 

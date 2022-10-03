@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: core_entity.c
+    * File: gs_core_entity.c
 
     All Rights Reserved
 
@@ -34,73 +34,72 @@
 
 =================================================================================================================*/ 
 
-#include "core_entity.h"
+#include "gs_core_entity.h"
 #include <flecs/flecs.h>
 #include <flecs/flecs.c>
 
-#define CORE_ECS() ((core_entity_data_t*)g_entities->data)
+#define ECS()      gs_core_instance()->entities
+#define CORE_ECS() ((gs_core_entity_data_t*)(ECS()->data))
 
 typedef struct
 {
     ecs_world_t* world;
-} core_entity_data_t; 
+} gs_core_entity_data_t; 
 
-static core_entities_t* g_entities = NULL;
-
-GS_API_DECL core_entities_t* core_entities_new()
+GS_API_DECL gs_core_entities_t* 
+gs_core_entities_new()
 {
-    if (g_entities) return g_entities;
+    if (ECS()) return ECS();
 
-    core_entities_t* ents = gs_malloc_init(core_entities_t); 
-    g_entities = ents; 
-    ents->data = gs_malloc_init(core_entity_data_t);
-
-    CORE_ECS()->world = ecs_init();
-
+    gs_core_entities_t* ents = gs_malloc_init(gs_core_entities_t); 
+    ents->data = gs_malloc_init(gs_core_entity_data_t); 
+    ((gs_core_entity_data_t*)(ents->data))->world = ecs_init();
+    ents->component_register = gs_core_entities_register_component_internal;
     return ents;
 }
 
-GS_API_DECL core_entities_t* core_entities_instance()
+GS_API_DECL gs_core_entities_t* 
+gs_core_entities_instance()
 {
-    return g_entities;
+    return ECS();
 } 
 
-GS_API_DECL void core_entities_update()
+GS_API_DECL void gs_core_entities_update()
 {
     ecs_progress(CORE_ECS()->world, 0);
 }
 
-GS_API_DECL void core_entities_shutdown()
+GS_API_DECL void gs_core_entities_shutdown()
 {
 } 
 
-GS_API_DECL core_entity_world_t* core_entities_world()
+GS_API_DECL gs_core_entity_world_t* gs_core_entities_world()
 {
-    core_entity_data_t* ecs = CORE_ECS(); 
+    gs_core_entity_data_t* ecs = CORE_ECS(); 
     return ecs->world;
 }
 
-GS_API_DECL core_entity_t core_entities_register_component_internal(const core_entities_component_desc_t* desc)
+GS_API_DECL gs_core_entity_t gs_core_entities_register_component_internal(const gs_core_entities_component_desc_t* desc)
 { 
-    core_entity_data_t* ecs = CORE_ECS(); 
+    gs_core_entity_data_t* ecs = CORE_ECS(); 
     ecs_entity_t comp = ecs_component_init(ecs->world, &(ecs_component_desc_t){
         .entity.name = desc->name, 
         .size = desc->size, 
         .alignment = desc->alignment
     }); 
-    return comp;
+    return (gs_core_entity_t)comp;
 }
 
-GS_API_DECL void core_entities_register_system(const core_entities_system_desc_t* desc)
+GS_API_DECL void gs_core_entities_register_system(const gs_core_entities_system_desc_t* desc)
 {
-    core_entity_data_t* ecs = CORE_ECS(); 
+    gs_core_entity_data_t* ecs = CORE_ECS(); 
 
     // Construct descriptor
     ecs_system_desc_t sdesc = {
-        .entity = {desc->name, .add = {EcsOnUpdate}},
+        .entity = {.name = desc->name, .add = {EcsOnUpdate}},
         .callback = desc->callback
     };
-    for (uint32_t i = 0; desc->filter.component_list[i] != NULL; ++i) {
+    for (uint32_t i = 0; (void*)desc->filter.component_list[i] != NULL; ++i) {
         sdesc.query.filter.terms[i].id = desc->filter.component_list[i];
     } 
 
@@ -108,27 +107,27 @@ GS_API_DECL void core_entities_register_system(const core_entities_system_desc_t
     ecs_system_init(ecs->world, &sdesc);
 }
 
-GS_API_DECL core_entity_t core_entities_allocate()
+GS_API_DECL gs_core_entity_t gs_core_entities_allocate()
 {
-    core_entity_data_t* ecs = CORE_ECS(); 
+    gs_core_entity_data_t* ecs = CORE_ECS(); 
 
     // Allocate a new entity
     ecs_entity_t e = ecs_new(ecs->world, 0); 
-    return (core_entity_t)e;
+    return (gs_core_entity_t)e;
 }
 
 GS_API_DECL void 
-core_entities_deallocate(core_entity_world_t* world, core_entity_t entity)
+gs_core_entities_deallocate(gs_core_entity_world_t* world, gs_core_entity_t entity)
 {
-    core_entity_data_t* ecs = CORE_ECS();
+    gs_core_entity_data_t* ecs = CORE_ECS();
 
     // TODO(john): Iterate through all components for entity, then call destructor manually
     // Or need to set a generated dtor for this entity
     ecs_delete(world, entity);
 } 
 
-GS_API_DECL void core_entities_component_remove_internal(core_entity_world_t* world, 
-    core_entity_t entity, core_entity_t comp)
+GS_API_DECL void gs_core_entities_component_remove_internal(gs_core_entity_world_t* world, 
+    gs_core_entity_t entity, gs_core_entity_t comp)
 {
 } 
 

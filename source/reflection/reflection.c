@@ -52,7 +52,14 @@ typedef struct
 {
     char name[META_PROPERTY_STR_MAX];
     char content[META_FUNCTION_STR_MAX];
+    char function[META_FUNCTION_STR_MAX];
+    bool32 is_overriden;
 } method_t;
+
+typedef struct
+{
+    gs_hash_table(uint64_t, method_t) methods;
+} vtable_t;
 
 typedef struct
 {
@@ -60,6 +67,7 @@ typedef struct
     char base[META_PROPERTY_STR_MAX];
     gs_dyn_array(property_t) properties;
     gs_hash_table(uint64_t, method_t) methods;
+    vtable_t vtable;
     struct {
         bool32 reliable; 
     } rpc;
@@ -73,13 +81,13 @@ typedef struct
 
 static meta_t g_meta = {0};
 
-GS_API_DECL void write_to_file(meta_t* meta, const char* dir);
+GS_API_DECL void write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_offset);
 GS_API_DECL void parse_file(meta_t* meta, const char* path);
 
 #define TOKEN_EXPECT(LEX, TYPE, MSG)\
     if (!gs_lexer_require_token_type(LEX, TYPE)) {\
         gs_token_t TOKEN = LEX->current_token;\
-        gs_log_warning("Unidentified token: %.%s: %s", TOKEN.len, TOKEN.text, MSG);\
+        gs_log_warning("Unidentified token: %.*s: %s", TOKEN.len, TOKEN.text, MSG);\
         return;\
     } 
 
@@ -185,6 +193,128 @@ parse_class_property(meta_t* meta, class_t* cls, gs_lexer_t* lex)
     gs_dyn_array_push(cls->properties, prop);
 }
 
+GS_API_DECL void
+parse_class_method_vt(meta_t* meta, class_t* cls, gs_lexer_t* lex, vtable_t* vt)
+{
+    method_t method = {0};
+
+    /*
+    typedef struct
+    {
+        char name[META_PROPERTY_STR_MAX];
+        char content[META_FUNCTION_STR_MAX];
+        bool32 is_overriden;
+    } method_t;
+
+    typedef struct
+    {
+        gs_hash_table(uint64_t, method_t) methods;
+    } vtable_t;
+    */ 
+
+    // Check for "override", if so, then mark as such
+    // Move until we find open paren and asterisk for name
+    // Move to semicolon
+    // Copy all text as contents
+    
+    // Beginning of method signature (return type)
+    gs_token_t start = lex->current_token;
+    gs_token_t token = start;
+
+    // gs_token_debug_print(&token);
+
+    // If find 'override' tag, then we're overriden
+    if (gs_token_compare_text(&token, "_override"))
+    {
+        method.is_overriden = true;
+
+        // Move to next colon and get identifier
+        gs_lexer_find_next_token_type(lex, GS_TOKEN_COLON); 
+
+        // Get method name
+        TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expect identifier for function pointer name");
+        TOKEN_COPY(lex->current_token, method.name);
+
+        // Look for equal for callback to be registered
+        TOKEN_EXPECT(lex, GS_TOKEN_EQUAL, "Expect equal for function pointer");
+        TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expect function name for function pointer"); 
+        TOKEN_COPY(lex->current_token, method.function);
+
+        // Move to semicolon 
+        gs_lexer_find_next_token_type(lex, GS_TOKEN_SEMICOLON);
+        token = lex->current_token;
+
+        gs_println("%s: %s", method.name, method.function);
+    } 
+    else
+    { 
+        // Move to next open paren
+        gs_lexer_find_next_token_type(lex, GS_TOKEN_LPAREN);
+        TOKEN_EXPECT(lex, GS_TOKEN_ASTERISK, "Expect asterisk for function pointer");
+
+        // Get method name
+        TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expect identifier for function pointer name"); 
+        TOKEN_COPY(lex->current_token, method.name);
+
+        // Move past parens
+        gs_lexer_find_next_token_type(lex, GS_TOKEN_RPAREN);
+        gs_lexer_find_next_token_type(lex, GS_TOKEN_RPAREN);
+        // gs_token_debug_print(&lex->current_token);
+
+        // Look for equal for callback to be registered
+        TOKEN_EXPECT(lex, GS_TOKEN_EQUAL, "Expect equal for function pointer name");
+
+        // Copy content
+        token = lex->current_token; 
+        memcpy(method.content, start.text, (token.text - start.text));
+
+        // gs_println("content: %s", method.content);
+
+        // Get function name
+        TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expect function name for function pointer"); 
+        TOKEN_COPY(lex->current_token, method.function);
+
+        // Move to semicolon 
+        gs_lexer_find_next_token_type(lex, GS_TOKEN_SEMICOLON);
+        token = lex->current_token;
+    }
+
+    // Add method to vt
+    uint64_t hash = gs_hash_str64(method.name);
+    gs_hash_table_insert(vt->methods, hash, method);
+}
+
+GS_API_DECL void 
+parse_class_vtable(meta_t* meta, class_t* cls, gs_lexer_t* lex)
+{
+
+    vtable_t vt = {0};
+
+    // Parse left paren
+    TOKEN_EXPECT(lex, GS_TOKEN_LPAREN, "Expect lparen for _vtable");
+
+    // Paren token
+    gs_token_t token = lex->current_token;
+
+    // Until paren count is closed
+    uint32_t pc = 1;
+    while (pc)
+    {
+        token = lex->next_token(lex);
+        switch (token.type)
+        {
+            case GS_TOKEN_RPAREN: pc--; break;
+            case GS_TOKEN_LPAREN: pc++; break;
+            default:
+            {
+                parse_class_method_vt(meta, cls, lex, &vt);
+            }  break; 
+        }
+    } 
+
+    cls->vtable = vt; 
+}
+
 GS_API_DECL void 
 parse_class_properties(meta_t* meta, class_t* cls, gs_lexer_t* lex)
 {
@@ -202,16 +332,18 @@ parse_class_properties(meta_t* meta, class_t* cls, gs_lexer_t* lex)
 
             case GS_TOKEN_IDENTIFIER: 
             {
-                token = lex->current_token;
+                token = lex->current_token; 
+
+                // Parse VTable
+                if (gs_token_compare_text(&token, "_vtable"))
+                {
+                    parse_class_vtable(meta, cls, lex);
+                } 
 
                 // Parse functions
-                if (
+                else if (
                     gs_token_compare_text(&token, "_ctor") || 
                     gs_token_compare_text(&token, "_dtor") || 
-                    gs_token_compare_text(&token, "_serialize") ||
-                    gs_token_compare_text(&token, "_deserialize") ||
-                    gs_token_compare_text(&token, "_net_deserialize") ||
-                    gs_token_compare_text(&token, "_net_serialize") ||
                     gs_token_compare_text(&token, "_callback")
                 )
                 {
@@ -249,18 +381,18 @@ parse_class(meta_t* meta, gs_lexer_t* lex)
     gs_lexer_find_next_token_type(lex, GS_TOKEN_LBRACE);
 
     // Look for core base
-    TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expect core_base()"); 
+    TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expect gs_core_base()"); 
 
-    // Check against token, make sure it IS core_base
-    if (!gs_token_compare_text(&lex->current_token, "core_base"))
+    // Check against token, make sure it IS gs_core_base
+    if (!gs_token_compare_text(&lex->current_token, "gs_core_base"))
     {
-        gs_log_warning("Expected core_base identifier"); 
+        gs_log_warning("Expected gs_core_base identifier"); 
         gs_lexer_find_next_token_type(lex, GS_TOKEN_RBRACE);
         return;
     }
 
     // Open paren
-    TOKEN_EXPECT(lex, GS_TOKEN_LPAREN, "Expect open paren for core_base"); 
+    TOKEN_EXPECT(lex, GS_TOKEN_LPAREN, "Expect open paren for gs_core_base"); 
 
     // Parse and copy base
     TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expected name" );
@@ -268,8 +400,8 @@ parse_class(meta_t* meta, gs_lexer_t* lex)
     TOKEN_COPY(token, cls.base);
 
     // Close paren and semicolon
-    TOKEN_EXPECT(lex, GS_TOKEN_RPAREN, "Expect close paren for core_base"); 
-    TOKEN_EXPECT(lex, GS_TOKEN_SEMICOLON, "Expect semicolon for core_base"); 
+    TOKEN_EXPECT(lex, GS_TOKEN_RPAREN, "Expect close paren for gs_core_base"); 
+    TOKEN_EXPECT(lex, GS_TOKEN_SEMICOLON, "Expect semicolon for gs_core_base"); 
 
     // Parse all properties
     parse_class_properties(meta, &cls, lex);
@@ -313,6 +445,7 @@ void iterate_dir(const char* path, iterate_dir_cb cb)
                     gs_string_compare_equal(entry->d_name, "..") || 
                     gs_string_compare_equal(entry->d_name, ".") || 
                     gs_string_compare_equal(entry->d_name, "reflection") || 
+                    gs_string_compare_equal(entry->d_name, "generated") ||
                     gs_string_compare_equal(entry->d_name, "proj_gen") 
                 )
                 {
@@ -344,9 +477,9 @@ void refl_iterate_dir_cb(const char* path, struct dirent* entry)
     }
 
     // Ignore list
-    if (gs_string_compare_equal(entry->d_name, "core_object.h"))
+    if (gs_string_compare_equal(entry->d_name, "gs_core_object.h"))
     {
-        return;
+        // return;
     }
 
     if (!gs_platform_file_exists(path))
@@ -384,6 +517,19 @@ int32_t main(int32_t argc, char** argv)
     if (argc < 2)
     {
         gs_log_error("Missing input directory for reflection!");
+        return -1;
+    }
+
+    if (argc < 3)
+    {
+        gs_log_error("Missing output directory for generated file!");
+        return -1;
+    }
+
+    // Need to have a project name as well, so I can generate the files effectively
+    if (argc < 4)
+    {
+        gs_log_error("Missing project name!");
         return -1;
     }
 
@@ -430,23 +576,33 @@ int32_t main(int32_t argc, char** argv)
         gs_hash_table_insert(g_meta.type_map, gs_hash_str64(type_map[i].key), type_map[i].info);
     }
 
+    const char* in_dir = argv[1];
+    const char* out_dir = argv[2];
+    const char* proj_name = argv[3];
+    uint32_t id_offset = argc > 4 ? atoi(argv[4]) : 0;
+
+    gs_println("in_dir: %s", in_dir);
+    gs_println("out_dir: %s", out_dir);
+    gs_println("proj_name: %s", proj_name);
+
     // Directory where written information will live
-    const char* dir = "../source/generated/"; 
+    // const char* dir = "../source/generated/"; 
+    const char* dir = out_dir; 
 
     // Iterate through core files
-    iterate_dir("../../gs_core/source", refl_iterate_dir_cb); 
+    // iterate_dir("../../gs_core/source", refl_iterate_dir_cb); 
 
     // Iterate through project files (this should be passed in) 
     // for source files to parse, ignore third party directory, generated, reflection
-    iterate_dir(argv[1], refl_iterate_dir_cb);
+    iterate_dir(in_dir, refl_iterate_dir_cb);
 
-    write_to_file(&g_meta, dir);
+    write_to_file(&g_meta, dir, proj_name, id_offset);
 
     return 0;
 }
 
 GS_API_DECL void 
-write_to_file(meta_t* meta, const char* dir)
+write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_offset)
 {
     FILE* fp = NULL; 
     char PATH[256] = {0}; 
@@ -502,22 +658,24 @@ write_to_file(meta_t* meta, const char* dir)
 
     //====[ Header ]====//
 
-    gs_snprintf(PATH, sizeof(PATH), "%s/generated.h", dir); 
+    gs_snprintfc(FNAME, 256, "%s_generated.h", proj_name);
+
+    gs_snprintf(PATH, sizeof(PATH), "%s/%s", dir, FNAME);
     fp = fopen(PATH, "w"); 
-    gs_assert(fp); 
+    gs_assert(fp);
 
     // Copyright info 
-    COPYRIGHT(fp, "generated.h");
+    COPYRIGHT(fp, FNAME);
     
     // Include guard
-    gs_fprintln(fp, "\n#ifndef GENERATED_H");
-    gs_fprintln(fp, "#define GENERATED_H\n"); 
+    gs_fprintln(fp, "\n#ifndef %s_GENERATED_H", proj_name);
+    gs_fprintln(fp, "#define %s_GENERATED_H\n", proj_name); 
 
     // Includes
-    gs_fprintln(fp, "\n// Core/App Includes");
-    gs_fprintln(fp, "#include \"%s\"\n", "core/core_object.h"); 
-    gs_fprintln(fp, "#include \"%s\"", "core/core_gs.h");
-    gs_fprintln(fp, "#include \"%s\"", "core/core_object.h");
+    gs_fprintln(fp, "// Includes");
+    gs_fprintln(fp, "#include \"core/gs_core_object.h\""); 
+    gs_fprintln(fp, "#include \"core/gs_core_gs.h\"");
+    gs_fprintln(fp, "#include \"core/gs_core_object.h\"");
     for (uint32_t i = 0; i < gs_dyn_array_size(g_files); ++i)
     {
         gs_fprintln(fp, "#include \"%s\"", g_files[i].path);
@@ -528,7 +686,7 @@ write_to_file(meta_t* meta, const char* dir)
     gs_fprintln(fp, "//======[ Components ]=======//\n");
 
     gs_fprintln(fp, "GS_API_DECL void");
-    gs_fprintln(fp, "core_meta_ecs_register();\n");
+    gs_fprintln(fp, "%s_meta_ecs_register();\n", proj_name);
 
     for (
         gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
@@ -538,9 +696,9 @@ write_to_file(meta_t* meta, const char* dir)
     {
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
         
-        if (gs_string_compare_equal(cls->base, "core_entities_component_t"))
+        if (gs_string_compare_equal(cls->base, "gs_core_entities_component_t"))
         {
-            gs_fprintln(fp, "core_component_declare(%s);", cls->name);
+            gs_fprintln(fp, "gs_core_component_declare(%s);", cls->name);
         }
     } 
 
@@ -556,13 +714,13 @@ write_to_file(meta_t* meta, const char* dir)
     )
     {
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
-        if (gs_string_compare_equal(cls->base, "core_entities_system_t"))
+        if (gs_string_compare_equal(cls->base, "gs_core_entities_system_t"))
         {
             gs_fprintln(fp, "GS_API_DECL void"); 
-            gs_fprintln(fp, "_%s_cb(core_entity_iter_t* iter);\n", cls->name);
+            gs_fprintln(fp, "_%s_cb(gs_core_entity_iter_t* iter);\n", cls->name);
 
             gs_fprintln(fp, "GS_API_DECL void"); 
-            gs_fprintln(fp, "%s_cb(core_entities_system_t* system);\n", cls->name);
+            gs_fprintln(fp, "%s_cb(gs_core_entities_system_t* system);\n", cls->name);
         }
     }
 
@@ -570,6 +728,77 @@ write_to_file(meta_t* meta, const char* dir)
 
     // Classes
     gs_fprintln(fp, "//======[ Classes ]=======//\n");
+
+    // VTable Definitions
+    for (
+        gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
+        gs_hash_table_iter_valid(meta->classes, it);
+        gs_hash_table_iter_advance(meta->classes, it), CID++
+    )
+    {
+        class_t* cls = gs_hash_table_iter_getp(meta->classes, it);
+
+        // Vtable declaration 
+        gs_fprintln(fp, "#define %s_vtable_t_methods\\", cls->name); 
+
+        if (gs_string_compare_equal(cls->name, "gs_core_obj_t"))
+        {
+            gs_fprintln(fp, "\tgs_core_vtable_t_methods\\");
+        }
+
+        int32_t noc = 0;
+        for (
+            gs_hash_table_iter it = gs_hash_table_iter_new(cls->vtable.methods);
+            gs_hash_table_iter_valid(cls->vtable.methods, it); 
+            gs_hash_table_iter_advance(cls->vtable.methods, it)
+        )
+        { 
+            method_t* mt = gs_hash_table_iter_getp(cls->vtable.methods, it);
+            if (!mt->is_overriden) noc++;
+        }
+
+        // Do any base declaration here
+        if (cls->base && !gs_string_compare_equal(cls->name, "gs_core_obj_t"))
+        { 
+            gs_fprintf(fp, "\t%s_vtable_t_methods", cls->base); 
+
+            // Check if empty
+            if (noc && !gs_hash_table_empty(cls->vtable.methods))
+            {
+                gs_fprintf(fp, "\\"); 
+            }
+            gs_fprintf(fp, "\n");
+        }
+
+        // Get count of non-overriden functions
+
+        // All vtable functions
+        uint32_t ct = 0;
+        for (
+            gs_hash_table_iter it = gs_hash_table_iter_new(cls->vtable.methods);
+            gs_hash_table_iter_valid(cls->vtable.methods, it); 
+            gs_hash_table_iter_advance(cls->vtable.methods, it)
+        )
+        {
+            method_t* mt = gs_hash_table_iter_getp(cls->vtable.methods, it);
+            if (!mt->is_overriden)
+            {
+                gs_fprintf(fp, "\t%s;", mt->content); 
+            } 
+            if (noc && ct != noc - 1)
+            {
+                gs_fprintf(fp, "\\");
+            }
+            if (!mt->is_overriden) 
+            {
+                ct++;
+                gs_fprintf(fp, "\n"); 
+            }
+        } 
+
+        gs_fprintf(fp, "\n"); 
+
+    }
 
     for (
         gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
@@ -587,7 +816,7 @@ write_to_file(meta_t* meta, const char* dir)
         gs_fprintln(fp, "GS_API_DECL const gs_meta_class_t*");
         gs_fprintln(fp, "%s_class();\n", cls->name);
 
-        gs_fprintln(fp, "GS_API_DECL core_meta_info_t*");
+        gs_fprintln(fp, "GS_API_DECL const gs_core_meta_info_t*");
         gs_fprintln(fp, "%s_info();\n", cls->name);
 
         gs_fprintln(fp, "GS_API_DECL %s*", cls->name);
@@ -600,22 +829,10 @@ write_to_file(meta_t* meta, const char* dir)
         gs_fprintln(fp, "%s_ctor();\n", cls->name);
 
         gs_fprintln(fp, "GS_API_DECL void");
-        gs_fprintln(fp, "%s_dtor(core_obj_t* obj);\n", cls->name);
-
-        gs_fprintln(fp, "GS_API_DECL gs_result");
-        gs_fprintln(fp, "%s_serialize(gs_byte_buffer_t* buffer, const core_obj_t* obj);\n", cls->name);
-
-        gs_fprintln(fp, "GS_API_DECL gs_result");
-        gs_fprintln(fp, "%s_deserialize(gs_byte_buffer_t* buffer, core_obj_t* obj);\n", cls->name);
-
-        gs_fprintln(fp, "GS_API_DECL gs_result");
-        gs_fprintln(fp, "%s_net_serialize(gs_byte_buffer_t* buffer, const core_obj_t* obj);\n", cls->name);
-
-        gs_fprintln(fp, "GS_API_DECL gs_result");
-        gs_fprintln(fp, "%s_net_deserialize(gs_byte_buffer_t* buffer, core_obj_t* obj);\n", cls->name);
+        gs_fprintln(fp, "%s_dtor(gs_core_obj_t* obj);\n", cls->name);
 
         // If is base of rpc, then check for cb
-        if (gs_string_compare_equal(cls->base, "core_network_rpc_t") && cls->methods)
+        if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_t") && cls->methods)
         {
             method_t* rpc = gs_hash_table_getp(cls->methods, gs_hash_str64("_callback"));
             if (rpc)
@@ -629,6 +846,22 @@ write_to_file(meta_t* meta, const char* dir)
                 gs_fprintln(fp, "%s_cb(%s* rpc);\n", cls->name, cls->name);
             }
         } 
+
+        // VTable Struct
+        gs_fprintln(fp, "typedef struct %s_vtable_s", cls->name); 
+        gs_fprintln(fp, "{"); 
+        gs_fprintln(fp, "\t%s_vtable_t_methods", cls->name); 
+        gs_fprintln(fp, "} %s_vtable_t;", cls->name);
+
+        gs_fprintln(fp, ""); 
+
+        // Init 
+        gs_fprintln(fp, "GS_API_DECL void");
+        gs_fprintln(fp, "%s_vtable_t_init(%s_vtable_t* vt);\n", cls->name, cls->name);
+
+        // Ctor
+        gs_fprintln(fp, "GS_API_DECL %s_vtable_t", cls->name);
+        gs_fprintln(fp, "%s_vtable_t_ctor();\n", cls->name);
     }
 
     gs_fprintln(fp, "//========================//\n");
@@ -637,10 +870,13 @@ write_to_file(meta_t* meta, const char* dir)
     gs_fprintln(fp, "//============[ Registry ]===============//\n");
 
     gs_fprintln(fp, "GS_API_DECL void");
-    gs_fprintln(fp, "core_meta_register();\n"); 
+    gs_fprintln(fp, "%s_meta_register();\n", proj_name); 
 
-    gs_fprintln(fp, "GS_API_DECL core_obj_t*");
-    gs_fprintln(fp, "core_meta_static_ref_w_cls_id(uint32_t id);\n"); 
+    gs_fprintln(fp, "GS_API_DECL void");
+    gs_fprintln(fp, "%s_meta_ecs_register();\n", proj_name); 
+
+    gs_fprintln(fp, "GS_API_DECL void");
+    gs_fprintln(fp, "%s_meta_unregister();\n", proj_name); 
 
     // Include guard close
     gs_fprintln(fp, "#endif // GENERATED_H\n");
@@ -648,26 +884,22 @@ write_to_file(meta_t* meta, const char* dir)
     fclose(fp);
 
     //====[ Source ]====//
+    
+    gs_snprintfc(SNAME, 256, "%s_generated.c", proj_name);
 
-    gs_snprintf(PATH, sizeof(PATH), "%s/generated.c", dir); 
+    gs_snprintf(PATH, sizeof(PATH), "%s/%s", dir, SNAME); 
     fp = fopen(PATH, "w"); 
     gs_assert(fp);
 
-    COPYRIGHT(fp, "generated.c"); 
+    COPYRIGHT(fp, SNAME); 
+
+    gs_fprintln(fp, "\n// Includes");
 
     // Includes
-    gs_fprintln(fp, "#include \"%s\"\n", "generated.h");
+    gs_fprintln(fp, "#include \"%s_generated.h\"\n", proj_name); 
+    gs_fprintln(fp, "#include \"core/generated/gs_core_generated.h\"\n");
 
-    // Defines
-    gs_fprintln(fp, "#define META_CLASS_CNT        %zu\n", gs_hash_table_size(meta->classes) + 1);
-
-    // Meta registry
-    gs_fprintln(fp, "static struct");
-    gs_fprintln(fp, "{");
-    gs_fprintln(fp, "\tcore_meta_info_t info[META_CLASS_CNT];");
-    gs_fprintln(fp, "\tcore_obj_t* statics[META_CLASS_CNT];");
-    gs_fprintln(fp, "\tgs_meta_registry_t registry;");
-    gs_fprintln(fp, "} g_meta_registry = {0};");
+    gs_fprintln(fp, "// Class Ids");
 
     for (
         gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
@@ -675,50 +907,60 @@ write_to_file(meta_t* meta, const char* dir)
         gs_hash_table_iter_advance(meta->classes, it), CID++
     )
     {
-        class_t* cls = gs_hash_table_iter_getp(meta->classes, it);
+        class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
+        gs_fprintln(fp, "#define %s_cls_id %zu", cls->name, CID + id_offset);
+    }
 
-        // gs_println("outputting: %s", cls->name);
+    gs_fprintln(fp, "");
+
+    for (
+        gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
+        gs_hash_table_iter_valid(meta->classes, it);
+        gs_hash_table_iter_advance(meta->classes, it), CID++
+    )
+    {
+        class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
 
         gs_fprintln(fp, "/* %s */\n", cls->name); 
+
+        // gs_println("cls: %s", cls->name);
 
         // Class ID
         gs_fprintln(fp, "GS_API_DECL uint32_t");
         gs_fprintln(fp, "%s_class_id()", cls->name);
         gs_fprintln(fp, "{");
-        gs_fprintln(fp, "\treturn %zu;", CID);
+        gs_fprintln(fp, "\treturn %s_cls_id;", cls->name);
         gs_fprintln(fp, "}\n");
 
         // Class
         gs_fprintln(fp, "GS_API_DECL const gs_meta_class_t*");
         gs_fprintln(fp, "%s_class()", cls->name);
         gs_fprintln(fp, "{");
-        gs_fprintln(fp, "\tconst uint32_t cid = %s_class_id();", cls->name);
-        gs_fprintln(fp, "\treturn g_meta_registry.info[cid].cls;");
+        gs_fprintln(fp, "\treturn gs_core_meta_obj_info_w_cls_id(%s_cls_id)->cls;", cls->name);
         gs_fprintln(fp, "}\n");
 
         // Info
-        gs_fprintln(fp, "GS_API_DECL core_meta_info_t*");
+        gs_fprintln(fp, "GS_API_DECL const gs_core_meta_info_t*");
         gs_fprintln(fp, "%s_info()", cls->name);
         gs_fprintln(fp, "{");
-        gs_fprintln(fp, "\tconst uint32_t cid = %s_class_id();", cls->name);
-        gs_fprintln(fp, "\treturn &g_meta_registry.info[cid];");
+        gs_fprintln(fp, "\treturn gs_core_meta_obj_info_w_cls_id(%s_cls_id);", cls->name);
         gs_fprintln(fp, "}\n");
 
         // Init
         gs_fprintln(fp, "GS_API_DECL void");
         gs_fprintln(fp, "%s_init(%s* obj)", cls->name, cls->name);
         gs_fprintln(fp, "{"); 
-        gs_fprintln(fp, "\tcore_cast(obj, core_obj_t)->id = %s_class_id();", cls->name);
+        gs_fprintln(fp, "\tgs_core_cast(obj, gs_core_base_t)->id = %s_class_id();", cls->name);
 
         // If is rpc, then need to init rpc info
-        if (gs_string_compare_equal(cls->base, "core_network_rpc_t") && cls->methods)
+        if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_t") && cls->methods)
         { 
             method_t* cb = gs_hash_table_getp(cls->methods, gs_hash_str64("_callback"));
             gs_snprintfc(CB_GEN, 128, "%s_cb", cls->name);
-            gs_snprintfc(DELIVERY_STR, 128, "%s", cls->rpc.reliable ? "CORE_NETWORK_DELIVERY_RELIABLE" : 
-                    "CORE_NETWORK_DELIVERY_UNRELIABLE");
+            gs_snprintfc(DELIVERY_STR, 128, "%s", cls->rpc.reliable ? "GS_CORE_NETWORK_DELIVERY_RELIABLE" : 
+                    "GS_CORE_NETWORK_DELIVERY_UNRELIABLE");
             gs_snprintfc(CB_STR, 128, "%s", cb ? cb->content : CB_GEN);
-            gs_fprintln(fp, "\tcore_network_rpc_t* rpc = core_cast(obj, core_network_rpc_t);");
+            gs_fprintln(fp, "\tgs_core_network_rpc_t* rpc = gs_core_cast(obj, gs_core_network_rpc_t);");
             gs_fprintln(fp, "\trpc->delivery = %s;", DELIVERY_STR);
             gs_fprintln(fp, "\trpc->callback = %s;", CB_STR);
         }
@@ -752,7 +994,7 @@ write_to_file(meta_t* meta, const char* dir)
 
         // Dtor
         gs_fprintln(fp, "GS_API_DECL void");
-        gs_fprintln(fp, "%s_dtor(core_obj_t* obj)", cls->name);
+        gs_fprintln(fp, "%s_dtor(gs_core_obj_t* obj)", cls->name);
         gs_fprintln(fp, "{");
 
         if (gs_hash_table_exists(cls->methods, gs_hash_str64("_dtor")))
@@ -764,68 +1006,54 @@ write_to_file(meta_t* meta, const char* dir)
 
         gs_fprintln(fp, "}\n");
 
-        // Serialize
-        gs_fprintln(fp, "GS_API_DECL gs_result");
-        gs_fprintln(fp, "%s_serialize(gs_byte_buffer_t* buffer, const core_obj_t* obj)", cls->name);
-        gs_fprintln(fp, "{"); 
-        if (gs_hash_table_exists(cls->methods, gs_hash_str64("_serialize")))
+        // VTable
+
+        // Init 
+        gs_fprintln(fp, "GS_API_DECL void");
+        gs_fprintln(fp, "%s_vtable_t_init(%s_vtable_t* vt)", cls->name, cls->name);
+        gs_fprintln(fp, "{");
+
+        // Set up as base
+        if (cls->base && !gs_string_compare_equal(cls->name, "gs_core_obj_t"))
         {
-            method_t* func = gs_hash_table_getp(cls->methods, gs_hash_str64("_serialize"));
-            gs_fprintln(fp, "\t%s* this = obj;", cls->name);
-            gs_fprintln(fp, "\t%s", func->content);
-        } 
-        else
-        {
-            gs_fprintln(fp, "\treturn core_obj_serialize_default(buffer, obj);");
+            gs_fprintln(fp, "\t%s_vtable_t_init((%s_vtable_t*)vt);", cls->base, cls->base);
         }
+
+        // Iterate through all and set up function pointers
+        for (
+            gs_hash_table_iter mit = gs_hash_table_iter_new(cls->vtable.methods); 
+            gs_hash_table_iter_valid(cls->vtable.methods, mit);
+            gs_hash_table_iter_advance(cls->vtable.methods, mit)
+        )
+        {
+            method_t* mt = gs_hash_table_iter_getp(cls->vtable.methods, mit);
+
+            gs_fprintln(fp, "\tvt->%s = %s;", mt->name, mt->function);
+        }
+
+        // Init base stuff
+        gs_fprintln(fp, "\tvt->cls_id = %s_class_id;", cls->name); 
+        gs_fprintln(fp, "\tvt->cls = %s_class;", cls->name);
+
         gs_fprintln(fp, "}\n");
 
-        // Deserialize
-        gs_fprintln(fp, "GS_API_DECL gs_result");
-        gs_fprintln(fp, "%s_deserialize(gs_byte_buffer_t* buffer, core_obj_t* obj)", cls->name);
-        gs_fprintln(fp, "{"); 
-        if (gs_hash_table_exists(cls->methods, gs_hash_str64("_deserialize")))
-        {
-            method_t* func = gs_hash_table_getp(cls->methods, gs_hash_str64("_deserialize"));
-            gs_fprintln(fp, "\t%s* this = obj;", cls->name);
-            gs_fprintln(fp, "\t%s", func->content);
-        } 
-        else
-        {
-            gs_fprintln(fp, "\treturn core_obj_deserialize_default(buffer, obj);");
-        }
+        // Ctor
+        gs_fprintln(fp, "GS_API_DECL %s_vtable_t", cls->name);
+        gs_fprintln(fp, "%s_vtable_t_ctor()", cls->name);
+        gs_fprintln(fp, "{");
+        gs_fprintln(fp, "\t%s_vtable_t vt = gs_default_val();", cls->name);
+        gs_fprintln(fp, "\t%s_vtable_t_init(&vt);", cls->name);
+        gs_fprintln(fp, "\treturn vt;");
         gs_fprintln(fp, "}\n");
 
-        // Net Serialize
-        gs_fprintln(fp, "GS_API_DECL gs_result");
-        gs_fprintln(fp, "%s_net_serialize(gs_byte_buffer_t* buffer, const core_obj_t* obj)", cls->name);
-        gs_fprintln(fp, "{"); 
-        if (gs_hash_table_exists(cls->methods, gs_hash_str64("_net_serialize")))
-        {
-            method_t* func = gs_hash_table_getp(cls->methods, gs_hash_str64("_net_serialize"));
-            gs_fprintln(fp, "\t%s* this = obj;", cls->name);
-            gs_fprintln(fp, "\t%s", func->content);
-        } 
-        else
-        {
-            gs_fprintln(fp, "\treturn core_obj_net_serialize_default(buffer, obj);");
-        }
-        gs_fprintln(fp, "}\n");
-
-        // Net Deserialize
-        gs_fprintln(fp, "GS_API_DECL gs_result");
-        gs_fprintln(fp, "%s_net_deserialize(gs_byte_buffer_t* buffer, core_obj_t* obj)", cls->name);
-        gs_fprintln(fp, "{"); 
-        if (gs_hash_table_exists(cls->methods, gs_hash_str64("_net_deserialize")))
-        {
-            method_t* func = gs_hash_table_getp(cls->methods, gs_hash_str64("_net_deserialize"));
-            gs_fprintln(fp, "\t%s* this = obj;", cls->name);
-            gs_fprintln(fp, "\t%s", func->content);
-        } 
-        else
-        {
-            gs_fprintln(fp, "\treturn core_obj_net_deserialize_default(buffer, obj);");
-        }
+        // New
+        gs_fprintln(fp, "GS_API_DECL gs_core_vtable_t*");
+        gs_fprintln(fp, "%s_vtable_t_new()", cls->name);
+        gs_fprintln(fp, "{");
+        gs_fprintln(fp, "\t%s_vtable_t* vt = gs_malloc_init(%s_vtable_t);", 
+                cls->name, cls->name); 
+        gs_fprintln(fp, "\t%s_vtable_t_init(vt);", cls->name);
+        gs_fprintln(fp, "\treturn (gs_core_vtable_t*)vt;");
         gs_fprintln(fp, "}\n");
     }
 
@@ -845,46 +1073,20 @@ write_to_file(meta_t* meta, const char* dir)
         gs_fprintln(fp, "static %s g_%zu = {0};", cls->name, CID);
     }
 
-    gs_fprintln(fp, "");
-
-    gs_fprintln(fp, "GS_API_DECL const core_meta_info_t*");
-    gs_fprintln(fp, "core_meta_obj_info(const core_obj_t* obj)"); 
-    gs_fprintln(fp, "{"); 
-    gs_fprintln(fp, "\treturn &g_meta_registry.info[obj->id];");
-    gs_fprintln(fp, "}\n"); 
-
-    gs_fprintln(fp, "GS_API_DECL const core_meta_info_t*");
-    gs_fprintln(fp, "core_meta_obj_info_w_cls_id(uint32_t cls_id)"); 
-    gs_fprintln(fp, "{"); 
-    gs_fprintln(fp, "\tif (cls_id >= META_CLASS_CNT || !cls_id) return NULL;"); 
-    gs_fprintln(fp, "\treturn &g_meta_registry.info[cls_id];");
-    gs_fprintln(fp, "}\n"); 
-
-    gs_fprintln(fp, "GS_API_DECL core_obj_t*");
-    gs_fprintln(fp, "core_meta_static_ref_w_cls_id(uint32_t cls_id)");
-    gs_fprintln(fp, "{"); 
-    gs_fprintln(fp, "\tif (cls_id >= META_CLASS_CNT || !cls_id) return NULL;"); 
-    gs_fprintln(fp, "\treturn g_meta_registry.statics[cls_id];");
-    gs_fprintln(fp, "}\n"); 
+    gs_fprintln(fp, ""); 
 
     gs_fprintln(fp, "GS_API_DECL void");
-    gs_fprintln(fp, "core_meta_register()");
+    gs_fprintln(fp, "%s_meta_register()", proj_name);
     gs_fprintln(fp, "{");
 
+    gs_fprintln(fp, "\tgs_core_meta_registry_t* meta = gs_core_instance()->meta;");
     gs_fprintln(fp, "\tgs_meta_class_t* cls = NULL;"); 
     gs_fprintln(fp, "\tgs_meta_class_t* base = NULL;");
-    gs_fprintln(fp, "\tcore_meta_info_t* info = NULL;");
-    gs_fprintln(fp, "\tcore_network_rpc_t* rpc = NULL;");
+    gs_fprintln(fp, "\tgs_core_meta_info_t* info = NULL;");
+    gs_fprintln(fp, "\tgs_core_network_rpc_t* rpc = NULL;");
     gs_fprintln(fp, "\tuint64_t cid = 0;");
     gs_fprintln(fp, "\tuint32_t cnt = 0;");
-    gs_fprintln(fp, "\tuint32_t idx = 0;\n");
-
-    gs_fprintln(fp, "\t// Construct registry");
-    gs_fprintln(fp, "\tg_meta_registry.registry = gs_meta_registry_new();");
-    gs_fprintln(fp, "\tgs_meta_registry_t* gmr = &g_meta_registry.registry;\n");
-
-    gs_fprintln(fp, "\t// Pre-allocate registry count");
-    gs_fprintln(fp, "\tgs_hash_table_reserve(gmr->classes, uint64_t, gs_meta_class_t, META_CLASS_CNT * 3);\n");
+    gs_fprintln(fp, "\tuint32_t idx = 0;\n"); 
 
     // Classes
     for (
@@ -896,10 +1098,11 @@ write_to_file(meta_t* meta, const char* dir)
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
 
         gs_fprintln(fp, "\t/* %s */", cls->name);
+        gs_fprintln(fp, "\t{");
 
-        gs_fprintln(fp, "\tcid = gs_meta_class_register(gmr, (&(gs_meta_class_decl_t){");
-        gs_fprintln(fp, "\t\t.name = gs_to_str(%s),", cls->name);
-        gs_fprintf(fp, "\t\t.properties = (gs_meta_property_t[])");
+        gs_fprintln(fp, "\t\tcid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){");
+        gs_fprintln(fp, "\t\t\t.name = gs_to_str(%s),", cls->name);
+        gs_fprintf(fp, "\t\t\t.properties = (gs_meta_property_t[])");
 
         // Iterate through all properties
         const uint32_t psize = gs_dyn_array_size(cls->properties);
@@ -918,7 +1121,7 @@ write_to_file(meta_t* meta, const char* dir)
                     type_info = gs_hash_table_get(meta->type_map, type_hash);
                 }
 
-                gs_fprintf(fp, "\t\t\tgs_meta_property(%s, %s, %s, %s)",
+                gs_fprintf(fp, "\t\t\t\tgs_meta_property(%s, %s, %s, %s)",
                     cls->name, 
                     prop->type, 
                     prop->name, 
@@ -928,66 +1131,92 @@ write_to_file(meta_t* meta, const char* dir)
                 if (p < psize - 1) gs_fprintf(fp, ",\n");
                 else               gs_fprintln(fp, "");
             }
-            gs_fprintln(fp, "\t\t},");
+            gs_fprintln(fp, "\t\t\t},");
         }
         else
         {
             gs_fprintf(fp, "{0},\n"); 
         }
 
-        gs_fprintln(fp, "\t\t.size = %zu * sizeof(gs_meta_property_t)", gs_dyn_array_size(cls->properties));
-        gs_fprintln(fp, "\t}));");
+        gs_fprintln(fp, "\t\t\t.size = %zu * sizeof(gs_meta_property_t)", gs_dyn_array_size(cls->properties));
+        gs_fprintln(fp, "\t\t}));");
         gs_fprintln(fp, "");
 
-        gs_fprintln(fp, "\tidx = %s_class_id();", cls->name); 
-        gs_fprintln(fp, "\tcore_cast(&g_%zu, core_obj_t)->id = %s_class_id();", CID, cls->name);
+        gs_fprintln(fp, "\t\tgs_core_meta_info_t ci = {0};");
+        gs_fprintln(fp, "\t\tuint32_t hndl = %s_class_id();", cls->name); 
+        gs_fprintln(fp, "\t\tgs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);"); 
+        gs_fprintln(fp, "\t\tgs_core_cast(&g_%zu, gs_core_base_t)->id = %s_class_id();", CID, cls->name);
 
         // If is rpc, then need to init rpc info
-        if (gs_string_compare_equal(cls->base, "core_network_rpc_t") && cls->methods)
+        if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_t") && cls->methods)
         { 
             method_t* cb = gs_hash_table_getp(cls->methods, gs_hash_str64("_callback"));
             gs_snprintfc(CB_GEN, 128, "%s_cb", cls->name);
-            gs_snprintfc(DELIVERY_STR, 128, "%s", cls->rpc.reliable ? "CORE_NETWORK_DELIVERY_RELIABLE" : 
-                    "CORE_NETWORK_DELIVERY_UNRELIABLE");
+            gs_snprintfc(DELIVERY_STR, 128, "%s", cls->rpc.reliable ? "GS_CORE_NETWORK_DELIVERY_RELIABLE" : 
+                    "GS_CORE_NETWORK_DELIVERY_UNRELIABLE");
             gs_snprintfc(CB_STR, 128, "%s", cb ? cb->content : CB_GEN);
-            gs_fprintln(fp, "\trpc = core_cast(&g_%zu, core_network_rpc_t);", CID);
-            gs_fprintln(fp, "\trpc->delivery = %s;", DELIVERY_STR);
-            gs_fprintln(fp, "\trpc->callback = %s;", CB_STR);
+            gs_fprintln(fp, "\t\trpc = core_cast(&g_%zu, gs_core_network_rpc_t);", CID);
+            gs_fprintln(fp, "\t\trpc->delivery = %s;", DELIVERY_STR);
+            gs_fprintln(fp, "\t\trpc->callback = %s;", CB_STR);
         }
-        // gs_fprintln(fp, "\tcore_cls_init(%s, &g_%zu);", cls->name, CID);
-        gs_fprintln(fp, "\tg_meta_registry.statics[%zu] = &g_%zu;", CID, CID);
-        gs_fprintln(fp, "\tinfo = &g_meta_registry.info[idx];");
-        gs_fprintln(fp, "\tinfo->cls = gs_meta_class_get(gmr, %s);", cls->name);
-        gs_fprintln(fp, "\tinfo->cid = %zu;", CID); 
+        gs_fprintln(fp, "\t\tinfo->instance = gs_core_cast(&g_%zu, gs_core_obj_t);", CID);
+        gs_fprintln(fp, "\t\tinfo->cls = gs_meta_class_get(&meta->registry, %s);", cls->name);
+        gs_fprintln(fp, "\t\tinfo->cid = hndl;"); 
 
         // Set base class info
-        class_t* base = gs_hash_table_getp(meta->classes, gs_hash_str64(cls->base)); 
-        if (base)
+        if (cls->base && !gs_string_compare_equal(cls->base, "gs_core_obj_t") && 
+                !gs_string_compare_equal(cls->name, "gs_core_obj_t"))
         {
-            gs_fprintln(fp, "\tinfo->base = core_cls_info(%s);", base->name); 
+            gs_fprintln(fp, "\t\tuint32_t bid = gs_core_cls_cid(%s);", cls->base); 
+            gs_fprintln(fp, "\t\tinfo->base = gs_core_cls_info(%s);", cls->base); 
         }
         else
         { 
-            gs_fprintln(fp, "\tinfo->base = NULL;"); 
+            gs_fprintln(fp, "\t\tinfo->base = NULL;"); 
         }
-
-        gs_fprintln(fp, "\tinfo->vtable = (core_vtable_t){");
-        gs_fprintln(fp, "\t\t.info = %s_info,", cls->name);
-        gs_fprintln(fp, "\t\t.class_id = %s_class_id,", cls->name);
-        gs_fprintln(fp, "\t\t.serialize = %s_serialize,", cls->name);
-        gs_fprintln(fp, "\t\t.deserialize = %s_deserialize,", cls->name);
-        gs_fprintln(fp, "\t\t.net_serialize = %s_net_serialize,", cls->name);
-        gs_fprintln(fp, "\t\t.net_deserialize = %s_net_deserialize", cls->name);
-        gs_fprintln(fp, "\t};\n");
+        
+        // Vtable
+        gs_fprintln(fp, "\t\tinfo->vtable = %s_vtable_t_new();", cls->name);
+        gs_fprintln(fp, "\t\t%s_vtable_t_init(info->vtable);", cls->name);
+        gs_fprintln(fp, "\t}\n");
     } 
 
     gs_fprintln(fp, "}\n");
 
+    // Unregister
+
+    gs_fprintln(fp, "GS_API_DECL void");
+    gs_fprintln(fp, "%s_meta_unregister()", proj_name); 
+    gs_fprintln(fp, "{"); 
+
+    for (
+        gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
+        gs_hash_table_iter_valid(meta->classes, it);
+        gs_hash_table_iter_advance(meta->classes, it), CID++
+    ) 
+    {
+        class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
+
+        gs_fprintln(fp, "\t{");
+        gs_fprintln(fp, "\t\tgs_core_meta_registry_t* meta = gs_core_instance()->meta;");
+        gs_fprintln(fp, "\t\tgs_assert(meta);");
+        gs_fprintln(fp, "\t\tgs_core_meta_info_t* info = gs_slot_array_getp(meta->info, %s_cls_id);", cls->name);
+        gs_fprintln(fp, "\t\tgs_assert(info);");
+        gs_fprintln(fp, "\t\tgs_meta_class_unregister(&meta->registry, info->cls->id);");
+        gs_fprintln(fp, "\t\tinfo->cls = NULL;");
+        gs_fprintln(fp, "\t\tinfo->base = NULL;");
+        gs_fprintln(fp, "\t}"); 
+    } 
+
+    gs_fprintln(fp, "}\n"); 
+
     gs_fprintln(fp, "//=====[ Component/System Registration ]=====//\n");
 
     gs_fprintln(fp, "GS_API_DECL void");
-    gs_fprintln(fp, "meta_ecs_register()");
+    gs_fprintln(fp, "%s_meta_ecs_register()", proj_name);
     gs_fprintln(fp, "{"); 
+
+    gs_fprintln(fp, "\tgs_core_entities_t* ents = gs_core_instance()->entities;\n");
 
     gs_fprintln(fp, "\t// Components\n");
 
@@ -998,9 +1227,13 @@ write_to_file(meta_t* meta, const char* dir)
         )
         {
             class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
-            if (gs_string_compare_equal(cls->base, "core_entities_component_t"))
+            if (gs_string_compare_equal(cls->base, "gs_core_entities_component_t"))
             {
-                gs_fprintln(fp, "\tcore_entities_register_component(%s);", cls->name);
+                gs_fprintln(fp, "\tgs_core_entity_id(%s) = ents->component_register(&(gs_core_entities_component_desc_t){", cls->name);
+                gs_fprintln(fp, "\t\t.name = gs_to_str(%s),", cls->name);
+                gs_fprintln(fp, "\t\t.size = sizeof(%s),", cls->name);
+                gs_fprintln(fp, "\t\t.alignment = ECS_ALIGNOF(%s)", cls->name);
+                gs_fprintln(fp, "\t});");
             }
         }
 
@@ -1013,12 +1246,12 @@ write_to_file(meta_t* meta, const char* dir)
         )
         {
             class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
-            if (gs_string_compare_equal(cls->base, "core_entities_system_t"))
+            if (gs_string_compare_equal(cls->base, "gs_core_entities_system_t"))
             {
                 gs_fprintln(fp, "\t/* %s */", cls->name);
 
                 gs_snprintfc(CB, 256, "_%s_cb", cls->name);
-                gs_fprintln(fp, "\tcore_entities_register_system(&(core_entities_system_desc_t){");
+                gs_fprintln(fp, "\tgs_core_entities_register_system(&(gs_core_entities_system_desc_t){");
                 gs_fprintln(fp, "\t\t.callback = %s,", CB); 
                 gs_fprintln(fp, "\t\t.filter.component_list = {");
 
@@ -1026,7 +1259,7 @@ write_to_file(meta_t* meta, const char* dir)
                     { 
                         property_t* p = &cls->properties[i];
                         uint32_t strlen = gs_string_length(p->type) - 1;
-                        gs_fprintf(fp, "\t\t\tcore_entity_id(%.*s)", strlen, p->type);
+                        gs_fprintf(fp, "\t\t\tgs_core_entity_id(%.*s)", strlen, p->type);
                         if (i < gs_dyn_array_size(cls->properties) - 1)
                         {
                             gs_fprintln(fp, ",");
@@ -1055,9 +1288,9 @@ write_to_file(meta_t* meta, const char* dir)
     )
     {
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
-        if (gs_string_compare_equal(cls->base, "core_entities_system_t"))
+        if (gs_string_compare_equal(cls->base, "gs_core_entities_system_t"))
         { 
-            gs_snprintfc(CB, 256, "_%s_cb(core_entity_t* iter)", cls->name);
+            gs_snprintfc(CB, 256, "_%s_cb(gs_core_entity_t* iter)", cls->name);
             gs_fprintln(fp, "GS_API_DECL void");
             gs_fprintln(fp, "%s", CB);
             gs_fprintln(fp, "{");
@@ -1068,7 +1301,7 @@ write_to_file(meta_t* meta, const char* dir)
             {
                 property_t* p = &cls->properties[i];
                 uint32_t strlen = gs_string_length(p->type) - 1;
-                gs_fprintln(fp, "\tsdata.%s = core_entities_term(iter, %.*s, %zu);", 
+                gs_fprintln(fp, "\tsdata.%s = gs_core_entities_term(iter, %.*s, %zu);", 
                     p->name, strlen, p->type, i);
             } 
             gs_fprintln(fp, "\t%s_cb(&sdata);", cls->name);

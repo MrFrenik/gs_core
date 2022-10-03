@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: core.h
+    * File: gs_core_util.cpp
 
     All Rights Reserved
 
@@ -34,40 +34,50 @@
 
 =================================================================================================================*/
 
-#ifndef CORE_H
-#define CORE_H
+// Core Includes
+#include "gs_core_util.h"
 
-#include "core_gs.h"
-#include "core_object.h"
-#include "core_ai.h"
-#include "core_asset.h"
-#include "core_entity.h"
-#include "core_network.h"
-#include "core_graphics.h"
-#include "core_physics.h"
+// Third Party Includes
+#include "filewatch/FileWatch.hpp"
 
-typedef struct core_s
+#include <locale>
+#include <codecvt>
+#include <string>
+
+GS_API_DECL gs_core_util_filewatch_t* 
+gs_core_util_filewatch_new(const char* file_path, gs_core_util_filewatch_cb cb)
 {
-    struct core_assets_s*   assets;
-    struct core_physics_s*  physics;
-    struct core_entities_s* entities;
-    struct core_network_s*  network;
-    struct core_ai_s*       ai;
-    struct core_graphics_s* gfx;
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    // std::string narrow = converter.to_bytes(wide_utf16_source_string);
+    std::wstring wide = converter.from_bytes(file_path);
 
-    // GS Structures
-    gs_command_buffer_t cb;
-    gs_immediate_draw_t gsi;
-    gs_gui_context_t gui;
+    filewatch::FileWatch<std::wstring>* watch = new 
+        filewatch::FileWatch<std::wstring>(
+            wide,
+            [&](const std::wstring& path, const filewatch::Event evt) { 
+                cb();
+            }
+        );
 
-} core_t; 
+    return (gs_core_util_filewatch_t*)watch; 
+} 
 
-GS_API_DECL core_t* 
-core_new();
+GS_API_DECL void 
+gs_core_util_filewatch_free(gs_core_util_filewatch_t* watch)
+{
+    delete (watch);
+}
 
-GS_API_DECL void
-core_free(core_t* core);
 
-#endif // CORE_H
+
+
+
+
+
+
+
+
+
+
 
 

@@ -1,7 +1,7 @@
 @echo off
-rmdir /Q /S bin\%APP%
-mkdir bin\%APP%
-pushd bin\%APP%
+rmdir /Q /S bin\dd
+mkdir bin\dd
+pushd bin\dd
 
 rem GS_Core
 set gs_core=..\..\..\gs_core
@@ -63,15 +63,10 @@ set out_dir="%root%/source/generated"
 rem Run Reflection
 %gs_core%\bin\reflection\reflection.exe %in_dir% %out_dir% %proj_name%
 
-rem Compile Release
-rem cl /MP /FS /Ox /W0 /Fe%proj_name%.exe %src_all% %inc% ^
-rem /EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib /NODEFAULTLIB:LIBCMT ^
-rem %os_libs% %tp_libs%
-
-rem Compile Debug
-cl /w /MTd /MP -Zi -D _WINSOCKAPI_ -D GS_APP_STANDALONE /DEBUG:FULL ^
-/Fe%proj_name%.exe %src_all% %inc% /EHsc /link /SUBSYSTEM:CONSOLE ^
-/NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib ^
-%os_libs% %tp_libs_dbg%
+rem Compile Debug DLL
+cl /w /MTd /MP -Zi -D _WINSOCKAPI_ -D GS_API_DLL_EXPORT /D_USRDLL /D_WINDLL /DEBUG:FULL %src_all% %inc% ^
+/EHsc /link /DLL /SUBSYSTEM:CONSOLE /NODEFAULTLIB:libcmtd.lib ^
+/NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib ^
+%os_libs% %tp_libs_dbg% /OUT:%proj_name%_d.dll 
 
 popd 

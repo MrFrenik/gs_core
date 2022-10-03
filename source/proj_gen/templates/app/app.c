@@ -1,8 +1,8 @@
 // Includes
-#include "app.h"
+#include %APP_HEADER_PATH%
 
 // Reflection Includes
-#include "generated/generated.h"
+#include %GENERATED_HEADER_PATH%
 
 GS_API_DECL void 
 %APP%_init()
@@ -60,15 +60,31 @@ GS_API_DECL void
     core_free(app->core);
 } 
 
-gs_app_desc_t 
-gs_main(int32_t argc, char** argv)
+#ifdef GS_APP_STANDALONE
+
+GS_API_DECL int32_t 
+main(int32_t argc, char** argv)
 {
-    gs_app_desc_t desc = gs_default_val();
-    desc.user_data = gs_malloc_init(%APP%_t);
-    desc.window_width = 800;
-    desc.window_height = 600;
-    desc.init = %APP%_init;
-    desc.update = %APP%_update;
-    desc.shutdown = %APP%_shutdown;
-    return desc;
+    // Create gunslinger instance with application
+    gs_t* inst = gs_create((gs_app_desc_t){
+        .user_data = gs_malloc_init(%APP%_t),
+        .window_width = 800,
+        .window_height = 600,
+        .window_title = gs_to_str(%APP%),
+        .init = %APP%_init,
+        .update = %APP%_update,
+        .shutdown = %APP%_shutdown
+    });
+
+    // Main loop
+    while (gs_app()->is_running) {
+        gs_frame();
+    }
+
+    // Shutdown
+    gs_free(inst);
+
+    return 0;
 }
+
+#endif

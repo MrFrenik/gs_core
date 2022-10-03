@@ -6318,7 +6318,7 @@ ecs_entity_t ecs_entity_init(
     /* Find or create entity */
     ecs_entity_t result = desc->entity;
     if (!result) {
-        if (name) {
+        if (name) { 
             /* If add array contains a ChildOf pair, use it as scope instead */
             const ecs_id_t *ids = desc->add;
             ecs_id_t id;
@@ -6331,6 +6331,7 @@ ecs_entity_t ecs_entity_init(
                 }
             }
 
+            // BLAH
             result = ecs_lookup_path_w_sep(
                 world, scope, name, sep, root_sep, false);
             if (result) {
@@ -6460,7 +6461,7 @@ ecs_entity_t ecs_component_init(
     entity_desc.use_low_id = true;
     if (!entity_desc.symbol) {
         entity_desc.symbol = entity_desc.name;
-    }
+    } 
 
     ecs_entity_t e = desc->entity.entity;
     ecs_entity_t result = ecs_entity_init(world, &entity_desc);

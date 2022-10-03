@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: core.c
+    * File: core.h
 
     All Rights Reserved
 
@@ -34,56 +34,52 @@
 
 =================================================================================================================*/
 
-#include "core/core.h"
+#ifndef GS_CORE_H
+#define GS_CORE_H
 
-GS_API_DECL core_t* 
-core_new()
+#include "gs_core_gs.h"
+#include "gs_core_object.h"
+#include "gs_core_ai.h"
+#include "gs_core_asset.h"
+#include "gs_core_entity.h"
+#include "gs_core_network.h"
+#include "gs_core_graphics.h"
+#include "gs_core_physics.h"
+#include "gs_core_util.h"
+#include "gs_core_app.h"
+#include "core/generated/gs_core_generated.h"
+
+#define GS_CORE_REFL_CLASS_MAX     100
+
+typedef struct gs_core_s
 {
-    core_t* core = gs_malloc_init(core_t);
+    struct gs_core_assets_s*        assets;
+    struct gs_core_physics_s*       physics;
+    struct gs_core_entities_s*      entities;
+    struct gs_core_network_s*       network;
+    struct gs_core_ai_s*            ai;
+    struct gs_core_graphics_s*      gfx;
+    struct gs_core_meta_registry_s* meta;
 
-    // Init all gs structures
-    core->cb = gs_command_buffer_new();
-    core->gsi = gs_immediate_draw_new();
-    core->gui = gs_gui_new(gs_platform_main_window()); 
+    // GS Structures
+    gs_command_buffer_t cb;
+    gs_immediate_draw_t gsi;
+    gs_gui_context_t gui;
 
-    // Register all application meta information
-    core_meta_register();
+} gs_core_t; 
 
-    // Assets
-    core->assets = core_assets_new(
-        gs_platform_dir_exists("./assets") ? "./assets" : "../assets");
-
-    // Physics
-    core->physics = core_physics_new(); 
-
-    // Entities
-    core->entities = core_entities_new(); 
-
-    // Networking
-    core->network = core_network_new();
-
-    // AI
-    core->ai = core_ai_new();
-
-    // Graphics
-    core->gfx = core_graphics_new(); 
-
-    // Register Components/Systems
-    meta_ecs_register();
-
-    return core;
-}
+GS_API_DECL gs_core_t* 
+gs_core_new();
 
 GS_API_DECL void
-core_free(core_t* core)
-{ 
-    // Free gs structures
-    gs_immediate_draw_free(&core->gsi);
-    gs_command_buffer_free(&core->cb);
-    gs_gui_free(&core->gui);
+gs_core_free(gs_core_t* core);
 
-    // Shutdown network
-    core_network_shutdown();
+GS_API_DECL gs_core_t* 
+gs_core_instance();
 
-    gs_free(core);
-}
+GS_API_DECL void
+gs_core_instance_set(gs_core_t* core);
+
+#endif // GS_CORE_H
+
+

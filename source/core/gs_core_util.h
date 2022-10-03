@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: core_graphics.h
+    * File: gs_core_util.h
 
     All Rights Reserved
 
@@ -32,74 +32,38 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-=================================================================================================================*/ 
+=================================================================================================================*/
 
-#ifndef CORE_GRAPHICS_H
-#define CORE_GRAPHICS_H
+#ifndef CORE_UTIL_H
+#define CORE_UTIL_H
 
-#include "core_gs.h"
-#include "core_asset.h"
+#include <gs/gs.h>
 
-typedef struct
-{
-    core_asset_handle_t material;
-    core_asset_handle_t mesh;
-    gs_mat4 model;
-} core_graphics_renderable_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-typedef struct
-{
-    gs_slot_array(core_graphics_renderable_t) renderables;
-    gs_slot_array(gs_camera_t) cameras;
-    uint32_t camera;    // Main scene camera
-} core_graphics_scene_t;
+// File Watch
+typedef void* gs_core_util_filewatch_t;
+typedef void (* gs_core_util_filewatch_cb)(void);
 
-typedef struct core_graphics_s
-{
-    core_graphics_scene_t scene;   // Single scene for now...
-} core_graphics_t;
-
-//=====[ Core Graphics ]=====//
-
-GS_API_DECL core_graphics_t* 
-core_graphics_new();
+GS_API_DECL gs_core_util_filewatch_t* 
+gs_core_util_filewatch_new(const char* file_path, gs_core_util_filewatch_cb cb);
 
 GS_API_DECL void 
-core_graphics_shutdown();
+gs_core_util_filewatch_free(gs_core_util_filewatch_t* watch);
 
-GS_API_DECL core_graphics_t* 
-core_graphics_instance();
+#ifdef __cplusplus
+}
+#endif 
 
-//=====[ Core Renderable ]=====// 
+#endif // CORE_UTIL_H
 
-GS_API_DECL core_graphics_scene_t
-core_graphics_scene_create();
 
-GS_API_DECL void
-core_graphics_scene_destroy(core_graphics_scene_t* scene);
 
-//=====[ Core Renderable ]=====//
 
-GS_API_DECL uint32_t 
-core_graphics_scene_renderable_create(core_graphics_scene_t* scene, const core_graphics_renderable_t* renderable);
 
-GS_API_DECL void 
-core_graphics_scene_renderable_destroy(core_graphics_scene_t* scene, uint32_t hndl);
 
-//====[ Camera ]====//
-
-GS_API_DECL uint32_t
-core_graphics_scene_camera_create(core_graphics_scene_t* scene, 
-    const gs_camera_t* camera);
-
-GS_API_DECL gs_camera_t*
-core_graphics_scene_camera_get(core_graphics_scene_t* scene, 
-    uint32_t hndl);
-
-GS_API_DECL gs_camera_t* 
-core_graphics_scene_main_camera(core_graphics_scene_t* scene);
-
-#endif // CORE_GRAPHICS_H
 
 
 

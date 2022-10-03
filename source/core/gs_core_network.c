@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: core_network.c
+    * File: gs_core_network.c
 
     All Rights Reserved
 
@@ -35,13 +35,13 @@
 =================================================================================================================*/ 
 
 // Core Includes
-#include "core_gs.h"
-#include "core_network.h"
+#include "gs_core_gs.h"
+#include "gs_core_network.h"
 
 // Third party includes
 #include <enet/enet.h>
 
-#define CORE_ENET()       ((core_enet_t*)g_network->user_data)
+#define GS_CORE_ENET()       ((gs_core_enet_t*)g_network->user_data)
 
 // Broadcast to all clients
 // Server holds list of all connected clients
@@ -52,7 +52,7 @@ typedef struct
 {
     ENetAddress address;            // Hosting address
     ENetHost* host;                 // Either server/client
-    core_network_host_type_t type;  // Type of host
+    gs_core_network_host_type_t type;  // Type of host
     uint16_t max_connections;       // Max number of outgoing connections
     uint16_t max_channels;          // Max number of channels
     uint32_t id;                    // Id of host
@@ -69,97 +69,97 @@ typedef struct
         } server;
     };
     gs_byte_buffer_t message_data;
-} core_enet_t;
+} gs_core_enet_t;
 
-static core_network_t* g_network = NULL;
-
-GS_API_DECL void 
-core_enet_server_disconnect(core_enet_t* enet);
+static gs_core_network_t* g_network = NULL;
 
 GS_API_DECL void 
-core_enet_server_remove_client(core_enet_t* enet, uint32_t peer_id);
+gs_core_enet_server_disconnect(gs_core_enet_t* enet);
+
+GS_API_DECL void 
+gs_core_enet_server_remove_client(gs_core_enet_t* enet, uint32_t peer_id);
 
 GS_API_DECL bool 
-core_enet_server_poll(core_enet_t* enet, core_network_message_t* msg);
+gs_core_enet_server_poll(gs_core_enet_t* enet, gs_core_network_event_t* evt);
 
 GS_API_DECL void 
-core_enet_server_destroy(core_enet_t* enet);
+gs_core_enet_server_destroy(gs_core_enet_t* enet);
 
 GS_API_DECL uint32_t 
-core_enet_server_num_clients(core_enet_t* enet);
+gs_core_enet_server_num_clients(gs_core_enet_t* enet);
 
 GS_API_DECL void 
-core_enet_server_send_message(core_enet_t* enet, const core_network_message_t* msg);
+gs_core_enet_server_send_message(gs_core_enet_t* enet, const gs_core_network_message_t* msg);
 
 GS_API_DECL void 
-core_enet_server_broadcast(core_enet_t* enet, const core_network_message_t* msg);
+gs_core_enet_server_broadcast(gs_core_enet_t* enet, const gs_core_network_message_t* msg);
 
 GS_API_DECL ENetPeer* 
-core_enet_server_get_client(core_enet_t* enet, uint32_t id); 
+gs_core_enet_server_get_client(gs_core_enet_t* enet, uint32_t id); 
 
 GS_API_DECL void 
-core_enet_client_disconnect(core_enet_t* enet);
+gs_core_enet_client_disconnect(gs_core_enet_t* enet);
 
 GS_API_DECL bool 
-core_enet_client_poll(core_enet_t* enet, core_network_message_t* msg);
+gs_core_enet_client_poll(gs_core_enet_t* enet, gs_core_network_event_t* evt);
 
 GS_API_DECL void 
-core_enet_client_destroy(core_enet_t* enet);
+gs_core_enet_client_destroy(gs_core_enet_t* enet);
 
 GS_API_DECL void 
-core_enet_client_send_message(core_enet_t* enet, const core_network_message_t* msg);
+gs_core_enet_client_send_message(gs_core_enet_t* enet, const gs_core_network_message_t* msg);
 
 //============[ Implementation ] ============//
 
-GS_API_DECL core_network_t* 
-core_network_new()
+GS_API_DECL gs_core_network_t* 
+gs_core_network_new()
 {
     if (g_network) return g_network;
 
-    core_network_t* network = gs_malloc_init(core_network_t);
+    gs_core_network_t* network = gs_malloc_init(gs_core_network_t);
     g_network = network;
 
     // Set user data for enet
-    network->user_data = (core_enet_t*)gs_malloc_init(core_enet_t);
+    network->user_data = (gs_core_enet_t*)gs_malloc_init(gs_core_enet_t);
 
     // Construct message data buffer
-    CORE_ENET()->message_data = gs_byte_buffer_new();
+    GS_CORE_ENET()->message_data = gs_byte_buffer_new();
 
     if (enet_initialize() != 0)
     {
-        gs_log_error("core_network_t::New::Unable to initialize ENet");
+        gs_log_error("gs_core_network_t::New::Unable to initialize ENet");
         return NULL;
     } 
 
     return network;
 }
 
-GS_API_DECL core_network_t* 
-core_network_instance()
+GS_API_DECL gs_core_network_t* 
+gs_core_network_instance()
 {
     return g_network;
 } 
 
-GS_API_DECL void core_network_shutdown()
+GS_API_DECL void gs_core_network_shutdown()
 { 
-    core_enet_t* enet = CORE_ENET();
-    core_network_host_destroy(enet);
+    gs_core_enet_t* enet = GS_CORE_ENET();
+    gs_core_network_host_destroy(enet);
     gs_byte_buffer_free(&enet->message_data);
 }
 
-GS_API_DECL core_network_host_handle_t
-core_network_server_create(uint32_t port, uint32_t max_connections)
+GS_API_DECL gs_core_network_host_handle_t
+gs_core_network_server_create(uint32_t port, uint32_t max_connections)
 {
-    core_enet_t* enet = CORE_ENET(); 
+    gs_core_enet_t* enet = GS_CORE_ENET(); 
     if (enet->host) return enet; 
 
-    enet->type = CORE_NETWORK_HOST_SERVER;
+    enet->type = GS_CORE_NETWORK_HOST_SERVER;
     enet->max_channels = 2;
     enet->max_connections = max_connections; 
 
     enet->address.host = ENET_HOST_ANY;
     enet->address.port = port;
-    enet->id = CORE_NETWORK_SERVER_ID;
+    enet->id = GS_CORE_NETWORK_SERVER_ID;
 
     // Create server 
     enet->host = enet_host_create(
@@ -177,19 +177,19 @@ core_network_server_create(uint32_t port, uint32_t max_connections)
     }
 
     // Successful server connection
-    gs_log_success("core_network_host_connect::Server started on %x : port %u.", 
+    gs_log_success("gs_core_network_host_connect::Server started on %x : port %u.", 
         enet->host, enet->address.port); 
 
     return enet;
 }
 
-GS_API_DECL core_network_host_handle_t 
-core_network_client_create(const char* address, uint32_t port)
+GS_API_DECL gs_core_network_host_handle_t 
+gs_core_network_client_create(const char* address, uint32_t port)
 {
-    core_enet_t* enet = CORE_ENET(); 
+    gs_core_enet_t* enet = GS_CORE_ENET(); 
 
     // Create client
-    enet->type = CORE_NETWORK_HOST_CLIENT;
+    enet->type = GS_CORE_NETWORK_HOST_CLIENT;
     enet->host = enet_host_create(NULL, 1, 1, 0, 0);
     enet->max_channels = 2;
     enet->max_connections = 1;
@@ -220,7 +220,7 @@ core_network_client_create(const char* address, uint32_t port)
     if (enet_host_service(enet->host, &evt, timeout_ms) > 0 && evt.type == ENET_EVENT_TYPE_CONNECT)
     {
         // Set peer id
-        enet->id = evt.peer->outgoingPeerID + CORE_NETWORK_CLIENT_ID_START;
+        enet->id = evt.peer->outgoingPeerID + GS_CORE_NETWORK_CLIENT_ID_START;
 
         // Successful connection
         gs_log_success("Core_Network_Host_Connect::Connected to %x on port %zu, id: %zu", 
@@ -234,43 +234,43 @@ core_network_client_create(const char* address, uint32_t port)
         enet->host, enet->address.port);
     enet_peer_reset(enet->client.server);
     enet->client.server = NULL;
-    core_network_host_destroy(enet);
+    gs_core_network_host_destroy(enet);
     return NULL;
 } 
 
 GS_API_DECL bool
-core_network_is_server(core_network_t* net) 
+gs_core_network_is_server(gs_core_network_t* net) 
 {
-    core_enet_t* enet = CORE_ENET();
+    gs_core_enet_t* enet = GS_CORE_ENET();
     if (!enet->host) return false;
-    return core_network_get_type(net) == CORE_NETWORK_HOST_SERVER;
+    return gs_core_network_get_type(net) == GS_CORE_NETWORK_HOST_SERVER;
 }
 
 GS_API_DECL bool
-core_network_is_client(core_network_t* net)
+gs_core_network_is_client(gs_core_network_t* net)
 {
-    core_enet_t* enet = CORE_ENET();
+    gs_core_enet_t* enet = GS_CORE_ENET();
     if (!enet->host) return false;
-    return core_network_get_type(net) == CORE_NETWORK_HOST_CLIENT;
+    return gs_core_network_get_type(net) == GS_CORE_NETWORK_HOST_CLIENT;
 }
 
 GS_API_DECL void 
-core_network_host_destroy(core_network_host_handle_t hndl)
+gs_core_network_host_destroy(gs_core_network_host_handle_t hndl)
 {
-    core_enet_t* enet = CORE_ENET();
+    gs_core_enet_t* enet = GS_CORE_ENET();
     if (hndl != enet) return;
     switch (enet->type)
     {
-        case CORE_NETWORK_HOST_SERVER:    core_enet_server_destroy(enet); break;
-        case CORE_NETWORK_HOST_CLIENT:    core_enet_client_destroy(enet); break;
+        case GS_CORE_NETWORK_HOST_SERVER:    gs_core_enet_server_destroy(enet); break;
+        case GS_CORE_NETWORK_HOST_CLIENT:    gs_core_enet_client_destroy(enet); break;
     }
-    enet->type = CORE_NETWORK_HOST_INVALID;
+    enet->type = GS_CORE_NETWORK_HOST_INVALID;
 }
 
 GS_API_DECL bool 
-core_network_poll(core_network_t* net, core_network_event_t* evt)
+gs_core_network_poll(gs_core_network_t* net, gs_core_network_event_t* evt)
 { 
-    core_enet_t* enet = CORE_ENET();
+    gs_core_enet_t* enet = GS_CORE_ENET();
     if (!evt || !enet->host) return false;
 	bool ret = false;
 
@@ -279,8 +279,8 @@ core_network_poll(core_network_t* net, core_network_event_t* evt)
 
     switch (enet->type)
     {
-        case CORE_NETWORK_HOST_SERVER: ret = core_enet_server_poll(enet, evt); break;
-        case CORE_NETWORK_HOST_CLIENT: ret = core_enet_client_poll(enet, evt); break;
+        case GS_CORE_NETWORK_HOST_SERVER: ret = gs_core_enet_server_poll(enet, evt); break;
+        case GS_CORE_NETWORK_HOST_CLIENT: ret = gs_core_enet_client_poll(enet, evt); break;
     }
 
 	// Seek to beginning for reading
@@ -290,51 +290,51 @@ core_network_poll(core_network_t* net, core_network_event_t* evt)
 } 
 
 GS_API_DECL void 
-core_network_disconnect(core_network_t* net)
+gs_core_network_disconnect(gs_core_network_t* net)
 {
-    core_enet_t* enet = CORE_ENET(); 
-    if (net->user_data != enet || !core_network_is_connected(net)) return;
+    gs_core_enet_t* enet = GS_CORE_ENET(); 
+    if (net->user_data != enet || !gs_core_network_is_connected(net)) return;
     switch (enet->type)
     {
-        case CORE_NETWORK_HOST_SERVER: core_enet_server_disconnect(enet); break;
-        case CORE_NETWORK_HOST_CLIENT: core_enet_client_disconnect(enet); break;
+        case GS_CORE_NETWORK_HOST_SERVER: gs_core_enet_server_disconnect(enet); break;
+        case GS_CORE_NETWORK_HOST_CLIENT: gs_core_enet_client_disconnect(enet); break;
     } 
 }
 
 GS_API_DECL bool 
-core_network_is_connected(core_network_t* net)
+gs_core_network_is_connected(gs_core_network_t* net)
 {
-    core_enet_t* enet = CORE_ENET(); 
+    gs_core_enet_t* enet = GS_CORE_ENET(); 
     if (net->user_data != enet || !enet->host) return false;
     return (enet->host->connectedPeers > 0);
 }
 
 GS_API_DECL bool
-core_network_is_valid(core_network_t* net)
+gs_core_network_is_valid(gs_core_network_t* net)
 {
-    core_enet_t* enet = CORE_ENET(); 
+    gs_core_enet_t* enet = GS_CORE_ENET(); 
     if (net->user_data != enet || !enet->host) return false;
     return true;
 }
 
-GS_API_DECL core_network_host_type_t
-core_network_get_type(core_network_t* net)
+GS_API_DECL gs_core_network_host_type_t
+gs_core_network_get_type(gs_core_network_t* net)
 { 
-    core_enet_t* enet = CORE_ENET(); 
+    gs_core_enet_t* enet = GS_CORE_ENET(); 
     if (net->user_data != enet || !enet->host)
     {
         // Log warning
         gs_log_warning("Core Network Host::Enet host is invalid.");
-        return CORE_NETWORK_HOST_INVALID;
+        return GS_CORE_NETWORK_HOST_INVALID;
     }
 
     return enet->type;
 }
 
 GS_API_DECL uint32_t 
-core_network_num_connections(core_network_t* net)
+gs_core_network_num_connections(gs_core_network_t* net)
 {
-    core_enet_t* enet = CORE_ENET(); 
+    gs_core_enet_t* enet = GS_CORE_ENET(); 
     if (net->user_data != enet || !enet->host)
     {
         return 0;
@@ -344,9 +344,9 @@ core_network_num_connections(core_network_t* net)
 }
 
 GS_API_DECL int32_t 
-core_network_id(core_network_t* net)
+gs_core_network_id(gs_core_network_t* net)
 {
-    core_enet_t* enet = CORE_ENET(); 
+    gs_core_enet_t* enet = GS_CORE_ENET(); 
     if (!enet || !enet->host)
     {
         return -1;
@@ -356,104 +356,104 @@ core_network_id(core_network_t* net)
 } 
 
 GS_API_DECL void 
-core_network_send_message(core_network_t* net, 
-    const core_network_message_t* message)
+gs_core_network_send_message(gs_core_network_t* net, 
+    const gs_core_network_message_t* message)
 {
-    core_enet_t* enet = CORE_ENET(); 
+    gs_core_enet_t* enet = GS_CORE_ENET(); 
     if (!enet->host) return;
     switch (enet->type)
     {
-        case CORE_NETWORK_HOST_SERVER: core_enet_server_send_message(enet, message); break;
-        case CORE_NETWORK_HOST_CLIENT: core_enet_client_send_message(enet, message); break;
+        case GS_CORE_NETWORK_HOST_SERVER: gs_core_enet_server_send_message(enet, message); break;
+        case GS_CORE_NETWORK_HOST_CLIENT: gs_core_enet_client_send_message(enet, message); break;
     }
 }
 
 GS_API_DECL void 
-core_network_broadcast(core_network_t* net, 
-    const core_network_message_t* message)
+gs_core_network_broadcast(gs_core_network_t* net, 
+    const gs_core_network_message_t* message)
 {
-    core_enet_t* enet = CORE_ENET(); 
+    gs_core_enet_t* enet = GS_CORE_ENET(); 
     if (!enet->host) return;
     switch (enet->type)
     { 
-        case CORE_NETWORK_HOST_SERVER: core_enet_server_broadcast(enet, message); break;
-        case CORE_NETWORK_HOST_CLIENT: core_enet_client_send_message(enet, message); break;
+        case GS_CORE_NETWORK_HOST_SERVER: gs_core_enet_server_broadcast(enet, message); break;
+        case GS_CORE_NETWORK_HOST_CLIENT: gs_core_enet_client_send_message(enet, message); break;
     } 
 } 
 
 GS_API_DECL void
-core_network_rpc_send_internal(core_network_t* net, core_network_rpc_t* rpc) 
+gs_core_network_rpc_send_internal(gs_core_network_t* net, gs_core_network_rpc_t* rpc) 
 {
-    core_enet_t* enet = CORE_ENET(); 
+    gs_core_enet_t* enet = GS_CORE_ENET(); 
 
     // Request internal packet from network using message buffer
-    core_network_packet_t packet = core_network_packet_request(net);
+    gs_core_network_packet_t packet = gs_core_network_packet_request(net);
 
     // Write out cls id of rpc
-    gs_byte_buffer_write(packet.buffer, uint32_t, core_obj_cls_id(rpc));
+    gs_byte_buffer_write(packet.buffer, uint32_t, gs_core_obj_cls_id(rpc));
 
     // Net serialize rpc into buffer
-    core_obj_net_serialize(packet.buffer, rpc);
+    gs_core_obj_net_serialize(packet.buffer, gs_core_cast(rpc, gs_core_obj_t));
 	
-	uint8_t* data = core_network_packet_data(net, &packet);
-	size_t sz = core_network_packet_size(net, &packet);
+	uint8_t* data = gs_core_network_packet_data(net, &packet);
+	size_t sz = gs_core_network_packet_size(net, &packet);
 
     // Construct message 
-    core_network_message_t _msg = {
-        .delivery = core_cast(&rpc, core_network_rpc_t)->delivery,
-        .data = core_network_packet_data(net, &packet),
-        .size = core_network_packet_size(net, &packet)
+    gs_core_network_message_t _msg = {
+        .delivery = gs_core_cast(&rpc, gs_core_network_rpc_t)->delivery,
+        .data = gs_core_network_packet_data(net, &packet),
+        .size = gs_core_network_packet_size(net, &packet)
     };
 
     // Broadcast message
-    core_network_broadcast(net, &_msg);
+    gs_core_network_broadcast(net, &_msg);
 } 
 
 GS_API_DECL void
-core_network_rpc_send_id_internal(core_network_t* net, 
+gs_core_network_rpc_send_id_internal(gs_core_network_t* net, 
         const uint32_t id, 
-        core_network_rpc_t* rpc)
+        gs_core_network_rpc_t* rpc)
 {
-    core_enet_t* enet = CORE_ENET(); 
+    gs_core_enet_t* enet = GS_CORE_ENET(); 
 
     // Request internal packet from network using message buffer
-    core_network_packet_t packet = core_network_packet_request(net);
+    gs_core_network_packet_t packet = gs_core_network_packet_request(net);
 
     // Write out cls id of rpc
-    gs_byte_buffer_write(packet.buffer, uint32_t, core_obj_cls_id(rpc));
+    gs_byte_buffer_write(packet.buffer, uint32_t, gs_core_obj_cls_id(rpc));
 
     // Net serialize rpc into buffer
-    core_obj_net_serialize(packet.buffer, rpc);
+    gs_core_obj_net_serialize(packet.buffer, gs_core_cast(rpc, gs_core_obj_t));
 	
-	uint8_t* data = core_network_packet_data(net, &packet);
-	size_t sz = core_network_packet_size(net, &packet);
+	uint8_t* data = gs_core_network_packet_data(net, &packet);
+	size_t sz = gs_core_network_packet_size(net, &packet);
 
     // Construct message 
-    core_network_message_t _msg = {
-        .delivery = core_cast(&rpc, core_network_rpc_t)->delivery,
+    gs_core_network_message_t _msg = {
+        .delivery = gs_core_cast(&rpc, gs_core_network_rpc_t)->delivery,
         .peer_id = id,
-        .data = core_network_packet_data(net, &packet),
-        .size = core_network_packet_size(net, &packet)
+        .data = gs_core_network_packet_data(net, &packet),
+        .size = gs_core_network_packet_size(net, &packet)
     };
 
     // Broadcast message
-    core_network_send_message(net, &_msg);
+    gs_core_network_send_message(net, &_msg);
 }
 
 GS_API_DECL void
-core_network_rpc_receive_internal(core_network_t* net, 
-    core_network_event_t* evt)
+gs_core_network_rpc_receive_internal(gs_core_network_t* net, 
+    gs_core_network_event_t* evt)
 {
-    core_enet_t* enet = CORE_ENET(); 
+    gs_core_enet_t* enet = GS_CORE_ENET(); 
 
     // Read class id
     gs_byte_buffer_readc(&enet->message_data, uint32_t, cls_id); 
 
     // Get class
-    const core_meta_info_t* info = core_info_w_cls_id(cls_id);
+    const gs_core_meta_info_t* info = gs_core_info_w_cls_id(cls_id);
 
     // Make sure IS base of network rpc
-    if (!core_info_base_of(info, core_network_rpc_t))
+    if (!gs_core_info_base_of(info, gs_core_network_rpc_t))
     {
         // Log warning
         gs_log_warning("Class does not inherit from rpc");
@@ -461,13 +461,13 @@ core_network_rpc_receive_internal(core_network_t* net,
     }
 
     // Get reference to static object storage for class id
-    core_obj_t* sobj = core_obj_static_ref_w_info(info);
+    gs_core_obj_t* sobj = gs_core_obj_static_ref_w_info(info);
 
     // Deserialize rpc
-    core_obj_net_deserialize(&enet->message_data, sobj);
+    gs_core_obj_net_deserialize(&enet->message_data, sobj);
 
     // Cast to net rpc
-    core_network_rpc_t* rpc = core_cast(sobj, core_network_rpc_t);
+    gs_core_network_rpc_t* rpc = gs_core_cast(sobj, gs_core_network_rpc_t);
 
     // Set peer id for received rpc
     rpc->id = evt->peer_id;
@@ -476,29 +476,29 @@ core_network_rpc_receive_internal(core_network_t* net,
     gs_assert(rpc && rpc->callback);
 
     // Call function pointer for net rpc
-    rpc->callback(rpc, info->size);
+    rpc->callback(rpc);
 }
 
 //=========[ Core Network Packet ]========//
 
-GS_API_DECL core_network_packet_t
-core_network_packet_request(core_network_t* net)
+GS_API_DECL gs_core_network_packet_t
+gs_core_network_packet_request(gs_core_network_t* net)
 {
-    core_enet_t* enet = CORE_ENET();
-    core_network_packet_t packet = {0};
+    gs_core_enet_t* enet = GS_CORE_ENET();
+    gs_core_network_packet_t packet = {0};
     packet.buffer = &enet->message_data;
     packet.start = enet->message_data.position;
     return packet;
 }
 
 GS_API_DECL uint8_t*
-core_network_packet_data(core_network_t* net, const core_network_packet_t* packet)
+gs_core_network_packet_data(gs_core_network_t* net, const gs_core_network_packet_t* packet)
 {
     return (uint8_t*)(packet->buffer->data + packet->start);
 }
 
 GS_API_DECL size_t 
-core_network_packet_size(core_network_t* net, const core_network_packet_t* packet)
+gs_core_network_packet_size(gs_core_network_t* net, const gs_core_network_packet_t* packet)
 {
     return (packet->buffer->position - packet->start);
 }
@@ -506,18 +506,18 @@ core_network_packet_size(core_network_t* net, const core_network_packet_t* packe
 //=========[ Core_ENet_Server ]========//
 
 GS_API_DECL void 
-core_enet_server_destroy(core_enet_t* enet)
+gs_core_enet_server_destroy(gs_core_enet_t* enet)
 {
-    if (core_network_is_connected(core_network_instance()))
+    if (gs_core_network_is_connected(gs_core_network_instance()))
     {
         gs_println("SERVER: disconnecting server");
-        core_enet_server_disconnect(enet);
+        gs_core_enet_server_disconnect(enet);
     }
     enet_host_destroy(enet->host);
 }
 
 GS_API_DECL void 
-core_enet_server_disconnect(core_enet_t* enet)
+gs_core_enet_server_disconnect(gs_core_enet_t* enet)
 { 
     // Have to keep track of all peers and disconnect them manually
     for (
@@ -550,14 +550,14 @@ core_enet_server_disconnect(core_enet_t* enet)
 
             case ENET_EVENT_TYPE_DISCONNECT:
             { 
-                core_enet_server_remove_client(enet, evt.peer->incomingPeerID + CORE_NETWORK_CLIENT_ID_START);
+                gs_core_enet_server_remove_client(enet, evt.peer->incomingPeerID + GS_CORE_NETWORK_CLIENT_ID_START);
             } break;
         }
     } 
 }
 
 GS_API_DECL ENetPeer* 
-core_enet_server_get_client(core_enet_t* enet, uint32_t id)
+gs_core_enet_server_get_client(gs_core_enet_t* enet, uint32_t id)
 {
     if (gs_hash_table_exists(enet->server.clients, id))
     {
@@ -567,13 +567,13 @@ core_enet_server_get_client(core_enet_t* enet, uint32_t id)
 }
 
 GS_API_DECL void 
-core_enet_server_remove_client(core_enet_t* enet, uint32_t peer_id)
+gs_core_enet_server_remove_client(gs_core_enet_t* enet, uint32_t peer_id)
 {
     gs_hash_table_erase(enet->server.clients, peer_id);
 }
 
 GS_API_DECL bool 
-core_enet_server_poll(core_enet_t* enet, core_network_event_t* out)
+gs_core_enet_server_poll(gs_core_enet_t* enet, gs_core_network_event_t* out)
 { 
     ENetEvent evt;
     gs_byte_buffer_t* mdata = &enet->message_data;
@@ -581,13 +581,13 @@ core_enet_server_poll(core_enet_t* enet, core_network_event_t* out)
     while (enet_host_service(enet->host, &evt, 0) > 0)
     {
         uint32_t type = evt.type;
-        uint32_t peer_id = (evt.peer->incomingPeerID + CORE_NETWORK_CLIENT_ID_START);
+        uint32_t peer_id = (evt.peer->incomingPeerID + GS_CORE_NETWORK_CLIENT_ID_START);
         switch (evt.type)
         {
             case ENET_EVENT_TYPE_CONNECT:
             { 
                 gs_hash_table_insert(enet->server.clients, peer_id, evt.peer);
-                out->type = CORE_NETWORK_MESSAGE_CONNECT;
+                out->type = GS_CORE_NETWORK_MESSAGE_CONNECT;
                 out->peer_id = peer_id;
                 return true;
             } break;
@@ -596,7 +596,7 @@ core_enet_server_poll(core_enet_t* enet, core_network_event_t* out)
             {
                 ENetPacket* packet = evt.packet;
 
-                out->type = CORE_NETWORK_MESSAGE_DATA;
+                out->type = GS_CORE_NETWORK_MESSAGE_DATA;
                 out->peer_id = peer_id;
                 out->data = mdata->data;
                 out->size = packet->dataLength;
@@ -612,8 +612,8 @@ core_enet_server_poll(core_enet_t* enet, core_network_event_t* out)
 
             case ENET_EVENT_TYPE_DISCONNECT:
             {
-                core_enet_server_remove_client(enet, peer_id);
-                out->type = CORE_NETWORK_MESSAGE_DISCONNECT;
+                gs_core_enet_server_remove_client(enet, peer_id);
+                out->type = GS_CORE_NETWORK_MESSAGE_DISCONNECT;
                 out->peer_id = peer_id;
                 return true;
             } break;
@@ -628,16 +628,16 @@ core_enet_server_poll(core_enet_t* enet, core_network_event_t* out)
 }
 
 GS_API_DECL uint32_t 
-core_enet_server_num_clients(core_enet_t* enet)
+gs_core_enet_server_num_clients(gs_core_enet_t* enet)
 {
     return enet->host->connectedPeers;
 } 
 
 GS_API_DECL void 
-core_enet_server_send_message(core_enet_t* enet, const core_network_message_t* message)
+gs_core_enet_server_send_message(gs_core_enet_t* enet, const gs_core_network_message_t* message)
 {
     // Grab peer and check if valid
-    ENetPeer* peer = core_enet_server_get_client(enet, message->peer_id);
+    ENetPeer* peer = gs_core_enet_server_get_client(enet, message->peer_id);
     if (!peer)
     {
         gs_log_warning("Send Message: Peer %zu does not exist.", message->peer_id);
@@ -647,15 +647,15 @@ core_enet_server_send_message(core_enet_t* enet, const core_network_message_t* m
     uint32_t channel = 0;
     switch (message->delivery)
     {
-        case CORE_NETWORK_DELIVERY_RELIABLE:   
+        case GS_CORE_NETWORK_DELIVERY_RELIABLE:   
         {
             flags = ENET_PACKET_FLAG_RELIABLE;
-            channel = CORE_NETWORK_CHANNEL_RELIABLE;
+            channel = GS_CORE_NETWORK_CHANNEL_RELIABLE;
         } break;
-        case CORE_NETWORK_DELIVERY_UNRELIABLE: 
+        case GS_CORE_NETWORK_DELIVERY_UNRELIABLE: 
         {
             flags = ENET_PACKET_FLAG_UNSEQUENCED;
-            channel = CORE_NETWORK_CHANNEL_UNRELIABLE;
+            channel = GS_CORE_NETWORK_CHANNEL_UNRELIABLE;
         } break;
     }
 
@@ -674,23 +674,23 @@ core_enet_server_send_message(core_enet_t* enet, const core_network_message_t* m
 }
 
 GS_API_DECL void 
-core_enet_server_broadcast(core_enet_t* enet, const core_network_message_t* message)
+gs_core_enet_server_broadcast(gs_core_enet_t* enet, const gs_core_network_message_t* message)
 {
-	if (!core_enet_server_num_clients(enet)) return;
+	if (!gs_core_enet_server_num_clients(enet)) return;
 
     uint32_t flags = 0; 
     uint32_t channel = 0;
     switch (message->delivery)
     {
-        case CORE_NETWORK_DELIVERY_RELIABLE:   
+        case GS_CORE_NETWORK_DELIVERY_RELIABLE:   
         {
             flags = ENET_PACKET_FLAG_RELIABLE;
-            channel = CORE_NETWORK_CHANNEL_RELIABLE;
+            channel = GS_CORE_NETWORK_CHANNEL_RELIABLE;
         } break;
-        case CORE_NETWORK_DELIVERY_UNRELIABLE: 
+        case GS_CORE_NETWORK_DELIVERY_UNRELIABLE: 
         {
             flags = ENET_PACKET_FLAG_UNSEQUENCED;
-            channel = CORE_NETWORK_CHANNEL_UNRELIABLE;
+            channel = GS_CORE_NETWORK_CHANNEL_UNRELIABLE;
         } break;
     }
 
@@ -711,17 +711,17 @@ core_enet_server_broadcast(core_enet_t* enet, const core_network_message_t* mess
 //===========[ Core_ENet_Client ]=========// 
 
 GS_API_DECL void 
-core_enet_client_destroy(core_enet_t* enet)
+gs_core_enet_client_destroy(gs_core_enet_t* enet)
 {
-    if (core_network_is_connected(core_network_instance()))
+    if (gs_core_network_is_connected(gs_core_network_instance()))
     {
-        core_enet_client_disconnect(enet);
+        gs_core_enet_client_disconnect(enet);
     }
     enet_host_destroy(enet->host);
 } 
 
 GS_API_DECL void 
-core_enet_client_disconnect(core_enet_t* enet)
+gs_core_enet_client_disconnect(gs_core_enet_t* enet)
 {
 	if (!enet->client.server) return;
 
@@ -747,7 +747,7 @@ core_enet_client_disconnect(core_enet_t* enet)
         }
     }
 
-    if (core_network_is_connected(core_network_instance()))
+    if (gs_core_network_is_connected(gs_core_network_instance()))
     {
         gs_log_warning("Core_Network_Host_Disconnect::Server not acknowledging disconnect. Forcing disconnect.");
         enet_peer_reset(enet->client.server);
@@ -757,7 +757,7 @@ core_enet_client_disconnect(core_enet_t* enet)
 }
 
 GS_API_DECL bool 
-core_enet_client_poll(core_enet_t* enet, core_network_event_t* out)
+gs_core_enet_client_poll(gs_core_enet_t* enet, gs_core_network_event_t* out)
 {
     ENetEvent evt;
     gs_byte_buffer_t* mdata = &enet->message_data; 
@@ -771,8 +771,8 @@ core_enet_client_poll(core_enet_t* enet, core_network_event_t* out)
             {
                 ENetPacket* packet = evt.packet;
 
-                out->type = CORE_NETWORK_MESSAGE_DATA;
-                out->peer_id = CORE_NETWORK_SERVER_ID;
+                out->type = GS_CORE_NETWORK_MESSAGE_DATA;
+                out->peer_id = GS_CORE_NETWORK_SERVER_ID;
                 out->data = mdata->data;
                 out->size = packet->dataLength;
 
@@ -787,9 +787,9 @@ core_enet_client_poll(core_enet_t* enet, core_network_event_t* out)
 
             case ENET_EVENT_TYPE_DISCONNECT:
             {
-                core_enet_client_disconnect(enet);
-                out->type = CORE_NETWORK_MESSAGE_DISCONNECT;
-                out->peer_id = CORE_NETWORK_SERVER_ID;
+                gs_core_enet_client_disconnect(enet);
+                out->type = GS_CORE_NETWORK_MESSAGE_DISCONNECT;
+                out->peer_id = GS_CORE_NETWORK_SERVER_ID;
                 return true;
             } break;
         }
@@ -799,7 +799,7 @@ core_enet_client_poll(core_enet_t* enet, core_network_event_t* out)
 }
 
 GS_API_DECL void 
-core_enet_client_send_message(core_enet_t* enet, const core_network_message_t* message)
+gs_core_enet_client_send_message(gs_core_enet_t* enet, const gs_core_network_message_t* message)
 {
     if (!enet->client.server) return;
 
@@ -807,15 +807,15 @@ core_enet_client_send_message(core_enet_t* enet, const core_network_message_t* m
     uint32_t channel = 0;
     switch (message->delivery)
     {
-        case CORE_NETWORK_DELIVERY_RELIABLE:   
+        case GS_CORE_NETWORK_DELIVERY_RELIABLE:   
         {
             flags = ENET_PACKET_FLAG_RELIABLE;
-            channel = CORE_NETWORK_CHANNEL_RELIABLE;
+            channel = GS_CORE_NETWORK_CHANNEL_RELIABLE;
         } break;
-        case CORE_NETWORK_DELIVERY_UNRELIABLE: 
+        case GS_CORE_NETWORK_DELIVERY_UNRELIABLE: 
         {
             flags = ENET_PACKET_FLAG_UNSEQUENCED;
-            channel = CORE_NETWORK_CHANNEL_UNRELIABLE;
+            channel = GS_CORE_NETWORK_CHANNEL_UNRELIABLE;
         } break;
     }
 
