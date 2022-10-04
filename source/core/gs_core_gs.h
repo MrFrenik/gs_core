@@ -32,7 +32,9 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-=================================================================================================================*/ 
+// =================================================================================================================*/ 
+
+struct gs_os_api_s;
 
 #include <gs/gs.h>
 #include <gs/util/gs_idraw.h>

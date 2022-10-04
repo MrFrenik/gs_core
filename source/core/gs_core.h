@@ -49,7 +49,14 @@
 #include "gs_core_app.h"
 #include "core/generated/gs_core_generated.h"
 
-#define GS_CORE_REFL_CLASS_MAX     100
+#define GS_CORE_REFL_CLASS_MAX     100 
+
+extern void* gs_core_os_malloc(size_t sz); 
+extern void* gs_core_os_malloc_init(size_t sz);
+extern void gs_core_os_free(void* ptr); 
+extern void* gs_core_os_realloc(void* ptr, size_t sz); 
+extern void* gs_core_os_calloc(size_t sz);
+extern char* gs_core_os_strdup(const char* str);
 
 typedef struct gs_core_s
 {
@@ -66,6 +73,8 @@ typedef struct gs_core_s
     gs_immediate_draw_t gsi;
     gs_gui_context_t gui;
 
+    gs_gui_context_t* (* gs_gui_context_new)(uint32_t hndl);
+
 } gs_core_t; 
 
 GS_API_DECL gs_core_t* 
@@ -78,7 +87,7 @@ GS_API_DECL gs_core_t*
 gs_core_instance();
 
 GS_API_DECL void
-gs_core_instance_set(gs_core_t* core);
+gs_core_instance_set(gs_core_t* core); 
 
 #endif // GS_CORE_H
 

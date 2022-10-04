@@ -52,36 +52,26 @@ typedef gs_core_app_t* (* gs_app_init_func)(void* core);
 typedef void (* gs_app_update_func)(gs_core_app_t* app);
 typedef void (* gs_app_shutdown_func)(gs_core_app_t* app);
 
-GS_API_DECL void
-_gs_app_meta_register(struct gs_core_s* core);
+// App declarations to export
 
-GS_API_DECL void
-_gs_app_meta_unregister();
+GS_API_DECL void* 
+_gs_app_new(gs_t* gs, struct gs_core_s* core);
 
 #define GS_CORE_APP_META_REGISTER(NAME)\
     NAME##_meta_register();\
     NAME##_meta_ecs_register();
 
-#define GS_CORE_APP_DEFINE(NAME)\
-    /* Register meta information */\
-    GS_API_DECL void\
-    _gs_app_meta_register(struct gs_core_s* core)\
+#define GS_CORE_APP_DEFINE(__T)\
+    GS_API_DECL void*\
+    _gs_app_new(gs_t* gs, struct gs_core_s* core)\
     {\
         gs_core_instance_set(core);\
-        gs_assert(gs_core_instance());\
-        NAME##_meta_register();\
-        NAME##_meta_ecs_register();\
-        gs_println("Reflection registered for: %s", gs_to_str(NAME));\
+        gs_set_instance(gs);\
+        __T* _app = gs_malloc_init(__T);\
+        return _app;\
     }\
-    /* Unregisster all meta information */\
-    GS_API_DECL void\
-    _gs_app_meta_unregister()\
-    {\
-        NAME##_meta_unregister();\
-        gs_println("Reflection unregistered for: %s", gs_to_str(NAME));\
-    }
 
-#endif // CORE_APP_H
+#endif // CORE_APP_H 
 
 
 

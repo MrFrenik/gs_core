@@ -6,12 +6,11 @@
 #include "editor\gs_editor.h" 
 
 GS_API_DECL void 
-gs_editor_scene_cb(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd);
-
-GS_API_DECL void 
 gs_editor_view_scene_cb(struct gs_editor_view_s* view);
 
 #ifdef GS_EDITOR_IMPL
+
+static gs_editor_scene_draw_cb g_editor_scene_draw_cb = NULL;
 
 GS_API_DECL void 
 gs_editor_view_scene_cb(struct gs_editor_view_s* view)
@@ -24,10 +23,14 @@ gs_editor_view_scene_cb(struct gs_editor_view_s* view)
     gs_gui_rect_t rect = gs_gui_layout_next(gui);
     gs_gui_layout_set_next(gui, rect, 0);
     gs_gui_container_t* cnt = gs_gui_get_current_container(gui); 
-    gs_gui_draw_custom(gui, rect, gs_editor_scene_cb, NULL, 0);
 
+    if (editor->scene_draw_cb)
+    { 
+        gs_gui_draw_custom(gui, rect, editor->scene_draw_cb, NULL, 0); 
+    }
 }
 
+/*
 GS_API_DECL void 
 gs_editor_scene_cb(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd)
 {
@@ -43,6 +46,7 @@ gs_editor_scene_cb(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd)
     gsi_rectvd(gsi, gs_v2s(100.f), gs_v2s(100.f), gs_v2s(0.f), gs_v2s(1.f), 
         GS_COLOR_RED, GS_GRAPHICS_PRIMITIVE_TRIANGLES);
 }
+*/
 
 #endif
 

@@ -34,22 +34,22 @@
 
 =================================================================================================================*/ 
 
-#include "gs_core_graphics.h"
-
-static gs_core_graphics_t* g_graphics = NULL;
+#include "core/gs_core_graphics.h" 
+#include "core/gs_core.h"
 
 //====[ Core Graphics ]====//
 
 GS_API_DECL gs_core_graphics_t*
 gs_core_graphics_new()
 {
-    if (g_graphics) return g_graphics; 
+    gs_core_t* core = gs_core_instance();
+    if (core && core->gfx) return core->gfx; 
 
     gs_core_graphics_t* gfx = gs_malloc_init(gs_core_graphics_t);
     gfx->scene = gs_core_graphics_scene_create();
     gs_camera_t cam = gs_camera_perspective();
     gfx->scene.camera = gs_core_graphics_scene_camera_create(&gfx->scene, &cam);
-    g_graphics = gfx;
+    gfx->submit = gs_core_graphics_submit_cb;
     return gfx;
 }
 
@@ -62,7 +62,7 @@ gs_core_graphics_shutdown()
 GS_API_DECL gs_core_graphics_t* 
 gs_core_graphics_instance()
 {
-    return g_graphics;
+    return gs_core_instance()->gfx;
 }
 
 //====[ Graphics Scene ]====//
@@ -141,6 +141,12 @@ GS_API_DECL gs_camera_t*
 gs_core_graphics_scene_main_camera(gs_core_graphics_scene_t* scene) 
 {
     return gs_slot_array_getp(scene->cameras, 0);
+}
+
+GS_API_PRIVATE void
+gs_core_graphics_submit_cb(gs_command_buffer_t* cb)
+{
+    gs_graphics_command_buffer_submit(cb);
 }
 
 

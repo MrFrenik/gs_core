@@ -37,20 +37,42 @@
 #include "core/gs_core.h"
 
 // Global instance
-gs_core_t* g_core; 
+gs_core_t* g_core;
+
+GS_API_DECL gs_gui_context_t*
+gs_core_gs_gui_context_new(uint32_t window_hndl) 
+{
+    gs_gui_context_t* ctx = gs_malloc_init(gs_gui_context_t);
+    gs_gui_init(ctx, window_hndl);
+    return ctx;
+}
 
 GS_API_DECL gs_core_t* 
 gs_core_new()
 {
-    gs_core_t* core = gs_malloc_init(gs_core_t);
+    // Return global instance if  already exists
+    if (g_core)
+    {
+		// Set up entity static data
+		gs_core_entities_set_instance(g_core->entities); 
 
-    // Set instance
+		// Set up gsi static data
+		gs_immediate_draw_static_data_set(g_core->gsi.data);
+
+        return g_core;
+    }
+
+    // Allocate and set global instance
+    gs_core_t* core = gs_malloc_init(gs_core_t);
     g_core = core;
 
     // Init all gs structures
     core->cb = gs_command_buffer_new();
     core->gsi = gs_immediate_draw_new();
     core->gui = gs_gui_new(gs_platform_main_window()); 
+
+    // Register api for dll boundary
+    core->gs_gui_context_new = gs_core_gs_gui_context_new;
 
     // Construct meta registry
     core->meta = gs_core_meta_registry_new(); 
@@ -83,6 +105,10 @@ gs_core_new()
 GS_API_DECL void
 gs_core_free(gs_core_t* core)
 { 
+    #if (!defined GS_APP_STANDALONE)
+        return;
+    #endif
+
     // Free gs structures
     gs_immediate_draw_free(&core->gsi);
     gs_command_buffer_free(&core->cb);

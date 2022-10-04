@@ -37,6 +37,11 @@
 // GS Includes
 #define GS_NO_HIJACK_MAIN
 #define GS_IMPL
+#define gs_malloc       malloc 
+#define gs_free         free 
+#define gs_realloc      realloc 
+#define gs_calloc       calloc 
+#define gs_alloca       malloc
 #include <gs/gs.h> 
 
 #define META_PROPERTY_STR_MAX   128
@@ -698,7 +703,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         
         if (gs_string_compare_equal(cls->base, "gs_core_entities_component_t"))
         {
-            gs_fprintln(fp, "gs_core_component_declare(%s);", cls->name);
+            gs_fprintln(fp, "gs_core_entities_component_declare(%s);", cls->name);
         }
     } 
 
@@ -716,6 +721,8 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
         if (gs_string_compare_equal(cls->base, "gs_core_entities_system_t"))
         {
+            gs_fprintln(fp, "gs_core_entities_system_declare(%s);\n", cls->name);
+
             gs_fprintln(fp, "GS_API_DECL void"); 
             gs_fprintln(fp, "_%s_cb(gs_core_entity_iter_t* iter);\n", cls->name);
 
@@ -1188,6 +1195,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     gs_fprintln(fp, "GS_API_DECL void");
     gs_fprintln(fp, "%s_meta_unregister()", proj_name); 
     gs_fprintln(fp, "{"); 
+    gs_fprintln(fp, "\tgs_core_entities_t* ents = gs_core_instance()->entities;\n");
 
     for (
         gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
@@ -1204,9 +1212,21 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "\t\tgs_assert(info);");
         gs_fprintln(fp, "\t\tgs_meta_class_unregister(&meta->registry, info->cls->id);");
         gs_fprintln(fp, "\t\tinfo->cls = NULL;");
-        gs_fprintln(fp, "\t\tinfo->base = NULL;");
+        gs_fprintln(fp, "\t\tinfo->base = NULL;"); 
+        if (gs_string_compare_equal(cls->base, "gs_core_entities_component_t"))
+        {
+            gs_fprintln(fp, "\t\tents->component_unregister(gs_core_entity_id(%s));", cls->name);
+        } 
+        if (gs_string_compare_equal(cls->base, "gs_core_entities_system_t"))
+        {
+            gs_fprintln(fp, "\t\tents->system_unregister(gs_core_entity_id(%s));", cls->name);
+        }
         gs_fprintln(fp, "\t}"); 
     } 
+
+    // Components
+
+    // Systems
 
     gs_fprintln(fp, "}\n"); 
 
@@ -1251,7 +1271,8 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
                 gs_fprintln(fp, "\t/* %s */", cls->name);
 
                 gs_snprintfc(CB, 256, "_%s_cb", cls->name);
-                gs_fprintln(fp, "\tgs_core_entities_register_system(&(gs_core_entities_system_desc_t){");
+                gs_fprintln(fp, "\tgs_core_entity_id(%s) = ents->system_register(&(gs_core_entities_system_desc_t){", cls->name);
+                gs_fprintln(fp, "\t\t.name = gs_to_str(%s),", cls->name); 
                 gs_fprintln(fp, "\t\t.callback = %s,", CB); 
                 gs_fprintln(fp, "\t\t.filter.component_list = {");
 

@@ -34,12 +34,11 @@
 
 =================================================================================================================*/ 
 
-#include "gs_core_asset.h"
+#include "core/gs_core_asset.h"
+#include "core/gs_core.h"
 #include "core/generated/gs_core_generated.h"
 
 //===============[ Assets ]===============//
-
-static gs_core_assets_t* g_assets = NULL;   // Global, static asset manager instance 
 
 typedef struct 
 {
@@ -117,6 +116,7 @@ static void _gs_core_assets_register_importer(gs_core_assets_t* assets, gs_core_
     gs_core_asset_importer_t importer = {0};
     importer.load_resource_from_file = desc->load_resource_from_file;
     importer.register_defaults = desc->register_defaults;
+    importer.free_asset = desc->free_asset;
     importer.class_id = desc->class_id;
     memcpy(importer.file_extension, desc->asset_file_extension, GS_CORE_ASSETS_FILE_EXTENSION_MAX_LENGTH);
     
@@ -135,6 +135,7 @@ static void _gs_core_assets_register_importers(gs_core_assets_t* assets)
     _gs_core_assets_register_importer(assets, &(gs_core_asset_importer_desc_t){
         .load_resource_from_file = gs_core_asset_texture_importer_load_resource_from_file,
         .register_defaults = gs_core_asset_texture_importer_register_defaults,
+        .free_asset = gs_core_asset_texture_importer_free_asset,
         .resource_file_extensions = {"png", "jpg", "tga"},
         .asset_file_extension = "tex",
         .class_id = gs_core_cls_cid(gs_core_asset_texture_t)
@@ -144,6 +145,7 @@ static void _gs_core_assets_register_importers(gs_core_assets_t* assets)
     _gs_core_assets_register_importer(assets, &(gs_core_asset_importer_desc_t){
         .load_resource_from_file = NULL,
         .register_defaults = NULL,
+        .free_asset = gs_core_asset_material_importer_free_asset,
         .resource_file_extensions = NULL,
         .asset_file_extension = "mat",
         .class_id = gs_core_cls_cid(gs_core_asset_material_t)
@@ -153,6 +155,7 @@ static void _gs_core_assets_register_importers(gs_core_assets_t* assets)
     _gs_core_assets_register_importer(assets, &(gs_core_asset_importer_desc_t){
         .load_resource_from_file = gs_core_asset_mesh_importer_load_resource_from_file,
         .register_defaults = gs_core_asset_mesh_importer_register_defaults,
+        .free_asset = gs_core_asset_mesh_importer_free_asset,
         .resource_file_extensions = {"glb", "gltf"},
         .asset_file_extension = "msh",
         .class_id = gs_core_cls_cid(gs_core_asset_mesh_t)
@@ -162,6 +165,7 @@ static void _gs_core_assets_register_importers(gs_core_assets_t* assets)
     _gs_core_assets_register_importer(assets, &(gs_core_asset_importer_desc_t){
         .load_resource_from_file = gs_core_asset_pipeline_importer_load_resource_from_file,
         .register_defaults = gs_core_asset_pipeline_importer_register_defaults,
+        .free_asset = gs_core_asset_pipeline_importer_free_asset,
         .resource_file_extensions = {"sf"},
         .asset_file_extension = "pip",
         .class_id = gs_core_cls_cid(gs_core_asset_pipeline_t)
@@ -171,6 +175,7 @@ static void _gs_core_assets_register_importers(gs_core_assets_t* assets)
     _gs_core_assets_register_importer(assets, &(gs_core_asset_importer_desc_t){
         .load_resource_from_file = gs_core_asset_font_importer_load_resource_from_file,
         .register_defaults = gs_core_asset_font_importer_register_defaults,
+        .free_asset = gs_core_asset_font_importer_free_asset,
         .resource_file_extensions = {"ttf", "otf"},
         .asset_file_extension = "fnt",
         .class_id = gs_core_cls_cid(gs_core_asset_font_t)
@@ -180,6 +185,7 @@ static void _gs_core_assets_register_importers(gs_core_assets_t* assets)
     _gs_core_assets_register_importer(assets, &(gs_core_asset_importer_desc_t){
         .load_resource_from_file = gs_core_asset_audio_importer_load_resource_from_file,
         .register_defaults = gs_core_asset_audio_importer_register_defaults,
+        .free_asset = gs_core_asset_audio_importer_free_asset,
         .resource_file_extensions = {"wav", "mp3", "ogg"},
         .asset_file_extension = "aud",
         .class_id = gs_core_cls_cid(gs_core_asset_audio_t)
@@ -189,21 +195,23 @@ static void _gs_core_assets_register_importers(gs_core_assets_t* assets)
     _gs_core_assets_register_importer(assets, &(gs_core_asset_importer_desc_t){
         .load_resource_from_file = gs_core_asset_ui_stylesheet_importer_load_resource_from_file,
         .register_defaults = gs_core_asset_ui_stylesheet_importer_register_defaults,
+        .free_asset = gs_core_asset_ui_stylesheet_importer_free_asset,
         .resource_file_extensions = {"gss"},
         .asset_file_extension = "uss",
         .class_id = gs_core_cls_cid(gs_core_asset_ui_stylesheet_t)
     });
 }
 
-GS_API_DECL gs_core_assets_t* gs_core_assets_new(const char* root_path)
+GS_API_DECL gs_core_assets_t* 
+gs_core_assets_new(const char* root_path)
 {
+    // Get core instance
+    gs_core_t* core = gs_core_instance();
+
     // Can only be ONE instance!
-    if (g_assets) return g_assets;
+    if (core->assets) return core->assets;
 
-    gs_core_assets_t* am = gs_malloc_init(gs_core_assets_t);
-
-    // Set global static instance
-    g_assets = am;
+    gs_core_assets_t* am = gs_malloc_init(gs_core_assets_t); 
 
     // Copy root path for assets
     memcpy(am->root_path, root_path, GS_CORE_ASSET_STR_MAX);
@@ -216,9 +224,10 @@ GS_API_DECL gs_core_assets_t* gs_core_assets_new(const char* root_path)
     return am;
 }
 
-GS_API_DECL gs_core_assets_t* gs_core_assets_instance()
+GS_API_DECL gs_core_assets_t* 
+gs_core_assets_instance()
 {
-    return g_assets;
+    return gs_core_instance()->assets;
 }
 
 GS_API_DECL gs_core_asset_handle_t gs_core_assets_import(const char* path, gs_core_asset_import_options_t* options, bool serialize)
@@ -362,7 +371,8 @@ gs_core_assets_add(gs_core_asset_t* asset, bool serialize)
     return asset_hndl;
 }
 
-void gs_core_assets_serialize_asset(const char* path, const gs_core_asset_t* asset)
+GS_API_DECL void 
+gs_core_assets_serialize_asset(const char* path, const gs_core_asset_t* asset)
 {
     gs_core_assets_t* am = gs_core_assets_instance();
 
@@ -395,14 +405,34 @@ void gs_core_assets_serialize_asset(const char* path, const gs_core_asset_t* ass
 }
 
 // Get access to raw asset from handle
-gs_core_asset_t* gs_core_asset_handle_get(const gs_core_asset_handle_t* hndl)
+GS_API_DECL gs_core_asset_t* 
+gs_core_asset_handle_get(const gs_core_asset_handle_t* hndl)
 {
     gs_core_assets_t* am = gs_core_assets_instance();
     const gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, hndl->importer); 
     return gs_slot_array_get(importer->assets, hndl->hndl);
 }
 
-//================[ Core_Texture ]===================// 
+GS_API_DECL void
+gs_core_asset_free(const gs_core_asset_handle_t* hndl)
+{ 
+    gs_core_assets_t* am = gs_core_assets_instance();
+
+    gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, hndl->importer);
+    gs_core_asset_t* asset = gs_slot_array_get(importer->assets, hndl->hndl);
+
+    // Free asset
+    importer->free_asset(hndl);
+
+    // Erase record handle
+    gs_slot_array_erase(importer->records, asset->record_hndl);
+
+    // Erase asset then free
+    gs_slot_array_erase(importer->assets, hndl->hndl);
+    gs_free(asset);
+}
+
+//================[ Texture ]===================// 
 
 GS_API_DECL struct gs_core_asset_importer_s*
 gs_core_asset_texture_importer()
@@ -422,103 +452,162 @@ gs_core_asset_texture_deserialize(gs_byte_buffer_t* buffer, gs_core_obj_t* obj)
     return GS_RESULT_INCOMPLETE;
 }
 
-//================[ Core_Mesh ]===================// 
+//================[ Mesh ]===================// 
 
-//================[ Core_Material ]===================// 
+//================[ Material ]===================// 
 
 //================[ Pipeline ]===================// 
 
 //================[ Font ]===================// 
 
-//================[ Core_Audio ]===================// 
+//================[ Audio ]===================// 
 
-//================[ Core UIStyleSheet ]===================//
+//================[ UIStyleSheet ]===================//
 
-//================[ TextureImporter ]===================//
+//================[ Texture Importer ]===================//
 
-gs_core_asset_t* gs_core_asset_texture_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
+GS_API_DECL gs_core_asset_t* 
+gs_core_asset_texture_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
 {
     gs_core_asset_texture_t* texture = gs_core_cls_new(gs_core_asset_texture_t); 
     gs_graphics_texture_desc_t* tdesc = options ? &options->texture.desc : NULL;
-    texture->texture = gs_gfxt_texture_load_from_file(path, tdesc, false, false); 
+    texture->resource = gs_gfxt_texture_load_from_file(path, tdesc, false, false); 
     return gs_core_cast(texture, gs_core_asset_t);
 }
 
-void gs_core_asset_texture_importer_register_defaults()
+GS_API_DECL void 
+gs_core_asset_texture_importer_register_defaults()
 { 
     gs_core_asset_texture_t* texture = gs_core_cls_new(gs_core_asset_texture_t); 
-    texture->texture = gs_gfxt_texture_generate_default();
+    texture->resource = gs_gfxt_texture_generate_default();
 } 
 
-//================[ MeshImporter ]===================//
+GS_API_DECL void
+gs_core_asset_texture_importer_free_asset(gs_core_asset_handle_t* hndl)
+{ 
+    gs_core_asset_texture_t* texture = (gs_core_asset_texture_t*)gs_core_asset_handle_get(hndl);
+    gs_gfxt_texture_destroy(&texture->resource);
+} 
 
-gs_core_asset_t* gs_core_asset_mesh_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
+//================[ Material Importer ]===================//
+
+GS_API_DECL void
+gs_core_asset_material_importer_free_asset(gs_core_asset_handle_t* hndl)
+{
+    gs_core_asset_material_t* material = (gs_core_asset_material_t*)gs_core_asset_handle_get(hndl);
+    gs_gfxt_material_destroy(&material->resource);
+}
+
+//================[ Mesh Importer ]===================//
+
+GS_API_DECL gs_core_asset_t* 
+gs_core_asset_mesh_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
 {
     gs_core_asset_mesh_t* msh = gs_core_cls_new(gs_core_asset_mesh_t); 
     gs_gfxt_mesh_import_options_t* desc = options ? &options->mesh.desc : NULL;
-    msh->mesh = gs_gfxt_mesh_load_from_file(path, desc);
+    msh->resource = gs_gfxt_mesh_load_from_file(path, desc);
     return gs_core_cast(msh, gs_core_asset_t);
 }
 
-void gs_core_asset_mesh_importer_register_defaults()
+GS_API_DECL void 
+gs_core_asset_mesh_importer_register_defaults()
 { 
     gs_core_asset_mesh_t* msh = gs_core_cls_new(gs_core_asset_mesh_t); 
-    msh->mesh = gs_gfxt_mesh_unit_quad_generate(NULL);
+    msh->resource = gs_gfxt_mesh_unit_quad_generate(NULL);
 } 
 
-//================[ PipelineImporter ]===================//
+GS_API_DECL void
+gs_core_asset_mesh_importer_free_asset(gs_core_asset_handle_t* hndl)
+{ 
+    gs_core_asset_mesh_t* mesh = (gs_core_asset_mesh_t*)gs_core_asset_handle_get(hndl);
+    gs_gfxt_mesh_destroy(&mesh->resource);
+} 
 
-GS_API_DECL gs_core_asset_t* gs_core_asset_pipeline_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
+//================[ Pipeline Importer ]===================//
+
+GS_API_DECL gs_core_asset_t* 
+gs_core_asset_pipeline_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
 { 
     gs_core_asset_pipeline_t* pip = gs_core_cls_new(gs_core_asset_pipeline_t);
-    pip->pipeline = gs_gfxt_pipeline_load_from_file(path); 
+    pip->resource = gs_gfxt_pipeline_load_from_file(path); 
     return gs_core_cast(pip, gs_core_asset_t);
 }
 
-GS_API_DECL void gs_core_asset_pipeline_importer_register_defaults()
+GS_API_DECL void 
+gs_core_asset_pipeline_importer_register_defaults()
 {
 } 
 
-//================[ FontImporter ]===================//
+GS_API_DECL void
+gs_core_asset_pipeline_importer_free_asset(gs_core_asset_handle_t* hndl)
+{ 
+    gs_core_asset_pipeline_t* pip = (gs_core_asset_pipeline_t*)gs_core_asset_handle_get(hndl);
+    gs_gfxt_pipeline_destroy(&pip->resource);
+} 
 
-GS_API_DECL gs_core_asset_t* gs_core_asset_font_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
+//================[ Font Importer ]===================//
+
+GS_API_DECL gs_core_asset_t* 
+gs_core_asset_font_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
 {
     gs_core_asset_font_t* font = gs_core_cls_new(gs_core_asset_font_t); 
     uint32_t point_size = options ? options->font.point_size : 16;
-    gs_asset_font_load_from_file(path, &font->font, point_size);
+    gs_asset_font_load_from_file(path, &font->resource, point_size);
     return gs_core_cast(font, gs_core_asset_t);
 }
 
-GS_API_DECL void gs_core_asset_font_importer_register_defaults()
+GS_API_DECL void 
+gs_core_asset_font_importer_register_defaults()
 {
 }
 
-//================[ AudioImporter ]===================//
+GS_API_DECL void
+gs_core_asset_font_importer_free_asset(gs_core_asset_handle_t* hndl)
+{ 
+    // Not sure about this one yet...
+} 
 
-GS_API_DECL gs_core_asset_t* gs_core_asset_audio_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
+//================[ Audio Importer ]===================//
+
+GS_API_DECL gs_core_asset_t* 
+gs_core_asset_audio_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
 {
     gs_core_asset_audio_t* aud = gs_core_cls_new(gs_core_asset_audio_t);
-    gs_asset_audio_load_from_file(path, &aud->audio);
+    gs_asset_audio_load_from_file(path, &aud->resource);
     return gs_core_cast(aud, gs_core_asset_t);
 }
 
-GS_API_DECL void gs_core_asset_audio_importer_register_defaults()
+GS_API_DECL void 
+gs_core_asset_audio_importer_register_defaults()
 {
 }
 
-//================[ Core_UIStyleSheetImporter ]===================//
+GS_API_DECL void
+gs_core_asset_audio_importer_free_asset(gs_core_asset_handle_t* hndl)
+{ 
+    // Not sure about this one either...
+} 
+
+//================[ UI StyleSheet Importer ]===================//
 
 GS_API_DECL gs_core_asset_t* gs_core_asset_ui_stylesheet_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
 {
     gs_assert(options && options->gui.ctx);
     gs_core_asset_ui_stylesheet_t* ss = gs_core_cls_new(gs_core_asset_ui_stylesheet_t);
     gs_gui_context_t* ctx = options->gui.ctx;
-    ss->style_sheet = gs_gui_style_sheet_load_from_file(ctx, path);
+    ss->resource = gs_gui_style_sheet_load_from_file(ctx, path);
     return gs_core_cast(ss, gs_core_asset_t);
 }
 
 GS_API_DECL void gs_core_asset_ui_stylesheet_importer_register_defaults() 
 {
+} 
+
+GS_API_DECL void
+gs_core_asset_ui_stylesheet_importer_free_asset(gs_core_asset_handle_t* hndl)
+{ 
+    gs_core_asset_ui_stylesheet_t* ss = (gs_core_asset_ui_stylesheet_t*)gs_core_asset_handle_get(hndl);
+    gs_gui_style_sheet_destroy(&ss->resource);
 } 
 
 

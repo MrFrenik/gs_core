@@ -11,6 +11,9 @@ GS_API_DECL void
 
     // Init core
     app->core = core_new();
+
+    // Register application meta information
+    GS_CORE_APP_META_REGISTER(%APP%);
 }
 
 GS_API_DECL void 

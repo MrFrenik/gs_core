@@ -1382,6 +1382,8 @@ gs_core_meta_register()
 GS_API_DECL void
 gs_core_meta_unregister()
 {
+	gs_core_entities_t* ents = gs_core_instance()->entities;
+
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);

@@ -43,16 +43,95 @@
 #define GS_GUI_IMPL
 #define GS_AI_IMPL
 #define GS_GFXT_IMPL
-#define GS_META_IMPL
+#define GS_META_IMPL 
 
-#include <gs/gs.h> 
-#include <gs/util/gs_idraw.h> 
-#include <gs/util/gs_gui.h> 
-#include <gs/util/gs_ai.h> 
-#include <gs/util/gs_gfxt.h> 
-#include <gs/util/gs_meta.h> 
+// Memory management defines 
+#ifdef __cplusplus
+    #define GS_CORE_API_EXTERN extern "C"
+#else
+    #define GS_CORE_API_EXTERN extern
+#endif
 
-// Third party includes
+struct gs_os_api_s;
+
+GS_CORE_API_EXTERN struct gs_os_api_s
+gs_core_os_api_new(); 
+
+#define gs_os_api_new gs_core_os_api_new
+
+// GS
+#include "core/gs_core_gs.h" 
+
+GS_API_DECL void* 
+gs_core_os_malloc(size_t sz)
+{
+    return malloc(sz);
+}
+
+GS_API_DECL void* 
+gs_core_os_malloc_init(size_t sz)
+{
+    void* data = malloc(sz);
+    memset(data, 0, sz);
+    return data;
+}
+
+GS_API_DECL void 
+gs_core_os_free(void* ptr)
+{ 
+    free(ptr);
+}
+
+GS_API_DECL void* 
+gs_core_os_realloc(void* ptr, size_t sz)
+{ 
+    return realloc(ptr, sz);
+} 
+
+GS_API_DECL void* 
+gs_core_os_calloc(size_t sz)
+{ 
+    return calloc(1, sz);
+} 
+
+GS_API_DECL void* 
+gs_core_os_alloca(size_t sz)
+{
+    #ifdef GS_PLATFORM_WIN
+        return malloc(sz);
+    #else
+        return malloc(sz);
+    #endif
+} 
+
+GS_API_DECL char* 
+gs_core_os_strdup(const char* str)
+{
+    return strdup(str);
+}
+
+GS_API_DECL struct gs_os_api_s
+gs_core_os_api_new()
+{
+    struct gs_os_api_s os = gs_default_val();
+    os.malloc = gs_core_os_malloc;
+    os.malloc_init = gs_core_os_malloc_init;
+    os.free = gs_core_os_free;
+    os.realloc = gs_core_os_realloc;
+    os.calloc = gs_core_os_calloc;
+    os.alloca = gs_core_os_alloca;
+    os.strdup = gs_core_os_strdup;
+    return os;
+} 
+
+// Flecs
+#define ecs_os_malloc   gs_malloc
+#define ecs_os_free     gs_free
+#define ecs_os_realloc  gs_realloc
+#define ecs_os_calloc   gs_calloc
+#define ecs_os_alloca   gs_alloca 
+#define ecs_os_strdup   gs_strdup
+
 #include "flecs/flecs.h"
 
 

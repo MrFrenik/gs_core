@@ -10,10 +10,21 @@ GS_API_DECL void gs_editor_app_hot_reload();
 GS_API_DECL void gs_editor_library_load();
 GS_API_DECL void gs_editor_library_unload();
 
-GS_API_DECL void 
-gs_editor_init()
+// Global editor instance
+static gs_editor_t* g_editor = NULL;
+
+GS_API_DECL gs_editor_t* 
+gs_editor_instance()
 { 
-    gs_editor_t* editor = gs_user_data(gs_editor_t);
+    return g_editor;
+} 
+
+GS_API_DECL void 
+gs_editor_init(void* app)
+{ 
+    // Set global instance
+    g_editor = app; 
+    gs_editor_t* editor = (gs_editor_t*)app;
     gs_assert(editor);
 
     // Init core
@@ -63,10 +74,10 @@ gs_editor_init()
 }
 
 GS_API_DECL void
-gs_editor_update()
+gs_editor_update(void* app)
 {
     // Grab application and all required gs structures
-    gs_editor_t* editor = gs_user_data(gs_editor_t); 
+    gs_editor_t* editor = (gs_editor_t*)app;
     gs_command_buffer_t* cb = &editor->core->cb;
     gs_immediate_draw_t* gsi = &editor->core->gsi;
     gs_gui_context_t* gui = &editor->core->gui;
@@ -147,13 +158,13 @@ gs_editor_update()
     gs_gui_renderpass_submit_ex(gui, cb, NULL);
 
     // Submit command buffer for GPU
-    gs_graphics_command_buffer_submit(cb);
+    gs_core_graphics_instance()->submit(cb);
 }
 
 GS_API_DECL void 
-gs_editor_shutdown()
+gs_editor_shutdown(void* app)
 {
-    gs_editor_t* editor = gs_user_data(gs_editor_t);
+    gs_editor_t* editor = (gs_editor_t*)app;
 
     // Shutdown core
     gs_core_free(editor->core);
@@ -203,11 +214,22 @@ gs_editor_library_load()
     if (editor->app.dll) 
     {
         gs_println("App Loaded!");
-        editor->app.app_meta_register = gs_platform_library_proc_address(editor->app.dll, "_gs_app_meta_register");
-        editor->app.app_meta_unregister = gs_platform_library_proc_address(editor->app.dll, "_gs_app_meta_unregister");
-        gs_assert(editor->app.app_meta_register);
-        gs_assert(editor->app.app_meta_unregister);
-        editor->app.app_meta_register(editor->core);
+        editor->app.new = gs_platform_library_proc_address(editor->app.dll, "_gs_app_new");
+        editor->app.init = gs_platform_library_proc_address(editor->app.dll, gs_app_init_func_name());
+        editor->app.update = gs_platform_library_proc_address(editor->app.dll, gs_app_update_func_name());
+        editor->app.shutdown = gs_platform_library_proc_address(editor->app.dll, gs_app_shutdown_func_name());
+        editor->scene_draw_cb = gs_platform_library_proc_address(editor->app.dll, gs_app_scene_render_cb_name());
+        gs_assert(editor->app.new);
+        gs_assert(editor->app.init);
+        gs_assert(editor->app.update);
+        gs_assert(editor->app.shutdown);
+        gs_assert(editor->scene_draw_cb);
+
+        // Construct application pointer (this should just register everything, honestly...)
+        editor->app.app = editor->app.new(gs_instance(), editor->core);
+
+        // Initialize application (which SHOULD register meta information correctly)
+        editor->app.init(editor->app.app); 
     }
 }
 
@@ -218,10 +240,17 @@ gs_editor_library_unload()
 
     if (editor->app.dll) 
     {
+        // Shutdown application and free memory
+        editor->app.shutdown(editor->app.app);
         gs_println("App Unloaded!");
-        editor->app.app_meta_unregister(editor->core);
         gs_platform_library_unload(editor->app.dll);
         editor->app.dll = NULL;
+        editor->app.app = NULL;
+        editor->app.new = NULL;
+        editor->app.init = NULL;
+        editor->app.update = NULL;
+        editor->app.shutdown = NULL;
+        editor->scene_draw_cb = NULL;
     }
 } 
 

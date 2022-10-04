@@ -44,18 +44,42 @@
 typedef struct
 {
     ecs_world_t* world;
+	ecs_os_api_t api;
 } gs_core_entity_data_t; 
 
 GS_API_DECL gs_core_entities_t* 
 gs_core_entities_new()
 {
-    if (ECS()) return ECS();
+	// Bind existing api for defaults then return existing
+	if (ECS())
+	{
+        gs_core_entities_set_instance(ECS());
+		return ECS();
+	}
 
     gs_core_entities_t* ents = gs_malloc_init(gs_core_entities_t); 
     ents->data = gs_malloc_init(gs_core_entity_data_t); 
+
+    // Set up os api for flecs
+	gs_core_entity_data_t* data = (gs_core_entity_data_t*)ents->data;
+    ecs_os_set_api_defaults(); 
+    data->api = ecs_os_api; 
+    ecs_os_set_api(&data->api);
+
     ((gs_core_entity_data_t*)(ents->data))->world = ecs_init();
-    ents->component_register = gs_core_entities_register_component_internal;
+    ents->component_register = gs_core_entities_component_register_internal;
+    ents->component_unregister = gs_core_entities_component_unregister_internal;
+    ents->system_register = gs_core_entities_system_register_internal;
+    ents->system_unregister = gs_core_entities_system_unregister_internal;
     return ents;
+}
+
+GS_API_DECL void 
+gs_core_entities_set_instance(gs_core_entities_t* ents)
+{ 
+    // Set up os api for flecs
+    gs_core_entity_data_t* data = (gs_core_entity_data_t*)ents->data;
+    ecs_os_set_api(&data->api);
 }
 
 GS_API_DECL gs_core_entities_t* 
@@ -64,22 +88,26 @@ gs_core_entities_instance()
     return ECS();
 } 
 
-GS_API_DECL void gs_core_entities_update()
+GS_API_DECL void 
+gs_core_entities_update()
 {
     ecs_progress(CORE_ECS()->world, 0);
 }
 
-GS_API_DECL void gs_core_entities_shutdown()
+GS_API_DECL void 
+gs_core_entities_shutdown()
 {
 } 
 
-GS_API_DECL gs_core_entity_world_t* gs_core_entities_world()
+GS_API_DECL gs_core_entity_world_t* 
+gs_core_entities_world()
 {
     gs_core_entity_data_t* ecs = CORE_ECS(); 
     return ecs->world;
 }
 
-GS_API_DECL gs_core_entity_t gs_core_entities_register_component_internal(const gs_core_entities_component_desc_t* desc)
+GS_API_DECL gs_core_entity_t 
+gs_core_entities_component_register_internal(const gs_core_entities_component_desc_t* desc)
 { 
     gs_core_entity_data_t* ecs = CORE_ECS(); 
     ecs_entity_t comp = ecs_component_init(ecs->world, &(ecs_component_desc_t){
@@ -90,7 +118,15 @@ GS_API_DECL gs_core_entity_t gs_core_entities_register_component_internal(const 
     return (gs_core_entity_t)comp;
 }
 
-GS_API_DECL void gs_core_entities_register_system(const gs_core_entities_system_desc_t* desc)
+GS_API_DECL void 
+gs_core_entities_component_unregister_internal(gs_core_entity_t comp)
+{ 
+    gs_core_entity_data_t* ecs = CORE_ECS(); 
+    ecs_remove_all(ecs->world, comp);
+}
+
+GS_API_DECL gs_core_entity_t 
+gs_core_entities_system_register_internal(const gs_core_entities_system_desc_t* desc)
 {
     gs_core_entity_data_t* ecs = CORE_ECS(); 
 
@@ -107,7 +143,15 @@ GS_API_DECL void gs_core_entities_register_system(const gs_core_entities_system_
     ecs_system_init(ecs->world, &sdesc);
 }
 
-GS_API_DECL gs_core_entity_t gs_core_entities_allocate()
+GS_API_DECL void
+gs_core_entities_system_unregister_internal(gs_core_entity_t system)
+{
+    gs_core_entity_data_t* ecs = CORE_ECS();
+    ecs_remove_all(ecs->world, system);
+}
+
+GS_API_DECL gs_core_entity_t 
+gs_core_entities_allocate()
 {
     gs_core_entity_data_t* ecs = CORE_ECS(); 
 
@@ -126,7 +170,8 @@ gs_core_entities_deallocate(gs_core_entity_world_t* world, gs_core_entity_t enti
     ecs_delete(world, entity);
 } 
 
-GS_API_DECL void gs_core_entities_component_remove_internal(gs_core_entity_world_t* world, 
+GS_API_DECL void 
+gs_core_entities_component_remove_internal(gs_core_entity_world_t* world, 
     gs_core_entity_t entity, gs_core_entity_t comp)
 {
 } 

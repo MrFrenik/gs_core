@@ -56,7 +56,8 @@ typedef struct
 
 typedef struct gs_core_graphics_s
 {
-    gs_core_graphics_scene_t scene;   // Single scene for now...
+    gs_core_graphics_scene_t scene;             // Single scene for now...
+    void (* submit)(gs_command_buffer_t* cb);   // Used for .dll, so all graphics driver calls are done in main process
 } gs_core_graphics_t;
 
 //=====[ Core Graphics ]=====//
@@ -116,6 +117,11 @@ typedef struct gs_core_graphics_renderpass_s
         void (* execute)(gs_command_buffer_t* cb, gs_core_graphics_renderpass_t* pass) = NULL;
     )
 } gs_core_graphics_renderpass_t;
+
+//====[ Submit ]====//
+
+GS_API_PRIVATE void
+gs_core_graphics_submit_cb(gs_command_buffer_t* cb);
 
 #endif // GS_CORE_GRAPHICS_H
 
