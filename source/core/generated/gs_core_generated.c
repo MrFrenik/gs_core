@@ -1389,126 +1389,224 @@ gs_core_meta_unregister()
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_texture_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_app_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_pipeline_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_font_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_mesh_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_audio_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_network_rpc_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_obj_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_ui_stylesheet_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_entities_component_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_material_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_entities_system_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_graphics_renderpass_t_cls_id);
 		gs_assert(info);
-		gs_meta_class_unregister(&meta->registry, info->cls->id);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
 		info->cls = NULL;
 		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 }
 

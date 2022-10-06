@@ -56,7 +56,9 @@ gs_core_graphics_new()
 GS_API_DECL void 
 gs_core_graphics_shutdown()
 {
-    // ...
+    gs_core_graphics_t* gfx = gs_core_graphics_instance();
+    gs_slot_array_free(gfx->scene.renderables);
+    gs_slot_array_free(gfx->scene.cameras);
 }
 
 GS_API_DECL gs_core_graphics_t* 

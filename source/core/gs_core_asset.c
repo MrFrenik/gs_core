@@ -224,6 +224,73 @@ gs_core_assets_new(const char* root_path)
     return am;
 }
 
+GS_API_DECL void 
+gs_core_assets_shutdown()
+{
+    // Get core instance
+    gs_core_t* core = gs_core_instance();
+
+    // Can only be ONE instance!
+    if (core->assets) return core->assets;
+
+    /*
+typedef struct gs_core_assets_s
+{ 
+    char root_path[GS_CORE_ASSET_STR_MAX];
+    gs_slot_array(gs_core_asset_importer_t) importers;
+    gs_hash_table(uint64_t, uint32_t) cid2importer; // Mapping from class id to importer data
+    gs_hash_table(uint64_t, uint32_t) fe2importer;  // Mapping file extension to importer data 
+} gs_core_assets_t;
+*/ 
+    gs_core_assets_t* am = core->assets;
+    
+    // Free all importers
+    for (
+        gs_slot_array_iter it = gs_slot_array_iter_new(am->importers);
+        gs_slot_array_iter_valid(am->importers, it);
+        gs_slot_array_iter_advance(am->importers, it)
+    )
+    {
+        
+        /*
+    typedef struct gs_core_asset_importer_s
+    {
+        gs_core_asset_t* (* load_resource_from_file)(const char* path, void* import_options);
+        void (* register_defaults)();
+        void (* free_asset)(gs_core_asset_handle_t* hndl);
+        gs_slot_array(gs_core_asset_record_t) records;                  // Loaded asset records
+        gs_slot_array(gs_core_asset_t*) assets;                         // Slot array of raw asset data 
+        gs_hash_table(uint64_t, uint32_t) uuid2id;                      // Mapping from uuid to record slot id
+        gs_hash_table(uint64_t, uint32_t) name2id;                      // Mapping from qualified name to record slot id
+        char file_extension[GS_CORE_ASSETS_FILE_EXTENSION_MAX_LENGTH];  // File extension for asset
+        uint64_t class_id;                                              // Class ID
+    } gs_core_asset_importer_t; 
+    */
+
+        gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, it);
+        for (
+            gs_slot_array_iter ait = gs_slot_array_iter_new(importer->records);
+            gs_slot_array_iter_valid(importer->records, ait);
+            gs_slot_array_iter_advance(importer->records, ait)
+        )
+        {
+            gs_core_asset_record_t* record = gs_slot_array_iter_getp(importer->records, ait);
+            gs_core_asset_handle_t handle = {
+                .hndl = record->hndl,
+                .importer = gs_hash_table_get(am->cid2importer, importer->class_id)
+            };
+            gs_core_asset_handle_free(&handle);
+        }
+        gs_hash_table_free(importer->uuid2id);
+        gs_hash_table_free(importer->name2id);
+        gs_slot_array_free(importer->records); 
+        gs_slot_array_free(importer->assets);
+    } 
+
+    gs_hash_table_free(am->cid2importer);
+    gs_hash_table_free(am->fe2importer); 
+}
+
 GS_API_DECL gs_core_assets_t* 
 gs_core_assets_instance()
 {
@@ -411,25 +478,46 @@ gs_core_asset_handle_get(const gs_core_asset_handle_t* hndl)
     gs_core_assets_t* am = gs_core_assets_instance();
     const gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, hndl->importer); 
     return gs_slot_array_get(importer->assets, hndl->hndl);
+} 
+
+GS_API_DECL gs_core_asset_handle_t
+gs_core_asset_handle_from_asset(const gs_core_asset_t* asset)
+{
+    gs_core_assets_t* am = gs_core_assets_instance();
+    uint32_t ihndl = gs_hash_table_get(am->cid2importer, gs_core_obj_cid(asset));
+    const gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, ihndl);
+    const gs_core_asset_record_t* record = gs_slot_array_getp(importer->records, asset->record_hndl); 
+
+    return (gs_core_asset_handle_t){
+        .hndl = record->hndl,
+        .importer = ihndl
+    };
 }
 
-GS_API_DECL void
-gs_core_asset_free(const gs_core_asset_handle_t* hndl)
-{ 
+GS_API_DECL void 
+gs_core_asset_free(gs_core_asset_t* asset)
+{
     gs_core_assets_t* am = gs_core_assets_instance();
-
-    gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, hndl->importer);
-    gs_core_asset_t* asset = gs_slot_array_get(importer->assets, hndl->hndl);
+    uint32_t ihndl = gs_hash_table_get(am->cid2importer, gs_core_obj_cid(asset));
+    const gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, ihndl);
+    uint32_t asset_hndl = (gs_slot_array_getp(importer->records, asset->record_hndl))->hndl;
 
     // Free asset
-    importer->free_asset(hndl);
+    importer->free_asset(asset);
 
     // Erase record handle
     gs_slot_array_erase(importer->records, asset->record_hndl);
 
     // Erase asset then free
-    gs_slot_array_erase(importer->assets, hndl->hndl);
+    gs_slot_array_erase(importer->assets, asset_hndl);
     gs_free(asset);
+}
+
+GS_API_DECL void
+gs_core_asset_handle_free(const gs_core_asset_handle_t* hndl)
+{ 
+    gs_core_assets_t* am = gs_core_assets_instance();
+    gs_core_asset_free(gs_core_asset_handle_get(hndl)); 
 }
 
 //================[ Texture ]===================// 
@@ -483,18 +571,18 @@ gs_core_asset_texture_importer_register_defaults()
 } 
 
 GS_API_DECL void
-gs_core_asset_texture_importer_free_asset(gs_core_asset_handle_t* hndl)
+gs_core_asset_texture_importer_free_asset(gs_core_asset_t* asset)
 { 
-    gs_core_asset_texture_t* texture = (gs_core_asset_texture_t*)gs_core_asset_handle_get(hndl);
+    gs_core_asset_texture_t* texture = (gs_core_asset_texture_t*)asset;
     gs_gfxt_texture_destroy(&texture->resource);
 } 
 
 //================[ Material Importer ]===================//
 
 GS_API_DECL void
-gs_core_asset_material_importer_free_asset(gs_core_asset_handle_t* hndl)
+gs_core_asset_material_importer_free_asset(gs_core_asset_t* asset)
 {
-    gs_core_asset_material_t* material = (gs_core_asset_material_t*)gs_core_asset_handle_get(hndl);
+    gs_core_asset_material_t* material = (gs_core_asset_material_t*)asset;
     gs_gfxt_material_destroy(&material->resource);
 }
 
@@ -517,9 +605,9 @@ gs_core_asset_mesh_importer_register_defaults()
 } 
 
 GS_API_DECL void
-gs_core_asset_mesh_importer_free_asset(gs_core_asset_handle_t* hndl)
+gs_core_asset_mesh_importer_free_asset(gs_core_asset_t* asset)
 { 
-    gs_core_asset_mesh_t* mesh = (gs_core_asset_mesh_t*)gs_core_asset_handle_get(hndl);
+    gs_core_asset_mesh_t* mesh = (gs_core_asset_mesh_t*)asset;
     gs_gfxt_mesh_destroy(&mesh->resource);
 } 
 
@@ -539,9 +627,9 @@ gs_core_asset_pipeline_importer_register_defaults()
 } 
 
 GS_API_DECL void
-gs_core_asset_pipeline_importer_free_asset(gs_core_asset_handle_t* hndl)
+gs_core_asset_pipeline_importer_free_asset(gs_core_asset_t* asset)
 { 
-    gs_core_asset_pipeline_t* pip = (gs_core_asset_pipeline_t*)gs_core_asset_handle_get(hndl);
+    gs_core_asset_pipeline_t* pip = (gs_core_asset_pipeline_t*)asset;
     gs_gfxt_pipeline_destroy(&pip->resource);
 } 
 
@@ -562,7 +650,7 @@ gs_core_asset_font_importer_register_defaults()
 }
 
 GS_API_DECL void
-gs_core_asset_font_importer_free_asset(gs_core_asset_handle_t* hndl)
+gs_core_asset_font_importer_free_asset(gs_core_asset_t* asset)
 { 
     // Not sure about this one yet...
 } 
@@ -583,7 +671,7 @@ gs_core_asset_audio_importer_register_defaults()
 }
 
 GS_API_DECL void
-gs_core_asset_audio_importer_free_asset(gs_core_asset_handle_t* hndl)
+gs_core_asset_audio_importer_free_asset(gs_core_asset_t* asset)
 { 
     // Not sure about this one either...
 } 
@@ -604,9 +692,9 @@ GS_API_DECL void gs_core_asset_ui_stylesheet_importer_register_defaults()
 } 
 
 GS_API_DECL void
-gs_core_asset_ui_stylesheet_importer_free_asset(gs_core_asset_handle_t* hndl)
+gs_core_asset_ui_stylesheet_importer_free_asset(gs_core_asset_t* asset)
 { 
-    gs_core_asset_ui_stylesheet_t* ss = (gs_core_asset_ui_stylesheet_t*)gs_core_asset_handle_get(hndl);
+    gs_core_asset_ui_stylesheet_t* ss = (gs_core_asset_ui_stylesheet_t*)asset;
     gs_gui_style_sheet_destroy(&ss->resource);
 } 
 

@@ -88,6 +88,10 @@ gs_editor_update(void* app)
         gs_quit();
     } 
 
+    gs_timed_action(60, { 
+        gs_editor_app_hot_reload();
+    });
+
     // Check if application needs to be reloaded
     gs_platform_file_stats_t cfstats = gs_platform_file_stats(gs_app_dll_path());
     if (gs_platform_file_compare_time(editor->app.fstats.modified_time, cfstats.modified_time))
@@ -97,23 +101,16 @@ gs_editor_update(void* app)
             gs_println("Initialize hot reload..."); 
             editor->app.hot_reload_begin = true; 
         }
-        editor->app.hot_reload_timer = 0;
     }
-    else if (editor->app.hot_reload_begin && editor->app.hot_reload_timer >= 30)
+    else if (editor->app.hot_reload_begin)
     { 
         gs_editor_app_hot_reload();
-
-        gs_println("Hot reload finished..."); 
-    } 
-    else if (editor->app.hot_reload_begin)
-    {
-        editor->app.hot_reload_timer++;
     } 
     
     editor->app.fstats = cfstats;
 
-    // Gui
-    gs_gui_begin(gui, fbs);
+    // Gui 
+    gs_gui_begin(gui, &(gs_gui_hints_t){.framebuffer_size = fbs, .viewport = gs_gui_rect(0.f, 0.f, fbs.x, fbs.y)});
     {
         // Dockspace
         int32_t opt = 
@@ -166,6 +163,9 @@ gs_editor_shutdown(void* app)
 {
     gs_editor_t* editor = (gs_editor_t*)app;
 
+    // Unload app 
+    gs_editor_library_unload();
+
     // Shutdown core
     gs_core_free(editor->core);
 }
@@ -209,17 +209,19 @@ gs_editor_library_load()
 {
     gs_editor_t* editor = gs_user_data(gs_editor_t);
 
-    editor->app.dll = gs_platform_library_load(gs_editor_dll_path());
+    editor->app.dll = gs_platform_library_load(gs_editor_dll_path()); 
 
     if (editor->app.dll) 
     {
         gs_println("App Loaded!");
         editor->app.new = gs_platform_library_proc_address(editor->app.dll, "_gs_app_new");
+        editor->app.free = gs_platform_library_proc_address(editor->app.dll, "_gs_app_free");
         editor->app.init = gs_platform_library_proc_address(editor->app.dll, gs_app_init_func_name());
         editor->app.update = gs_platform_library_proc_address(editor->app.dll, gs_app_update_func_name());
         editor->app.shutdown = gs_platform_library_proc_address(editor->app.dll, gs_app_shutdown_func_name());
         editor->scene_draw_cb = gs_platform_library_proc_address(editor->app.dll, gs_app_scene_render_cb_name());
         gs_assert(editor->app.new);
+        gs_assert(editor->app.free);
         gs_assert(editor->app.init);
         gs_assert(editor->app.update);
         gs_assert(editor->app.shutdown);
@@ -230,7 +232,7 @@ gs_editor_library_load()
 
         // Initialize application (which SHOULD register meta information correctly)
         editor->app.init(editor->app.app); 
-    }
+    } 
 }
 
 GS_API_DECL void 
@@ -242,6 +244,7 @@ gs_editor_library_unload()
     {
         // Shutdown application and free memory
         editor->app.shutdown(editor->app.app);
+        editor->app.free(editor->app.app);
         gs_println("App Unloaded!");
         gs_platform_library_unload(editor->app.dll);
         editor->app.dll = NULL;
@@ -259,6 +262,12 @@ gs_editor_app_hot_reload()
 {
     gs_editor_t* editor = gs_user_data(gs_editor_t); 
 
+    // Determine if can copy first before unloading
+    if (!gs_platform_file_exists(gs_app_dll_path()))
+    {
+        return;
+    }
+
     // Remove previous .dll
     if (gs_platform_file_exists(gs_editor_dll_path()))
     {
@@ -274,7 +283,7 @@ gs_editor_app_hot_reload()
         gs_editor_library_load();
     }
     editor->app.hot_reload_begin = false; 
-    editor->app.hot_reload_timer = 0; 
+    gs_println("Hot reload finished..."); 
 }
 
 

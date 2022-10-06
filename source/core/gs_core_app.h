@@ -45,14 +45,10 @@ struct gs_core_s;
 _introspect()
 typedef struct gs_core_app_s
 { 
-    gs_core_base(gs_core_obj_t);
-} gs_core_app_t;
-
-typedef gs_core_app_t* (* gs_app_init_func)(void* core);
-typedef void (* gs_app_update_func)(gs_core_app_t* app);
-typedef void (* gs_app_shutdown_func)(gs_core_app_t* app);
-
-// App declarations to export
+    gs_core_base(gs_core_obj_t); 
+    struct gs_core_s* core;         // Core framework 
+    gs_vec4 viewport;
+} gs_core_app_t; 
 
 GS_API_DECL void* 
 _gs_app_new(gs_t* gs, struct gs_core_s* core);
@@ -70,6 +66,12 @@ _gs_app_new(gs_t* gs, struct gs_core_s* core);
         __T* _app = gs_malloc_init(__T);\
         return _app;\
     }\
+\
+    GS_API_DECL void\
+    _gs_app_free(void* app)\
+    {\
+        if (app) gs_free(app);\
+    }
 
 #endif // CORE_APP_H 
 

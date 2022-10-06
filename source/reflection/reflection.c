@@ -1210,9 +1210,16 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "\t\tgs_assert(meta);");
         gs_fprintln(fp, "\t\tgs_core_meta_info_t* info = gs_slot_array_getp(meta->info, %s_cls_id);", cls->name);
         gs_fprintln(fp, "\t\tgs_assert(info);");
-        gs_fprintln(fp, "\t\tgs_meta_class_unregister(&meta->registry, info->cls->id);");
+        gs_fprintln(fp, "\t\tif (info->cls) {");
+        gs_fprintln(fp, "\t\t\tgs_meta_class_unregister(&meta->registry, info->cls->id);");
+        gs_fprintln(fp, "\t\t}");
         gs_fprintln(fp, "\t\tinfo->cls = NULL;");
         gs_fprintln(fp, "\t\tinfo->base = NULL;"); 
+        gs_fprintln(fp, "\t\tif (info->vtable)"); 
+        gs_fprintln(fp, "\t\t{"); 
+        gs_fprintln(fp, "\t\t\tgs_free(info->vtable);"); 
+        gs_fprintln(fp, "\t\t\tinfo->vtable = NULL;"); 
+        gs_fprintln(fp, "\t\t}"); 
         if (gs_string_compare_equal(cls->base, "gs_core_entities_component_t"))
         {
             gs_fprintln(fp, "\t\tents->component_unregister(gs_core_entity_id(%s));", cls->name);

@@ -38,6 +38,7 @@ typedef struct gs_editor_s
         bool32 hot_reload_begin;            // Change detected for hot-reload             
         void* dll;                          // Pointer to library
         void* (* new)(gs_t* gs, gs_core_t* core);
+        void (* free)(void* app);
         void (* init)(void* app);
         void (* update)(void* app);
         void (* shutdown)(void* app);

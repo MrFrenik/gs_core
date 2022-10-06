@@ -45,6 +45,9 @@
 #define GS_GFXT_IMPL
 #define GS_META_IMPL 
 
+// Core defines
+#define GS_CORE_MEMORY_DBG
+
 // Memory management defines 
 #ifdef __cplusplus
     #define GS_CORE_API_EXTERN extern "C"
@@ -59,8 +62,107 @@ gs_core_os_api_new();
 
 #define gs_os_api_new gs_core_os_api_new
 
+#ifdef GS_CORE_MEMORY_DBG
+
+    GS_CORE_API_EXTERN void* 
+    gs_core_malloc_dbg(void* ptr, size_t sz, const char* file, int line);
+
+    GS_CORE_API_EXTERN void 
+    gs_core_free_dbg(void* ptr, const char* file, int line);
+
+    #define gs_malloc(__SZ) gs_core_malloc_dbg(gs_ctx()->os.malloc(__SZ), __SZ, __FILE__, __LINE__) 
+    #define gs_free(__PTR)  gs_core_free_dbg(__PTR, __FILE__, __LINE__) 
+
+#endif 
+
 // GS
 #include "core/gs_core_gs.h" 
+#include "core/gs_core.h" 
+
+#ifdef GS_CORE_MEMORY_DBG
+
+#define GS_CORE_MEMORY_TOTAL_ALLOCS 4096
+static gs_core_memory_alloc_t g_allocations[GS_CORE_MEMORY_TOTAL_ALLOCS] = {0}; 
+static uint32_t g_allocation_max_idx = 0;
+static size_t g_total_allocated = 0;
+static size_t g_total_freed = 0;
+
+GS_API_DECL void
+gs_core_memory_print()
+{ 
+    for (uint32_t i = 0; i < GS_CORE_MEMORY_TOTAL_ALLOCS; ++i)
+    { 
+        if (g_allocations[i].ptr)
+        { 
+            gs_println("%x, %s, %zu", g_allocations[i].ptr, g_allocations[i].file, g_allocations[i].line);
+        }
+    }
+} 
+
+GS_API_DECL void
+gs_core_memory_print_to_file(const char* path)
+{ 
+    FILE* fp = NULL; 
+    fp = fopen(path, "w"); 
+
+    gs_fprintln(fp, "ta: %zu, tf: %zu", g_total_allocated, g_total_freed);
+
+    for (uint32_t i = 0; i < GS_CORE_MEMORY_TOTAL_ALLOCS; ++i)
+    { 
+        if (g_allocations[i].ptr)
+        { 
+            gs_core_memory_alloc_t* mem = &g_allocations[i];
+            gs_fprintln(fp, "%x, %s, %d", mem->ptr, mem->file, mem->line);
+        }
+    }
+}
+
+GS_CORE_API_EXTERN void* 
+gs_core_malloc_dbg(void* ptr, size_t sz, const char* file, int32_t line)
+{
+    // Add allocation
+    g_total_allocated += sz;
+    gs_core_memory_alloc_t alloc = {.ptr = ptr, .file = file, .line = line, .sz = sz};
+
+    for (uint32_t i = 0; i < GS_CORE_MEMORY_TOTAL_ALLOCS; ++i)
+    {
+        if (g_allocations[i].ptr == ptr) {
+            g_allocations[i] = alloc;
+            goto done;
+        }
+    }
+
+    for (uint32_t i = 0; i < GS_CORE_MEMORY_TOTAL_ALLOCS; ++i)
+    {
+        if (!g_allocations[i].ptr) {
+            g_allocations[i] = alloc;
+            g_allocation_max_idx = gs_max(g_allocation_max_idx, i);
+            goto done;
+        }
+    }
+
+done:
+    return ptr;
+}
+
+GS_CORE_API_EXTERN void 
+gs_core_free_dbg(void* ptr, const char* file, int line)
+{ 
+    // Search for allocation and remove
+    for (uint32_t i = 0; i < GS_CORE_MEMORY_TOTAL_ALLOCS; ++i)
+    {
+        if (g_allocations[i].ptr == ptr) { 
+            g_total_freed += g_allocations[i].sz;
+            g_allocations[i].ptr = NULL;
+            g_allocations[i].file = NULL;
+            g_allocations[i].line = 0;
+            break;
+        }
+    }
+
+    gs_ctx()->os.free(ptr);
+} 
+#endif
 
 GS_API_DECL void* 
 gs_core_os_malloc(size_t sz)

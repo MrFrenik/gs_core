@@ -47,6 +47,12 @@ gs_core_gs_gui_context_new(uint32_t window_hndl)
     return ctx;
 }
 
+GS_API_DECL void
+gs_core_gs_gui_renderpass_submit(gs_gui_context_t* ctx, gs_command_buffer_t* cb, gs_graphics_clear_action_t* action) 
+{
+    gs_gui_renderpass_submit_ex(ctx, cb, action);
+}
+
 GS_API_DECL gs_core_t* 
 gs_core_new()
 {
@@ -73,6 +79,11 @@ gs_core_new()
 
     // Register api for dll boundary
     core->gs_gui_context_new = gs_core_gs_gui_context_new;
+    core->gs_gui_renderpass_submit = gs_core_gs_gui_renderpass_submit; 
+    core->gs_gui_begin = gs_gui_begin;
+    core->gs_gui_end = gs_gui_end; 
+    core->gs_gui_window_begin_ex = gs_gui_window_begin_ex;
+    core->gs_gui_window_end = gs_gui_window_end;
 
     // Construct meta registry
     core->meta = gs_core_meta_registry_new(); 
@@ -105,17 +116,27 @@ gs_core_new()
 GS_API_DECL void
 gs_core_free(gs_core_t* core)
 { 
-    #if (!defined GS_APP_STANDALONE)
-        return;
-    #endif
-
     // Free gs structures
     gs_immediate_draw_free(&core->gsi);
     gs_command_buffer_free(&core->cb);
     gs_gui_free(&core->gui);
 
-    // Shutdown network
-    gs_core_network_shutdown();
+    // Unregister meta
+    gs_core_meta_unregister();
+
+    // Shutdown all systems
+    gs_core_network_shutdown(); 
+    gs_core_entities_shutdown(); 
+    gs_core_physics_shutdown();
+    gs_core_graphics_shutdown();
+    gs_core_assets_shutdown();
+    
+    gs_free(core->entities);
+    gs_free(core->gfx);
+    gs_free(core->assets);
+    gs_free(core->ai);
+    gs_free(core->network);
+    gs_free(core->physics);
 
     gs_free(core);
 }

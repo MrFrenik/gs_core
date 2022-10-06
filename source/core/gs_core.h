@@ -51,6 +51,7 @@
 
 #define GS_CORE_REFL_CLASS_MAX     100 
 
+// Want a way to track all allocations and log if they've been freed
 extern void* gs_core_os_malloc(size_t sz); 
 extern void* gs_core_os_malloc_init(size_t sz);
 extern void gs_core_os_free(void* ptr); 
@@ -74,6 +75,11 @@ typedef struct gs_core_s
     gs_gui_context_t gui;
 
     gs_gui_context_t* (* gs_gui_context_new)(uint32_t hndl);
+    void (* gs_gui_renderpass_submit)(gs_gui_context_t* ctx, gs_command_buffer_t* cb, gs_graphics_clear_action_t* action); 
+    void (* gs_gui_begin)(gs_gui_context_t *ctx, const gs_gui_hints_t* hints);
+    void (* gs_gui_end)(gs_gui_context_t *ctx); 
+    int32_t (* gs_gui_window_begin_ex)(gs_gui_context_t* ctx, const char* title, gs_gui_rect_t rect, bool* open, const gs_gui_selector_desc_t* desc, int32_t opt);
+    void (* gs_gui_window_end)(gs_gui_context_t* ctx);
 
 } gs_core_t; 
 
@@ -87,7 +93,25 @@ GS_API_DECL gs_core_t*
 gs_core_instance();
 
 GS_API_DECL void
-gs_core_instance_set(gs_core_t* core); 
+gs_core_instance_set(gs_core_t* core);
+
+#ifdef GS_CORE_MEMORY_DBG
+
+typedef struct gs_core_memory_alloc_s
+{
+    void* ptr;
+    const char* file;
+    uint32_t line;
+    size_t sz;
+} gs_core_memory_alloc_t;
+
+GS_API_DECL void
+gs_core_memory_print();
+
+GS_API_DECL void
+gs_core_memory_print_to_file(const char* path);
+
+#endif
 
 #endif // GS_CORE_H
 

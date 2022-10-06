@@ -91,12 +91,13 @@ gs_core_entities_instance()
 GS_API_DECL void 
 gs_core_entities_update()
 {
-    ecs_progress(CORE_ECS()->world, 0);
+    ecs_progress(CORE_ECS()->world, gs_platform_delta_time());
 }
 
 GS_API_DECL void 
 gs_core_entities_shutdown()
 {
+    ecs_fini(CORE_ECS()->world);
 } 
 
 GS_API_DECL gs_core_entity_world_t* 
@@ -122,7 +123,8 @@ GS_API_DECL void
 gs_core_entities_component_unregister_internal(gs_core_entity_t comp)
 { 
     gs_core_entity_data_t* ecs = CORE_ECS(); 
-    ecs_remove_all(ecs->world, comp);
+    // ecs_remove_pair(ecs->world, comp, EcsOnDelete, EcsThrow);
+    // ecs_delete(ecs->world, comp);
 }
 
 GS_API_DECL gs_core_entity_t 
@@ -140,14 +142,14 @@ gs_core_entities_system_register_internal(const gs_core_entities_system_desc_t* 
     } 
 
     // Init system
-    ecs_system_init(ecs->world, &sdesc);
+    return (gs_core_entity_t)ecs_system_init(ecs->world, &sdesc);
 }
 
 GS_API_DECL void
 gs_core_entities_system_unregister_internal(gs_core_entity_t system)
 {
     gs_core_entity_data_t* ecs = CORE_ECS();
-    ecs_remove_all(ecs->world, system);
+    ecs_delete(ecs->world, system);
 }
 
 GS_API_DECL gs_core_entity_t 

@@ -6498,7 +6498,7 @@ ecs_entity_t ecs_component_init(
     }
 
     /* Ensure components cannot be deleted */
-    ecs_add_pair(world, result, EcsOnDelete, EcsThrow);
+    // ecs_add_pair(world, result, EcsOnDelete, EcsThrow);
 
     flecs_resume_readonly(world, &readonly_state);
     

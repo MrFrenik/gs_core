@@ -49,17 +49,20 @@ static gs_core_physics_t* g_physics = nullptr;
 #define GS_CORE_SHAPE(HNDL)  (gs_slot_array_getp(GS_CORE_BULLET()->shapes, (HNDL)))
 
 // Utils
-static btVector3 gv2bv(const gs_vec3* v)
+static btVector3 
+gv2bv(const gs_vec3* v)
 {
     return btVector3(v->x, v->y, v->z);
 }
 
-static gs_vec3 bv_to_gv(const btVector3* v) 
+static gs_vec3 
+bv_to_gv(const btVector3* v) 
 {
     return gs_v3(v->getX(), v->getY(), v->getZ());
 }
 
-static gs_quat bq2gq(const btQuaternion* v)
+static gs_quat 
+bq2gq(const btQuaternion* v)
 { 
     gs_quat q = {}; 
     q.x = v->getX();
@@ -69,7 +72,8 @@ static gs_quat bq2gq(const btQuaternion* v)
     return q;
 }
 
-static btQuaternion gq2bq(const gs_quat* v)
+static btQuaternion 
+gq2bq(const gs_quat* v)
 {
     btQuaternion q = {};
     q.setX(v->x);
@@ -79,7 +83,8 @@ static btQuaternion gq2bq(const gs_quat* v)
     return q;
 }
 
-static gs_vqs bxform2gxform(const btTransform* v)
+static gs_vqs 
+bxform2gxform(const btTransform* v)
 {
     gs_vqs xform = {};
     xform.translation = bv_to_gv(&v->getOrigin());
@@ -88,7 +93,8 @@ static gs_vqs bxform2gxform(const btTransform* v)
     return xform;
 } 
 
-static btTransform gxform2bxform(const gs_vqs* v)
+static btTransform 
+gxform2bxform(const gs_vqs* v)
 {
     btTransform xform = {};
     xform.setIdentity();
@@ -122,11 +128,12 @@ struct gs_core_bullet_t
 }; 
 
 // Decls.
-void gs_core_bullet_check_collisions(); 
+GS_API_DECL void gs_core_bullet_check_collisions(); 
 
 //==== [ Implementation ] ====/
 
-GS_API_DECL gs_core_physics_t* gs_core_physics_new()
+GS_API_DECL gs_core_physics_t* 
+gs_core_physics_new()
 {
     if (g_physics) return g_physics;
 
@@ -160,12 +167,14 @@ GS_API_DECL gs_core_physics_t* gs_core_physics_new()
     return physics;
 }
 
-GS_API_DECL gs_core_physics_t* gs_core_physics_instance()
+GS_API_DECL gs_core_physics_t* 
+gs_core_physics_instance()
 {
     return g_physics;
 }
 
-GS_API_DECL void gs_core_physics_update()
+GS_API_DECL void 
+gs_core_physics_update()
 {
     if (gs_core_physics_instance()->paused) return;
 
@@ -180,7 +189,8 @@ GS_API_DECL void gs_core_physics_update()
     gs_core_bullet_check_collisions();
 }
 
-void gs_core_bullet_check_collisions()
+GS_API_DECL void 
+gs_core_bullet_check_collisions()
 {
     gs_core_bullet_t* bullet = GS_CORE_BULLET(); 
 
@@ -196,12 +206,21 @@ void gs_core_bullet_check_collisions()
     }
 }
 
-GS_API_DECL void gs_core_physics_shutdown()
+GS_API_DECL void 
+gs_core_physics_shutdown()
 {
-    gs_core_bullet_t* bullet = GS_CORE_BULLET();
+    gs_core_bullet_t* bullet = GS_CORE_BULLET(); 
+
+    // Set up default config, single thread
+    delete bullet->collision_config; 
+    delete bullet->dispatcher; 
+    delete bullet->broadphase; 
+    delete bullet->solver; 
+    delete bullet->world;
 } 
 
-GS_API_DECL void gs_core_physics_set_gravity(const gs_vec3* v)
+GS_API_DECL void 
+gs_core_physics_set_gravity(const gs_vec3* v)
 {
     gs_core_bullet_t* bullet = GS_CORE_BULLET();
     bullet->world->setGravity(gv2bv(v));
@@ -306,26 +325,31 @@ gs_core_physics_add_body(const gs_core_physics_body_desc_t* desc)
     return hndl;
 }
 
-GS_API_DECL void gs_core_physics_remove_body(gs_core_physics_body_handle_t hndl)
+GS_API_DECL void 
+gs_core_physics_remove_body(gs_core_physics_body_handle_t hndl)
 {
     gs_core_bullet_t* bullet = GS_CORE_BULLET();
 }
 
-GS_API_DECL void gs_core_physics_pause_system(bool enabled)
+GS_API_DECL void 
+gs_core_physics_pause_system(bool enabled)
 {
     gs_core_physics_instance()->paused = enabled;
 }
 
-GS_API_DECL bool gs_core_physics_is_paused()
+GS_API_DECL bool 
+gs_core_physics_is_paused()
 {
     return gs_core_physics_instance()->paused;
 }
 
-GS_API_DECL void gs_core_physics_clear_all_forces()
+GS_API_DECL void 
+gs_core_physics_clear_all_forces()
 {
 }
 
-GS_API_DECL void gs_core_physics_cast_ray(gs_core_physics_ray_cast_result_t* ray)
+GS_API_DECL void 
+gs_core_physics_cast_ray(gs_core_physics_ray_cast_result_t* ray)
 {
     gs_core_bullet_t* bullet = GS_CORE_BULLET();
 
@@ -346,7 +370,8 @@ GS_API_DECL void gs_core_physics_cast_ray(gs_core_physics_ray_cast_result_t* ray
 
 //========= [ Core_PhysicsBody ] ========//
 
-GS_API_DECL void gs_core_physics_body_set_world_transform(gs_core_physics_body_handle_t hndl, const gs_vqs* transform)
+GS_API_DECL void 
+gs_core_physics_body_set_world_transform(gs_core_physics_body_handle_t hndl, const gs_vqs* transform)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -368,7 +393,8 @@ GS_API_DECL void gs_core_physics_body_set_world_transform(gs_core_physics_body_h
     body->getMotionState()->setWorldTransform(xform);
 }
 
-GS_API_DECL gs_vqs gs_core_physics_body_get_world_transform(gs_core_physics_body_handle_t hndl)
+GS_API_DECL gs_vqs 
+gs_core_physics_body_get_world_transform(gs_core_physics_body_handle_t hndl)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -388,12 +414,14 @@ GS_API_DECL gs_vqs gs_core_physics_body_get_world_transform(gs_core_physics_body
     return xform;
 }
 
-GS_API_DECL void gs_core_physics_body_refresh_transform(gs_core_physics_body_handle_t hndl)
+GS_API_DECL void 
+gs_core_physics_body_refresh_transform(gs_core_physics_body_handle_t hndl)
 {
     gs_core_physics_body_set_world_transform(hndl, &gs_core_physics_body_get_world_transform(hndl));
 } 
 
-GS_API_DECL void gs_core_physics_body_set_awake(gs_core_physics_body_handle_t hndl, bool enabled)
+GS_API_DECL void 
+gs_core_physics_body_set_awake(gs_core_physics_body_handle_t hndl, bool enabled)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -406,7 +434,8 @@ GS_API_DECL void gs_core_physics_body_set_shape(gs_core_physics_body_handle_t hn
     btRigidBody* body = rb->body;
 }
 
-GS_API_DECL void gs_core_physics_body_set_mass(gs_core_physics_body_handle_t hndl, float value)
+GS_API_DECL void 
+gs_core_physics_body_set_mass(gs_core_physics_body_handle_t hndl, float value)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -415,14 +444,16 @@ GS_API_DECL void gs_core_physics_body_set_mass(gs_core_physics_body_handle_t hnd
     body->setMassProps(rb->desc.mass, local_inertia);
 }
 
-GS_API_DECL float gs_core_physics_body_get_mass(gs_core_physics_body_handle_t hndl)
+GS_API_DECL float 
+gs_core_physics_body_get_mass(gs_core_physics_body_handle_t hndl)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
     return rb->desc.mass;
 }
 
-GS_API_DECL void gs_core_physics_body_set_restitution(gs_core_physics_body_handle_t hndl, float value)
+GS_API_DECL void 
+gs_core_physics_body_set_restitution(gs_core_physics_body_handle_t hndl, float value)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -430,14 +461,16 @@ GS_API_DECL void gs_core_physics_body_set_restitution(gs_core_physics_body_handl
     body->setRestitution(value); 
 }
 
-GS_API_DECL float gs_core_physics_body_get_restitution(gs_core_physics_body_handle_t hndl)
+GS_API_DECL float 
+gs_core_physics_body_get_restitution(gs_core_physics_body_handle_t hndl)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
     return rb->desc.restitution;
 }
 
-GS_API_DECL void gs_core_physics_body_set_linear_damping(gs_core_physics_body_handle_t hndl, float value)
+GS_API_DECL void 
+gs_core_physics_body_set_linear_damping(gs_core_physics_body_handle_t hndl, float value)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -445,14 +478,16 @@ GS_API_DECL void gs_core_physics_body_set_linear_damping(gs_core_physics_body_ha
     body->setDamping(rb->desc.linear_damping, rb->desc.angular_damping); 
 }
 
-GS_API_DECL float gs_core_physics_body_get_linear_damping(gs_core_physics_body_handle_t hndl)
+GS_API_DECL float 
+gs_core_physics_body_get_linear_damping(gs_core_physics_body_handle_t hndl)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
     return rb->desc.linear_damping; 
 }
 
-GS_API_DECL void gs_core_physics_body_set_angular_damping(gs_core_physics_body_handle_t hndl, float value)
+GS_API_DECL void 
+gs_core_physics_body_set_angular_damping(gs_core_physics_body_handle_t hndl, float value)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -460,14 +495,16 @@ GS_API_DECL void gs_core_physics_body_set_angular_damping(gs_core_physics_body_h
     body->setDamping(rb->desc.linear_damping, rb->desc.angular_damping); 
 }
 
-GS_API_DECL float gs_core_physics_body_get_angular_damping(gs_core_physics_body_handle_t hndl)
+GS_API_DECL float 
+gs_core_physics_body_get_angular_damping(gs_core_physics_body_handle_t hndl)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
     return rb->desc.angular_damping;
 }
 
-GS_API_DECL void gs_core_physics_body_set_friction(gs_core_physics_body_handle_t hndl, float value)
+GS_API_DECL void 
+gs_core_physics_body_set_friction(gs_core_physics_body_handle_t hndl, float value)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -475,14 +512,16 @@ GS_API_DECL void gs_core_physics_body_set_friction(gs_core_physics_body_handle_t
     body->setFriction(rb->desc.friction);
 }
 
-GS_API_DECL float gs_core_physics_body_get_friction(gs_core_physics_body_handle_t hndl)
+GS_API_DECL float 
+gs_core_physics_body_get_friction(gs_core_physics_body_handle_t hndl)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
     return rb->desc.friction;
 }
 
-GS_API_DECL void gs_core_physics_body_set_gravity(gs_core_physics_body_handle_t hndl, const gs_vec3* value)
+GS_API_DECL void 
+gs_core_physics_body_set_gravity(gs_core_physics_body_handle_t hndl, const gs_vec3* value)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -490,28 +529,32 @@ GS_API_DECL void gs_core_physics_body_set_gravity(gs_core_physics_body_handle_t 
     body->setGravity(gv2bv(&rb->desc.gravity));
 }
 
-GS_API_DECL gs_vec3 gs_core_physics_body_get_gravity(gs_core_physics_body_handle_t hndl)
+GS_API_DECL gs_vec3 
+gs_core_physics_body_get_gravity(gs_core_physics_body_handle_t hndl)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
     return rb->desc.gravity;
 }
 
-GS_API_DECL void gs_core_physics_body_set_linear_velocity(gs_core_physics_body_handle_t hndl, const gs_vec3* value)
+GS_API_DECL void 
+gs_core_physics_body_set_linear_velocity(gs_core_physics_body_handle_t hndl, const gs_vec3* value)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
     body->setLinearVelocity(gv2bv(value));
 }
 
-GS_API_DECL void gs_core_physics_body_set_angular_velocity(gs_core_physics_body_handle_t hndl, const gs_vec3* value)
+GS_API_DECL void 
+gs_core_physics_body_set_angular_velocity(gs_core_physics_body_handle_t hndl, const gs_vec3* value)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
     body->setAngularVelocity(gv2bv(value));
 }
 
-GS_API_DECL void gs_core_physics_body_set_linear_factor(gs_core_physics_body_handle_t hndl, const gs_vec3* value)
+GS_API_DECL void 
+gs_core_physics_body_set_linear_factor(gs_core_physics_body_handle_t hndl, const gs_vec3* value)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -519,14 +562,16 @@ GS_API_DECL void gs_core_physics_body_set_linear_factor(gs_core_physics_body_han
     body->setLinearFactor(gv2bv(&rb->desc.linear_factor));
 }
 
-GS_API_DECL gs_vec3 gs_core_physics_body_get_linear_factor(gs_core_physics_body_handle_t hndl)
+GS_API_DECL gs_vec3 
+gs_core_physics_body_get_linear_factor(gs_core_physics_body_handle_t hndl)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
     return rb->desc.linear_factor;
 }
 
-GS_API_DECL void gs_core_physics_body_set_angular_factor(gs_core_physics_body_handle_t hndl, const gs_vec3* value)
+GS_API_DECL void 
+gs_core_physics_body_set_angular_factor(gs_core_physics_body_handle_t hndl, const gs_vec3* value)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -534,14 +579,16 @@ GS_API_DECL void gs_core_physics_body_set_angular_factor(gs_core_physics_body_ha
     body->setAngularFactor(gv2bv(&rb->desc.angular_factor));
 }
 
-GS_API_DECL gs_vec3 gs_core_physics_body_get_angular_factor(gs_core_physics_body_handle_t hndl)
+GS_API_DECL gs_vec3 
+gs_core_physics_body_get_angular_factor(gs_core_physics_body_handle_t hndl)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
     return rb->desc.angular_factor;
 } 
 
-GS_API_DECL void gs_core_physics_body_set_is_kinematic(gs_core_physics_body_handle_t hndl, bool enabled)
+GS_API_DECL void 
+gs_core_physics_body_set_is_kinematic(gs_core_physics_body_handle_t hndl, bool enabled)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -561,13 +608,15 @@ GS_API_DECL void gs_core_physics_body_set_is_kinematic(gs_core_physics_body_hand
     }
 }
 
-GS_API_DECL bool gs_core_physics_body_get_is_kinematic(gs_core_physics_body_handle_t hndl)
+GS_API_DECL bool 
+gs_core_physics_body_get_is_kinematic(gs_core_physics_body_handle_t hndl)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     return (rb->desc.flags & GS_CORE_PHYSICS_BODY_FLAG_IS_KINEMATIC);
 } 
 
-GS_API_DECL void gs_core_physics_body_set_ccd_enabled(gs_core_physics_body_handle_t hndl, bool enabled)
+GS_API_DECL void 
+gs_core_physics_body_set_ccd_enabled(gs_core_physics_body_handle_t hndl, bool enabled)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -579,13 +628,15 @@ GS_API_DECL void gs_core_physics_body_set_ccd_enabled(gs_core_physics_body_handl
     } 
 }
 
-GS_API_DECL bool gs_core_physics_body_get_ccd_enabled(gs_core_physics_body_handle_t hndl)
+GS_API_DECL bool 
+gs_core_physics_body_get_ccd_enabled(gs_core_physics_body_handle_t hndl)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     return (rb->desc.flags & GS_CORE_PHYSICS_BODY_FLAG_CCD_ENABLED);
 } 
 
-GS_API_DECL void gs_core_physics_body_set_is_trigger(gs_core_physics_body_handle_t hndl, bool enabled)
+GS_API_DECL void 
+gs_core_physics_body_set_is_trigger(gs_core_physics_body_handle_t hndl, bool enabled)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
@@ -603,13 +654,15 @@ GS_API_DECL void gs_core_physics_body_set_is_trigger(gs_core_physics_body_handle
     }
 }
 
-GS_API_DECL bool gs_core_physics_body_get_is_trigger(gs_core_physics_body_handle_t hndl)
+GS_API_DECL bool 
+gs_core_physics_body_get_is_trigger(gs_core_physics_body_handle_t hndl)
 { 
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     return (rb->desc.flags & GS_CORE_PHYSICS_BODY_FLAG_IS_TRIGGER);
 }
 
-GS_API_DECL void gs_core_physics_body_translate(gs_core_physics_body_handle_t hndl, const gs_vec3* value)
+GS_API_DECL void 
+gs_core_physics_body_translate(gs_core_physics_body_handle_t hndl, const gs_vec3* value)
 {
     gs_core_rigid_body_t* rb = GS_CORE_BODY(hndl);
     btRigidBody* body = rb->body;
