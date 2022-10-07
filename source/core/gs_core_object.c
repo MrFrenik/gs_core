@@ -112,6 +112,25 @@ gs_core_info_base_of_internal(const gs_core_meta_info_t* info, uint32_t compare)
     return false;
 } 
 
+GS_API_DECL bool
+gs_core_info_derived_from_internal(const gs_core_meta_info_t* info, uint32_t compare)
+{
+    if (!info || !compare) return false;
+
+    // If the same class
+    if (info->cid == compare) return false;
+
+    // While has base
+    const gs_core_meta_info_t* base = info->base;
+    while (base)
+    {
+        if (base->cid == compare) return true;
+        base = base->base;
+    }
+
+    return false;
+}
+
 GS_API_DECL gs_result 
 gs_core_obj_serialize_impl(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj)
 { 

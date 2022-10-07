@@ -43,6 +43,7 @@
 char proj_name[256] = {0}; 
 
 void write_template_to_disk(const char* read_path, const char* write_path);
+void write_assets_to_disk(const char* read_path, const char* write_path);
 
 int32_t main(int32_t argc, char** argv)
 { 
@@ -62,6 +63,8 @@ int32_t main(int32_t argc, char** argv)
     gs_snprintfc(SRC_DIR, 256, "%s/source", ROOT_DIR);
     gs_snprintfc(EDITOR_SRC_DIR, 256, "%s/source/editor", ROOT_DIR);
     gs_snprintfc(ASSET_DIR, 256, "%s/assets", ROOT_DIR);
+    gs_snprintfc(ASSET_TEXTURE_DIR, 256, "%s/textures", ASSET_DIR);
+    gs_snprintfc(ASSET_PIPELINE_DIR, 256, "%s/pipelines", ASSET_DIR);
     gs_snprintfc(PROC_DIR, 256, "%s/proc", ROOT_DIR);
     gs_snprintfc(PROC_WIN_DIR, 256, "%s/win", PROC_DIR);
     gs_snprintfc(PROJ_SRC, 256, "source/%s.c", proj_name);
@@ -82,6 +85,8 @@ int32_t main(int32_t argc, char** argv)
     gs_platform_mkdir(PROC_DIR, 0x00);
     gs_platform_mkdir(PROC_WIN_DIR, 0x00);
     gs_platform_mkdir(ASSET_DIR, 0x00); 
+    gs_platform_mkdir(ASSET_TEXTURE_DIR, 0x00); 
+    gs_platform_mkdir(ASSET_PIPELINE_DIR, 0x00); 
 
     // Load up templates 
     struct {const char* read_path; const char* write_path;} templates[] = 
@@ -96,7 +101,7 @@ int32_t main(int32_t argc, char** argv)
         {.read_path = "templates/editor/editor.h", .write_path = EDITOR_HDR},
         {.read_path = "templates/editor/unity.c", .write_path = "source/editor/unity.c"},
         {NULL}
-    };
+    }; 
 
     // Write templates out to disk 
     for (uint32_t i = 0; templates[i].read_path != NULL; ++i)
@@ -104,6 +109,22 @@ int32_t main(int32_t argc, char** argv)
         gs_snprintfc(WP, 256, "%s/%s", ROOT_DIR, templates[i].write_path);
         gs_snprintfc(RP, 256, "../../source/proj_gen/%s", templates[i].read_path);
         write_template_to_disk(RP, WP); 
+    }
+
+    // Load up assets to simply copy over
+    struct {const char* read_path; const char* write_path;} assets[] = 
+    { 
+        {.read_path = "templates/assets/textures/gs.png", .write_path = "assets/textures/gs.png"},
+        {.read_path = "templates/assets/pipelines/simple.sf", .write_path = "assets/pipelines/simple.sf"},
+        {NULL}
+    };
+
+    // Write assets to disk
+    for (uint32_t i = 0; assets[i].read_path != NULL; ++i)
+    {
+        gs_snprintfc(WP, 256, "%s/%s", ROOT_DIR, assets[i].write_path);
+        gs_snprintfc(RP, 256, "../../source/proj_gen/%s", assets[i].read_path);
+        write_assets_to_disk(RP, WP); 
     }
 }
 
@@ -190,6 +211,11 @@ void write_template_to_disk(const char* read_path, const char* write_path)
     }
 
     fclose(fp);
+}
+
+void write_assets_to_disk(const char* read_path, const char* write_path)
+{
+    gs_platform_file_copy(read_path, write_path);
 }
 
 

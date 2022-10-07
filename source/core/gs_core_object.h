@@ -49,8 +49,9 @@
 #define gs_core_obj_static_ref_w_info(INFO)   (gs_core_meta_static_ref_w_cls_id((INFO)->cid))
 
 // Info
-#define gs_core_info_base_of(INFO, T)  (gs_core_info_base_of_internal((INFO), gs_core_cls_cid(T)))
-#define gs_core_info_w_cls_id(ID)      (gs_core_meta_obj_info_w_cls_id((ID)))
+#define gs_core_info_derived_from(INFO, T)  (gs_core_info_derived_from_internal((INFO), gs_core_cls_cid(T)))
+#define gs_core_info_base_of(INFO, T)       (gs_core_info_base_of_internal((INFO), gs_core_cls_cid(T)))
+#define gs_core_info_w_cls_id(ID)           (gs_core_meta_obj_info_w_cls_id((ID)))
 
 // Class id
 #define gs_core_cls_cid(T)       T##_class_id()
@@ -173,6 +174,9 @@ gs_core_meta_static_ref_w_cls_id(uint32_t id);
 
 GS_API_DECL bool
 gs_core_info_base_of_internal(const gs_core_meta_info_t* info, uint32_t compare); 
+
+GS_API_DECL bool
+gs_core_info_derived_from_internal(const gs_core_meta_info_t* info, uint32_t compare); 
 
 GS_API_DECL gs_result 
 gs_core_obj_serialize_impl(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj);

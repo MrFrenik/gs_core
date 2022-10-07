@@ -29,7 +29,7 @@ gs_editor_view_properties_cb(struct gs_editor_view_s* view)
     )
     {
         gs_core_meta_info_t* info = gs_slot_array_iter_getp(meta->info, it);
-        if (gs_core_info_base_of(info, gs_core_entities_component_t))
+        if (gs_core_info_derived_from(info, gs_core_entities_component_t))
         {
             gs_gui_label(gui, "%s", info->cls->name);
         }

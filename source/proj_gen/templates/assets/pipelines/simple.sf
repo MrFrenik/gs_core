@@ -1,0 +1,81 @@
+/*
+    // Overview on this file format goes here
+
+    Vertex Layout: 
+
+        <attribute>: <type> 
+
+        attributes: 
+            POSITION: 	      	float3
+            TEXCOORD: 	      	float2
+            TEXCOORD[0-12]: 	float2
+            COLOR:    		    uint8[4]
+            NORMAL:   		    float3
+            TANGENT:  		    float4
+            JOINT[0-12]:        float4
+            WEIGHT[0-12]:   	float 
+            FLOAT: 		        float
+            FLOAT2: 	        float2
+            FLOAT3: 	        float3
+            FLOAT4: 		    float4
+
+*/ 
+
+pipeline { 
+
+    raster 
+    { 
+        primitive: TRIANGLES
+        index_buffer_element_size: UINT16
+    },
+
+    depth 
+    {
+        func: LESS 
+    }, 
+
+    shader { 
+    
+        vertex { 
+
+            attributes { 
+
+                POSITION : a_position   
+                TEXCOORD : a_uv         
+                COLOR    : a_color      
+            }, 
+
+            uniforms { 
+                GS_GFXT_UNIFORM_MODEL_VIEW_PROJECTION_MATRIX
+            },
+
+            out {
+                vec2 v_uv;
+            },
+
+            code { 
+                void main() {
+                    gl_Position = GS_GFXT_UNIFORM_MODEL_VIEW_PROJECTION_MATRIX * vec4(a_position, 1.0);
+                    v_uv = a_uv;
+                }
+            }
+        },
+
+        fragment { 
+
+            uniforms {
+                sampler2D u_tex;
+            }, 
+            
+            out {
+                vec4 frag_color;            
+            },
+
+            code {
+                void main() {
+                    frag_color = texture(u_tex, v_uv);
+                }
+            }
+        } 
+    } 
+} 
