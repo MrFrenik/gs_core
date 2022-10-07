@@ -36,6 +36,7 @@
 
 // GS Includes
 #define GS_NO_HIJACK_MAIN
+#define GS_OS_MEMORY_ALLOC_DEFAULT
 #define GS_IMPL
 #include <gs/gs.h>
 
@@ -167,12 +168,12 @@ void write_template_to_disk(const char* read_path, const char* write_path)
                 }
                 else if (gs_token_compare_text(&peek, "EDITOR_SOURCE_PATH"))
                 {
-                    gs_snprintfc(TMP, 256, "editor/%s_editor.c", proj_name);
+                    gs_snprintfc(TMP, 256, "%s_editor.c", proj_name);
                     REPLACE_TXT(TMP, true);
                 }
                 else if (gs_token_compare_text(&peek, "EDITOR_HEADER_PATH"))
                 {
-                    gs_snprintfc(TMP, 256, "editor/%s_editor.h", proj_name);
+                    gs_snprintfc(TMP, 256, "%s_editor.h", proj_name);
                     REPLACE_TXT(TMP, true);
                 }
                 else

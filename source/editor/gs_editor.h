@@ -33,19 +33,18 @@ typedef struct gs_editor_s
 {
     gs_core_t* core;                                       // Core 
     gs_hash_table(uint64_t, gs_editor_view_t) views;    // All registered editor views 
+    gs_gui_context_t gui;
     struct {
         gs_platform_file_stats_t fstats;    // To track dll hot reloading
         bool32 hot_reload_begin;            // Change detected for hot-reload             
         void* dll;                          // Pointer to library
         void* (* new)(gs_t* gs, gs_core_t* core);
         void (* free)(void* app);
-        void (* init)(void* app);
-        void (* update)(void* app);
-        void (* shutdown)(void* app);
+        void (* meta_register)();
+        void (* meta_unregister)();
         uint32_t hot_reload_timer;
-        void* app;                          // Pointer to application data
+        gs_core_app_t* app;                 // Pointer to application data
     } app;                                  // Struct for loaded application
-    gs_editor_scene_draw_cb scene_draw_cb;
 } gs_editor_t;
 
 GS_API_DECL void

@@ -3,20 +3,19 @@
 #define GS_EDITOR_SCENE_H 
 
 // Editor Includes
-#include "editor\gs_editor.h" 
+#include "editor/gs_editor.h" 
+#include "core/gs_core_app.h"
 
 GS_API_DECL void 
 gs_editor_view_scene_cb(struct gs_editor_view_s* view);
 
-#ifdef GS_EDITOR_IMPL
-
-static gs_editor_scene_draw_cb g_editor_scene_draw_cb = NULL;
+#ifdef GS_EDITOR_IMPL 
 
 GS_API_DECL void 
 gs_editor_view_scene_cb(struct gs_editor_view_s* view)
 {
     gs_editor_t* editor = gs_user_data(gs_editor_t); 
-    gs_gui_context_t* gui = &editor->core->gui;
+    gs_gui_context_t* gui = &editor->gui;
 
     gs_gui_layout_t* layout = gs_gui_get_layout(gui);
     gs_gui_layout_row(gui, 1, (int[]){-1}, -1); 
@@ -24,9 +23,10 @@ gs_editor_view_scene_cb(struct gs_editor_view_s* view)
     gs_gui_layout_set_next(gui, rect, 0);
     gs_gui_container_t* cnt = gs_gui_get_current_container(gui); 
 
-    if (editor->scene_draw_cb)
+    gs_core_app_t* app = editor->app.app;
+    if (app)
     { 
-        gs_gui_draw_custom(gui, rect, editor->scene_draw_cb, NULL, 0); 
+        gs_gui_draw_custom(gui, rect, _gs_core_app_editor, NULL, 0); 
     }
 }
 

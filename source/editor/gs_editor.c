@@ -30,8 +30,11 @@ gs_editor_init(void* app)
     // Init core
     editor->core = gs_core_new();
 
+    // Init gui
+    editor->gui = gs_gui_context_new(gs_platform_main_window());
+
     // Dock editor views (set for now by default)
-    gs_gui_context_t* gui = &editor->core->gui;
+    gs_gui_context_t* gui = &editor->gui;
 
     // Scene view
     gs_editor_view_register(&(gs_editor_view_desc_t){
@@ -80,7 +83,7 @@ gs_editor_update(void* app)
     gs_editor_t* editor = (gs_editor_t*)app;
     gs_command_buffer_t* cb = &editor->core->cb;
     gs_immediate_draw_t* gsi = &editor->core->gsi;
-    gs_gui_context_t* gui = &editor->core->gui;
+    gs_gui_context_t* gui = &editor->gui;
     const gs_vec2 fbs = gs_platform_framebuffer_sizev(gs_platform_main_window()); 
 
     if (gs_platform_key_pressed(GS_KEYCODE_ESC)) 
@@ -88,9 +91,11 @@ gs_editor_update(void* app)
         gs_quit();
     } 
 
+    /*
     gs_timed_action(60, { 
         gs_editor_app_hot_reload();
     });
+    */
 
     // Check if application needs to be reloaded
     gs_platform_file_stats_t cfstats = gs_platform_file_stats(gs_app_dll_path());
@@ -191,7 +196,7 @@ gs_editor_view_register(const gs_editor_view_desc_t* desc)
     gs_hash_table_insert(editor->views, hash, view); 
 
     // Dock view
-    gs_gui_context_t* gui = &editor->core->gui;
+    gs_gui_context_t* gui = &editor->gui;
     const char* parent = "Dockspace##editor";
     gs_gui_split_type split = GS_GUI_SPLIT_BOTTOM;
     float amount = 0.5f;
@@ -214,24 +219,23 @@ gs_editor_library_load()
     if (editor->app.dll) 
     {
         gs_println("App Loaded!");
-        editor->app.new = gs_platform_library_proc_address(editor->app.dll, "_gs_app_new");
-        editor->app.free = gs_platform_library_proc_address(editor->app.dll, "_gs_app_free");
-        editor->app.init = gs_platform_library_proc_address(editor->app.dll, gs_app_init_func_name());
-        editor->app.update = gs_platform_library_proc_address(editor->app.dll, gs_app_update_func_name());
-        editor->app.shutdown = gs_platform_library_proc_address(editor->app.dll, gs_app_shutdown_func_name());
-        editor->scene_draw_cb = gs_platform_library_proc_address(editor->app.dll, gs_app_scene_render_cb_name());
+        editor->app.new = gs_platform_library_proc_address(editor->app.dll, "_gs_core_app_new");
+        editor->app.free = gs_platform_library_proc_address(editor->app.dll, "_gs_core_app_free");
+        editor->app.meta_register = gs_platform_library_proc_address(editor->app.dll, "_gs_core_app_meta_register");
+        editor->app.meta_unregister = gs_platform_library_proc_address(editor->app.dll, "_gs_core_app_meta_unregister");
         gs_assert(editor->app.new);
         gs_assert(editor->app.free);
-        gs_assert(editor->app.init);
-        gs_assert(editor->app.update);
-        gs_assert(editor->app.shutdown);
-        gs_assert(editor->scene_draw_cb);
+        gs_assert(editor->app.meta_register);
+        gs_assert(editor->app.meta_unregister);
 
         // Construct application pointer (this should just register everything, honestly...)
         editor->app.app = editor->app.new(gs_instance(), editor->core);
 
-        // Initialize application (which SHOULD register meta information correctly)
-        editor->app.init(editor->app.app); 
+        // Register meta information
+        editor->app.meta_register();
+
+        // Initialize application
+        _gs_core_app_init(editor->app.app);
     } 
 }
 
@@ -242,18 +246,17 @@ gs_editor_library_unload()
 
     if (editor->app.dll) 
     {
-        // Shutdown application and free memory
-        editor->app.shutdown(editor->app.app);
+        // Shutdown application and free memory 
+        _gs_core_app_shutdown(editor->app.app);
+        editor->app.meta_unregister();
         editor->app.free(editor->app.app);
         gs_println("App Unloaded!");
         gs_platform_library_unload(editor->app.dll);
         editor->app.dll = NULL;
         editor->app.app = NULL;
         editor->app.new = NULL;
-        editor->app.init = NULL;
-        editor->app.update = NULL;
-        editor->app.shutdown = NULL;
-        editor->scene_draw_cb = NULL;
+        editor->app.meta_register = NULL;
+        editor->app.meta_unregister = NULL;
     }
 } 
 

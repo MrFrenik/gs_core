@@ -14,7 +14,7 @@ GS_API_DECL void
 gs_editor_view_outliner_cb(struct gs_editor_view_s* view)
 {
     gs_editor_t* editor = gs_user_data(gs_editor_t); 
-    gs_gui_context_t* gui = &editor->core->gui;
+    gs_gui_context_t* gui = &editor->gui;
     gs_gui_label(gui, "OUTLINER");
 }
 

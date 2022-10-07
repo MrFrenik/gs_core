@@ -47,31 +47,105 @@ typedef struct gs_core_app_s
 { 
     gs_core_base(gs_core_obj_t); 
     struct gs_core_s* core;         // Core framework 
-    gs_vec4 viewport;
+    gs_vec4 viewport; 
+    _vtable(
+        void (* init)(void* app) = NULL;
+        void (* update)(void* app) = NULL;
+        void (* shutdown)(void* app) = NULL;
+        void (* render)(void* app, gs_command_buffer_t* cb) = NULL;
+        void (* editor)(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd) = NULL;
+    )
 } gs_core_app_t; 
 
-GS_API_DECL void* 
+GS_API_DECL gs_core_app_t*
+gs_core_app_instance(); 
+
+GS_API_DECL void
+_gs_core_app_instance_set(gs_core_app_t* app);
+
+GS_API_PRIVATE void* 
 _gs_app_new(gs_t* gs, struct gs_core_s* core);
 
-#define GS_CORE_APP_META_REGISTER(NAME)\
-    NAME##_meta_register();\
-    NAME##_meta_ecs_register();
+GS_API_PRIVATE void
+_gs_core_app_init(void* app);
 
-#define GS_CORE_APP_DEFINE(__T)\
+GS_API_PRIVATE void
+_gs_core_app_update(void* app);
+
+GS_API_PRIVATE void
+_gs_core_app_shutdown(void* app);
+
+GS_API_PRIVATE void 
+_gs_core_app_render(void* app, gs_command_buffer_t* cb);
+
+GS_API_PRIVATE void 
+_gs_core_app_editor(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd); 
+
+GS_API_DECL void 
+_gs_core_app_meta_register();
+
+GS_API_DECL void 
+_gs_core_app_meta_unregister();
+
+#define GS_CORE_APP_DEFINE(_NAME)\
+    GS_API_DECL void\
+    _gs_core_app_meta_register()\
+    {\
+        _NAME##_meta_register();\
+        _NAME##_meta_ecs_register();\
+    }\
+\
+    GS_API_DECL void\
+    _gs_core_app_meta_unregister()\
+    {\
+        _NAME##_meta_unregister();\
+    }\
+\
     GS_API_DECL void*\
-    _gs_app_new(gs_t* gs, struct gs_core_s* core)\
+    _gs_core_app_new(gs_t* gs, struct gs_core_s* core)\
     {\
         gs_core_instance_set(core);\
         gs_set_instance(gs);\
-        __T* _app = gs_malloc_init(__T);\
+        _NAME##_t* _app = gs_core_cls_new(_NAME##_t);\
+        gs_core_app_instance_set(_app);\
+        gs_core_cast(_app, gs_core_app_t)->core = gs_core_new();\
         return _app;\
     }\
 \
     GS_API_DECL void\
-    _gs_app_free(void* app)\
+    _gs_core_app_free(void* app)\
     {\
         if (app) gs_free(app);\
     }
+
+#ifdef GS_CORE_APP_STANDALONE
+    #define GS_CORE_APP_MAIN(_NAME)\
+        int32_t main(int32_t argc, char** argv)\
+        {\
+            _NAME##_t* _app = gs_core_os_malloc_init(sizeof(_NAME##_t));\
+            gs_core_cls_init(_NAME##_t, _app);\
+            gs_t* inst = gs_create((gs_app_desc_t){\
+                .user_data = _app,\
+                .window_width = 800,\
+                .window_height = 600,\
+                .window_title = gs_to_str(_NAME),\
+                .init = _gs_core_app_init,\
+                .update = _gs_core_app_update,\
+                .shutdown = _gs_core_app_shutdown\
+            });\
+\
+            while (gs_app()->is_running) {\
+                gs_frame();\
+            }\
+\
+            gs_free(inst);\
+\
+            return 0;\
+        }
+#else
+    #define GS_CORE_APP_MAIN(_NAME) gs_empty_instruction()
+#endif
+
 
 #endif // CORE_APP_H 
 

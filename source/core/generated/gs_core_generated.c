@@ -181,6 +181,11 @@ GS_API_DECL void
 gs_core_app_t_vtable_t_init(gs_core_app_t_vtable_t* vt)
 {
 	gs_core_obj_t_vtable_t_init((gs_core_obj_t_vtable_t*)vt);
+	vt->init = NULL;
+	vt->update = NULL;
+	vt->shutdown = NULL;
+	vt->render = NULL;
+	vt->editor = NULL;
 	vt->cls_id = gs_core_app_t_class_id;
 	vt->cls = gs_core_app_t_class;
 }

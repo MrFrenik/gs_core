@@ -69,7 +69,12 @@ gs_core_meta_ecs_register();
 	gs_core_asset_t_vtable_t_methods
 
 #define gs_core_app_t_vtable_t_methods\
-	gs_core_obj_t_vtable_t_methods
+	gs_core_obj_t_vtable_t_methods\
+	void (* init)(void* app) ;\
+	void (* update)(void* app) ;\
+	void (* shutdown)(void* app) ;\
+	void (* render)(void* app, gs_command_buffer_t* cb) ;\
+	void (* editor)(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd) ;
 
 #define gs_core_asset_t_vtable_t_methods\
 	gs_core_obj_t_vtable_t_methods\

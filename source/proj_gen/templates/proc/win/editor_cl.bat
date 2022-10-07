@@ -13,7 +13,7 @@ rem Root Dir
 set root=..\..
 
 rem Include directories 
-set inc=/I %gs_core%\third_party\include\ /I %root%\source\ /I %gs_core%\source\
+set inc=/I %gs_core%\third_party\include\ /I %root%\source\editor\ /I %gs_core%\source\
 
 rem Source files
 set src_main=%root%\source\editor\unity.c
@@ -38,7 +38,7 @@ set tp_libs_dbg=%gs_core%\third_party\libs\win\dbg\Bullet3Collision_Debug.lib ^
     %gs_core%\third_party\libs\win\dbg\Detour-d.lib ^
     %gs_core%\third_party\libs\win\dbg\DetourCrowd-d.lib ^
     %gs_core%\third_party\libs\win\dbg\DetourTileCache-d.lib ^
-    %gs_core%\bin\core\core_d.lib
+    %gs_core%\bin\core\gs_core_d.lib
 
 set tp_libs=%gs_core%\third_party\libs\win\rel\Bullet3Collision.lib ^
     %gs_core%\third_party\libs\win\rel\Bullet3Common.lib ^
@@ -62,7 +62,7 @@ rem /EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib /NODEFAULTLIB:LIBCMT
 rem %os_libs% %tp_libs%
 
 rem Compile Debug
-cl /w /MTd /MP -Zi -D _WINSOCKAPI_ /DEBUG:FULL /Fe%proj_name%.exe %src_all% %inc% ^
+cl /w /MTd /MP -Zi -D _WINSOCKAPI_ -D GS_DEBUG /DEBUG:FULL /Fe%proj_name%.exe %src_all% %inc% ^
 /EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:libcmtd.lib ^
 /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib ^
 %os_libs% %tp_libs_dbg%

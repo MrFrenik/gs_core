@@ -1,0 +1,134 @@
+/*==============================================================================================================
+    * Copyright: 2022 John Jackson 
+    * File: gs_core_app.c
+
+    All Rights Reserved
+
+    BSD 3-Clause License
+
+    Copyright (c) 2022 John Jackson
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
+
+    3. Neither the name of the copyright holder nor the names of its contributors may be used to 
+    endorse or promote products derived from this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIEDi
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+    ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+=================================================================================================================*/
+
+#include "core/gs_core_app.h"
+
+static gs_core_app_t* g_app = NULL;
+
+GS_API_DECL gs_core_app_t*
+gs_core_app_instance()
+{
+    return g_app;
+}
+
+GS_API_DECL void
+gs_core_app_instance_set(gs_core_app_t* app)
+{
+    g_app = app;
+}
+
+GS_API_PRIVATE void
+_gs_core_app_init(void* app)
+{ 
+    // Cache application instance pointer
+    gs_core_app_instance_set(app);
+
+    // Register meta information
+    #ifdef GS_CORE_APP_STANDALONE
+        gs_core_cast(app, gs_core_app_t)->core = gs_core_new(); 
+        _gs_core_app_meta_register();
+    #endif
+
+    // Init app
+    gs_core_cast_vt(app, gs_core_app_t)->init(app);
+}
+
+GS_API_PRIVATE void
+_gs_core_app_update(void* app)
+{ 
+    // If in standalone, then set the viewport manually
+    // Need to get framebuffer and window size for placing gui elements within scene view 
+    #ifdef GS_CORE_APP_STANDALONE
+        gs_vec2 fbs = gs_platform_framebuffer_sizev(gs_platform_main_window());
+        gs_core_cast(app, gs_core_app_t)->viewport = gs_v4(0.f, 0.f, fbs.x, fbs.y);
+    #endif 
+    
+    // Update application
+    gs_core_cast_vt(app, gs_core_app_t)->update(app); 
+
+    // Render application
+    #ifdef GS_CORE_APP_STANDALONE
+		_gs_core_app_render(app, &gs_core_instance()->cb);
+    #endif 
+}
+
+GS_API_PRIVATE void 
+_gs_core_app_render(void* app, gs_command_buffer_t* cb)
+{ 
+    // Render application
+    gs_core_cast_vt(app, gs_core_app_t)->render(app, cb);
+
+    // Submit command buffer for GPU
+    #ifdef GS_CORE_APP_STANDALONE 
+        gs_core_graphics_instance()->submit(cb);
+    #endif
+}
+
+GS_API_PRIVATE void
+_gs_core_app_shutdown(void* app)
+{ 
+    gs_core_vt(gs_core_app_t)* vt = gs_core_cast_vt(app, gs_core_app_t);
+    vt->shutdown(app);
+
+    // Shutdown core (make this a pound define that can be easily used)
+    #ifdef GS_CORE_APP_STANDALONE 
+
+        // Unregister meta information 
+        _gs_core_app_meta_unregister();
+
+        // Free core
+        gs_core_t* core = gs_core_instance();
+        gs_core_free(core); 
+
+    #endif
+} 
+
+GS_API_PRIVATE void 
+_gs_core_app_editor(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd)
+{ 
+    gs_core_app_t* app = (gs_core_app_t*)gs_core_app_instance(); 
+    gs_core_t* core = app->core;
+    const gs_vec2 fbs = gs_platform_framebuffer_sizev(gs_platform_main_window());
+
+    // Set viewport of application to use for rendering
+    app->viewport = gs_v4(cmd->viewport.x, fbs.y - cmd->viewport.h - cmd->viewport.y, cmd->viewport.w, cmd->viewport.h);
+    
+    // Render scene 
+    gs_core_cast_vt(app, gs_core_app_t)->render(app, &ctx->gsi.commands);
+}
+
+
+

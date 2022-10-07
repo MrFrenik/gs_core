@@ -15,7 +15,7 @@ gs_editor_view_properties_cb(struct gs_editor_view_s* view)
 {
     gs_editor_t* editor = gs_user_data(gs_editor_t); 
     gs_core_meta_registry_t* meta = gs_core_meta_registry_instance();
-    gs_gui_context_t* gui = &editor->core->gui;
+    gs_gui_context_t* gui = &editor->gui;
     gs_gui_container_t* cnt = gs_gui_get_current_container(gui);
     gs_gui_label(gui, "PROPERTIES");
 

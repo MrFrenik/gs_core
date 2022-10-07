@@ -4,27 +4,30 @@
 // Reflection Includes
 #include %GENERATED_HEADER_PATH%
 
+GS_CORE_APP_MAIN(%APP%) 
+GS_CORE_APP_DEFINE(%APP%)
+
 GS_API_DECL void 
-%APP%_init()
+%APP%_init(void* app)
 {
-    %APP%_t* app = gs_user_data(%APP%_t);
+    // Get instance
+    %APP%_t* %APP% = (%APP%_t*)app;
 
-    // Init core
-    app->core = core_new();
-
-    // Register application meta information
-    GS_CORE_APP_META_REGISTER(%APP%);
+    // Get core instance
+    gs_core_t* core = gs_core_instance();
 }
 
 GS_API_DECL void 
-%APP%_update()
+%APP%_update(void* app)
 { 
     // Grab application and all required gs structures
-    %APP%_t* app = gs_user_data(%APP%_t); 
-    gs_command_buffer_t* cb = &app->core->cb;
-    gs_immediate_draw_t* gsi = &app->core->gsi;
-    gs_gui_context_t* gui = &app->core->gui;
+    %APP%_t* %APP% = (%APP%_t*)app; 
+    gs_core_t* core = gs_core_instance();
+    gs_command_buffer_t* cb = &core->cb;
+    gs_immediate_draw_t* gsi = &core->gsi;
+    gs_gui_context_t* gui = &core->gui;
     const gs_vec2 fbs = gs_platform_framebuffer_sizev(gs_platform_main_window()); 
+    const gs_vec4 vp = gs_core_cast(app, gs_core_app_t)->viewport;
 
     if (gs_platform_key_pressed(GS_KEYCODE_ESC)) 
     {
@@ -32,7 +35,7 @@ GS_API_DECL void
     } 
 
     // Gui
-    gs_gui_begin(gui, fbs);
+    gs_gui_begin(gui, &(gs_gui_hints_t){.framebuffer_size = fbs, .viewport = gs_gui_rect(vp.x, vp.y, vp.z, vp.w)});
     {
         // Any game gui can go in between begin/end calls...
         gs_gui_window_begin(gui, "dbg", gs_gui_rect(100, 100, 200, 200));
@@ -44,50 +47,27 @@ GS_API_DECL void
     } 
     gs_gui_end(gui);
 
+}
+
+GS_API_DECL void
+%APP%_render(void* app, gs_command_buffer_t* cb)
+{ 
+    gs_core_t* core = gs_core_instance();
+    gs_immediate_draw_t* gsi = &core->gsi;
+    gs_gui_context_t* gui = &core->gui;
+    const gs_vec2 fbs = gs_platform_framebuffer_sizev(gs_platform_main_window()); 
+    const gs_vec4 vp = gs_core_cast(app, gs_core_app_t)->viewport; 
+
     // Submit gsi
     gsi_renderpass_submit(gsi, cb, (uint32_t)fbs.x, (uint32_t)fbs.y, gs_color(10, 10, 10, 255)); 
 
     // Submit gui
     gs_gui_renderpass_submit_ex(gui, cb, NULL);
-
-    // Submit command buffer for GPU
-    gs_graphics_command_buffer_submit(cb);
 }
 
 GS_API_DECL void 
-%APP%_shutdown()
+%APP%_shutdown(void* app)
 {
-    %APP%_t* app = gs_user_data(%APP%_t);
-
-    // Shutdown core
-    core_free(app->core);
+    %APP%_t* %APP% = (%APP%_t*)app; 
 } 
 
-#ifdef GS_APP_STANDALONE
-
-GS_API_DECL int32_t 
-main(int32_t argc, char** argv)
-{
-    // Create gunslinger instance with application
-    gs_t* inst = gs_create((gs_app_desc_t){
-        .user_data = gs_malloc_init(%APP%_t),
-        .window_width = 800,
-        .window_height = 600,
-        .window_title = gs_to_str(%APP%),
-        .init = %APP%_init,
-        .update = %APP%_update,
-        .shutdown = %APP%_shutdown
-    });
-
-    // Main loop
-    while (gs_app()->is_running) {
-        gs_frame();
-    }
-
-    // Shutdown
-    gs_free(inst);
-
-    return 0;
-}
-
-#endif

@@ -37,11 +37,7 @@
 // GS Includes
 #define GS_NO_HIJACK_MAIN
 #define GS_IMPL
-#define gs_malloc       malloc 
-#define gs_free         free 
-#define gs_realloc      realloc 
-#define gs_calloc       calloc 
-#define gs_alloca       malloc
+#define GS_OS_MEMORY_ALLOC_DEFAULT
 #include <gs/gs.h> 
 
 #define META_PROPERTY_STR_MAX   128

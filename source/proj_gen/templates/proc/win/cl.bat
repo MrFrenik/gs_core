@@ -38,7 +38,7 @@ set tp_libs_dbg=%gs_core%\third_party\libs\win\dbg\Bullet3Collision_Debug.lib ^
     %gs_core%\third_party\libs\win\dbg\Detour-d.lib ^
     %gs_core%\third_party\libs\win\dbg\DetourCrowd-d.lib ^
     %gs_core%\third_party\libs\win\dbg\DetourTileCache-d.lib ^
-    %gs_core%\bin\core\core_d.lib
+    %gs_core%\bin\core\gs_core_d.lib
 
 set tp_libs=%gs_core%\third_party\libs\win\rel\Bullet3Collision.lib ^
     %gs_core%\third_party\libs\win\rel\Bullet3Common.lib ^
@@ -59,9 +59,10 @@ set l_options=/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib
 rem Reflection Dirs
 set in_dir="%root%/source" 
 set out_dir="%root%/source/generated" 
+set id_offset="14"
 
 rem Run Reflection
-%gs_core%\bin\reflection\reflection.exe %in_dir% %out_dir% %proj_name%
+%gs_core%\bin\reflection\reflection.exe %in_dir% %out_dir% %proj_name% %id_offset%
 
 rem Compile Release
 rem cl /MP /FS /Ox /W0 /Fe%proj_name%.exe %src_all% %inc% ^
@@ -69,7 +70,7 @@ rem /EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib /NODEFAULTLIB:LIBCMT
 rem %os_libs% %tp_libs%
 
 rem Compile Debug
-cl /w /MTd /MP -Zi -D _WINSOCKAPI_ -D GS_APP_STANDALONE /DEBUG:FULL ^
+cl /w /MTd /MP -Zi -D _WINSOCKAPI_ -D GS_DEBUG -D GS_CORE_APP_STANDALONE /DEBUG:FULL ^
 /Fe%proj_name%.exe %src_all% %inc% /EHsc /link /SUBSYSTEM:CONSOLE ^
 /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib ^
 %os_libs% %tp_libs_dbg%

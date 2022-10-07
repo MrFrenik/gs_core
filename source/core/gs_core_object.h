@@ -61,6 +61,7 @@
 
 // VTable
 #define gs_core_cast_vt(OBJ, T)                       (gs_core_cast(gs_core_obj_info(OBJ)->vtable, T##_vtable_t))
+#define gs_core_vt(T)                                 T##_vtable_t
 
 // Object
 #define gs_core_obj_id(OBJ)                      (gs_core_cast((OBJ), gs_core_base_t)->id)
