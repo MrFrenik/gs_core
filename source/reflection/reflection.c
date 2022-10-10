@@ -37,7 +37,6 @@
 // GS Includes
 #define GS_NO_HIJACK_MAIN
 #define GS_IMPL
-#define GS_OS_MEMORY_ALLOC_DEFAULT
 #include <gs/gs.h> 
 
 #define META_PROPERTY_STR_MAX   128
@@ -1252,11 +1251,14 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
             class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
             if (gs_string_compare_equal(cls->base, "gs_core_entities_component_t"))
             {
-                gs_fprintln(fp, "\tgs_core_entity_id(%s) = ents->component_register(&(gs_core_entities_component_desc_t){", cls->name);
-                gs_fprintln(fp, "\t\t.name = gs_to_str(%s),", cls->name);
-                gs_fprintln(fp, "\t\t.size = sizeof(%s),", cls->name);
-                gs_fprintln(fp, "\t\t.alignment = ECS_ALIGNOF(%s)", cls->name);
-                gs_fprintln(fp, "\t});");
+                gs_fprintln(fp, "\t{");
+                gs_fprintln(fp, "\t\tgs_core_entity_t comp = ents->component_register(&(gs_core_entities_component_desc_t){", cls->name);
+                gs_fprintln(fp, "\t\t\t.name = gs_to_str(%s),", cls->name);
+                gs_fprintln(fp, "\t\t\t.size = sizeof(%s),", cls->name);
+                gs_fprintln(fp, "\t\t\t.alignment = ECS_ALIGNOF(%s)", cls->name);
+                gs_fprintln(fp, "\t\t});");
+                gs_fprintln(fp, "\t\tgs_hash_table_insert(ents->components, gs_hash_str64(gs_to_str(%s)), comp);", cls->name);
+                gs_fprintln(fp, "\t}");
             }
         }
 
@@ -1283,7 +1285,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
                     { 
                         property_t* p = &cls->properties[i];
                         uint32_t strlen = gs_string_length(p->type) - 1;
-                        gs_fprintf(fp, "\t\t\tgs_core_entity_id(%.*s)", strlen, p->type);
+                        gs_fprintf(fp, "\t\t\tgs_hash_table_get(ents->components, gs_hash_str64(gs_to_str(%.*s)))", strlen, p->type);
                         if (i < gs_dyn_array_size(cls->properties) - 1)
                         {
                             gs_fprintln(fp, ",");

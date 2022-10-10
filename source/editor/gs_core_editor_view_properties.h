@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: gs_core_unity.c
+    * File: gs_core_editor_view_properties.h
 
     All Rights Reserved
 
@@ -32,16 +32,44 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-=================================================================================================================*/ 
+=================================================================================================================*/
 
-#include "gs_core_config.c" 
-#include "gs_core_asset.c" 
-#include "gs_core_graphics.c"
-#include "gs_core_entity.c"
-#include "gs_core_components.c"
-#include "gs_core_object.c"
-#include "gs_core_network.c" 
-#include "gs_core.c"
-#include "core/generated/gs_core_generated.c"
+#ifndef GS_CORE_EDITOR_VIEW_PROPERTIES_H
+#define GS_CORE_EDITOR_VIEW_PROPERTIES_H
 
+// Editor Includes
+#include "editor\gs_core_editor.h" 
 
+GS_API_DECL void 
+gs_core_editor_view_properties_cb(struct gs_core_editor_view_s* view);
+
+#ifdef GS_CORE_EDITOR_IMPL
+
+GS_API_DECL void 
+gs_core_editor_view_properties_cb(struct gs_core_editor_view_s* view)
+{
+    gs_core_editor_t* editor = gs_user_data(gs_core_editor_t); 
+    gs_core_meta_registry_t* meta = gs_core_meta_registry_instance();
+    gs_gui_context_t* gui = &editor->gui;
+    gs_gui_container_t* cnt = gs_gui_get_current_container(gui);
+    gs_gui_label(gui, "PROPERTIES");
+
+    gs_gui_layout_row(gui, 1, (int16_t[]){cnt->body.w * 0.8f}, 0);
+
+    // Get all registered components from meta
+    for (
+        gs_slot_array_iter it = gs_slot_array_iter_new(meta->info);
+        gs_slot_array_iter_valid(meta->info, it);
+        gs_slot_array_iter_advance(meta->info, it)
+    )
+    {
+        gs_core_meta_info_t* info = gs_slot_array_iter_getp(meta->info, it);
+        if (gs_core_info_derived_from(info, gs_core_entities_component_t))
+        {
+            gs_gui_label(gui, "%s", info->cls->name);
+        }
+    }
+}
+
+#endif  // GS_CORE_EDITOR_IMPL
+#endif  // GS_CORE_EDITOR_VIEW_PROPERTIES_H

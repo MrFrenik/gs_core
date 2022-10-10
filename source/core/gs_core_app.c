@@ -51,24 +51,31 @@ gs_core_app_instance_set(gs_core_app_t* app)
 }
 
 GS_API_PRIVATE void
-_gs_core_app_init(void* app)
+_gs_core_app_init()
 { 
-    // Cache application instance pointer
-    gs_core_app_instance_set(app);
+	gs_core_app_t* app = NULL;
 
     // Register meta information
     #ifdef GS_CORE_APP_STANDALONE
+		app = gs_user_data(gs_core_app_t);
+		gs_core_app_instance_set(app);
         gs_core_cast(app, gs_core_app_t)->core = gs_core_new(); 
         _gs_core_app_meta_register();
     #endif
 
+	// Core app instance 
+	app = gs_core_app_instance();
+
     // Init app
-    gs_core_cast_vt(app, gs_core_app_t)->init(app);
+    gs_core_cast_vt(app, gs_core_app_t)->init();
 }
 
 GS_API_PRIVATE void
-_gs_core_app_update(void* app)
+_gs_core_app_update()
 { 
+	// Core app instance 
+	gs_core_app_t* app = gs_core_app_instance();
+
     // If in standalone, then set the viewport manually
     // Need to get framebuffer and window size for placing gui elements within scene view 
     #ifdef GS_CORE_APP_STANDALONE
@@ -77,19 +84,22 @@ _gs_core_app_update(void* app)
     #endif 
     
     // Update application
-    gs_core_cast_vt(app, gs_core_app_t)->update(app); 
+    gs_core_cast_vt(app, gs_core_app_t)->update(); 
 
     // Render application
     #ifdef GS_CORE_APP_STANDALONE
-		_gs_core_app_render(app, &gs_core_instance()->cb);
+		_gs_core_app_render(&gs_core_instance()->cb);
     #endif 
 }
 
 GS_API_PRIVATE void 
-_gs_core_app_render(void* app, gs_command_buffer_t* cb)
+_gs_core_app_render(gs_command_buffer_t* cb)
 { 
+	// Core app instance 
+	gs_core_app_t* app = gs_core_app_instance();
+
     // Render application
-    gs_core_cast_vt(app, gs_core_app_t)->render(app, cb);
+    gs_core_cast_vt(app, gs_core_app_t)->render(cb);
 
     // Submit command buffer for GPU
     #ifdef GS_CORE_APP_STANDALONE 
@@ -98,10 +108,13 @@ _gs_core_app_render(void* app, gs_command_buffer_t* cb)
 }
 
 GS_API_PRIVATE void
-_gs_core_app_shutdown(void* app)
+_gs_core_app_shutdown()
 { 
-    gs_core_vt(gs_core_app_t)* vt = gs_core_cast_vt(app, gs_core_app_t);
-    vt->shutdown(app);
+	// Core app instance 
+	gs_core_app_t* app = gs_core_app_instance();
+
+    // Shutdown app
+    gs_core_cast_vt(app, gs_core_app_t)->shutdown();
 
     // Shutdown core (make this a pound define that can be easily used)
     #ifdef GS_CORE_APP_STANDALONE 
@@ -119,7 +132,8 @@ _gs_core_app_shutdown(void* app)
 GS_API_PRIVATE void 
 _gs_core_app_editor(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd)
 { 
-    gs_core_app_t* app = (gs_core_app_t*)gs_core_app_instance(); 
+	// Core app instance 
+	gs_core_app_t* app = gs_core_app_instance(); 
     gs_core_t* core = app->core;
     const gs_vec2 fbs = gs_platform_framebuffer_sizev(gs_platform_main_window());
 
@@ -127,7 +141,7 @@ _gs_core_app_editor(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd)
     app->viewport = gs_v4(cmd->viewport.x, fbs.y - cmd->viewport.h - cmd->viewport.y, cmd->viewport.w, cmd->viewport.h);
     
     // Render scene 
-    gs_core_cast_vt(app, gs_core_app_t)->render(app, &ctx->gsi.commands);
+    gs_core_cast_vt(app, gs_core_app_t)->render(&ctx->gsi.commands);
 }
 
 

@@ -44,6 +44,7 @@
 #define GS_AI_IMPL
 #define GS_GFXT_IMPL
 #define GS_META_IMPL 
+#define GS_NO_OS_MEMORY_ALLOC_DEFAULT
 
 // Core defines
 #define GS_CORE_MEMORY_DBG
@@ -191,9 +192,9 @@ gs_core_os_realloc(void* ptr, size_t sz)
 } 
 
 GS_API_DECL void* 
-gs_core_os_calloc(size_t sz)
+gs_core_os_calloc(size_t num, size_t sz)
 { 
-    return calloc(1, sz);
+    return calloc(num, sz);
 } 
 
 GS_API_DECL void* 

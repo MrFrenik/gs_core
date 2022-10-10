@@ -1,86 +1,128 @@
+/*==============================================================================================================
+    * Copyright: 2022 John Jackson 
+    * File: gs_core_editor.c
 
-// Includes
-#include "editor/gs_editor.h" 
-#include "editor/gs_editor_view_scene.h"
-#include "editor/gs_editor_view_outliner.h"
-#include "editor/gs_editor_view_properties.h"
-#include "core/gs_core_app.h"
+    All Rights Reserved
 
-GS_API_DECL void gs_editor_app_hot_reload();
-GS_API_DECL void gs_editor_library_load();
-GS_API_DECL void gs_editor_library_unload();
+    BSD 3-Clause License
+
+    Copyright (c) 2022 John Jackson
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
+
+    3. Neither the name of the copyright holder nor the names of its contributors may be used to 
+    endorse or promote products derived from this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIEDi
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+    ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+=================================================================================================================*/
+
+// Core Includes
+#include "editor/gs_core_editor.h" 
+#include "editor/gs_core_editor_view_scene.h"
+#include "editor/gs_core_editor_view_outliner.h"
+#include "editor/gs_core_editor_view_properties.h"
+#include "core/gs_core_app.h" 
+
+GS_API_DECL void gs_core_editor_app_hot_reload();
+GS_API_DECL void gs_core_editor_library_load();
+GS_API_DECL void gs_core_editor_library_unload();
 
 // Global editor instance
-static gs_editor_t* g_editor = NULL;
+static gs_core_editor_t* g_editor = NULL; 
+static char g_editor_path[256] = {0};
+static char g_app_path[256] = {0};
 
-GS_API_DECL gs_editor_t* 
-gs_editor_instance()
+#define GS_CORE_EDITOR_DOCKSPACE_NAME "Dockspace##gs_core_editor"
+
+GS_API_DECL gs_core_editor_t* 
+gs_core_editor_instance()
 { 
     return g_editor;
 } 
 
 GS_API_DECL void 
-gs_editor_init(void* app)
+gs_core_editor_init()
 { 
     // Set global instance
-    g_editor = app; 
-    gs_editor_t* editor = (gs_editor_t*)app;
+    gs_core_editor_t* editor = gs_user_data(gs_core_editor_t);
     gs_assert(editor);
 
     // Init core
     editor->core = gs_core_new();
 
     // Init gui
-    editor->gui = gs_gui_context_new(gs_platform_main_window());
+    editor->gui = gs_gui_context_new(gs_platform_main_window()); 
+
+    // Initialize paths
+    gs_snprintf(g_app_path, sizeof(g_app_path), "%s.%s", gs_app_dll_path(), GS_CORE_EDITOR_DYNAMIC_LIB_EXT);
+    gs_snprintf(g_editor_path, sizeof(g_editor_path), "%s.%s", gs_core_editor_dll_path(), GS_CORE_EDITOR_DYNAMIC_LIB_EXT);
 
     // Dock editor views (set for now by default)
     gs_gui_context_t* gui = &editor->gui;
 
     // Scene view
-    gs_editor_view_register(&(gs_editor_view_desc_t){
-        .name = "Scene##editor",
-        .cb = gs_editor_view_scene_cb,
+    gs_core_editor_view_register(&(gs_core_editor_view_desc_t){
+        .name = "Scene##gs_core_editor",
+        .cb = gs_core_editor_view_scene_cb,
         .split = {
-            .parent = "Dockspace##editor",
+            .parent = GS_CORE_EDITOR_DOCKSPACE_NAME,
             .type = GS_GUI_SPLIT_BOTTOM,
             .amount = 1.f
         }
     });
     
     // Outliner view
-    gs_editor_view_register(&(gs_editor_view_desc_t){
-        .name = "Outliner##editor", 
-        .cb = gs_editor_view_outliner_cb,
+    gs_core_editor_view_register(&(gs_core_editor_view_desc_t){
+        .name = "Outliner##gs_core_editor", 
+        .cb = gs_core_editor_view_outliner_cb,
         .split = {
-            .parent = "Scene##editor", 
+            .parent = "Scene##gs_core_editor", 
             .type = GS_GUI_SPLIT_RIGHT, 
             .amount = 0.3f
         }
     });
 
     // Properties view
-    gs_editor_view_register(&(gs_editor_view_desc_t){
-        .name = "Properties##editor", 
-        .cb = gs_editor_view_properties_cb,
+    gs_core_editor_view_register(&(gs_core_editor_view_desc_t){
+        .name = "Properties##gs_core_editor", 
+        .cb = gs_core_editor_view_properties_cb,
         .split = {
-            .parent = "Outliner##editor", 
+            .parent = "Outliner##gs_core_editor",
             .type = GS_GUI_SPLIT_BOTTOM, 
             .amount = 0.7f
         }
     }); 
 
     // Load app .dll if available
-    gs_editor_app_hot_reload();
+    gs_core_editor_app_hot_reload();
 
     // Initialize file stats
-    editor->app.fstats = gs_platform_file_stats(gs_app_dll_path());
+    editor->app.fstats = gs_platform_file_stats(g_app_path);
 }
 
 GS_API_DECL void
-gs_editor_update(void* app)
+gs_core_editor_update()
 {
     // Grab application and all required gs structures
-    gs_editor_t* editor = (gs_editor_t*)app;
+    gs_core_editor_t* editor = gs_user_data(gs_core_editor_t);
     gs_command_buffer_t* cb = &editor->core->cb;
     gs_immediate_draw_t* gsi = &editor->core->gsi;
     gs_gui_context_t* gui = &editor->gui;
@@ -89,16 +131,16 @@ gs_editor_update(void* app)
     if (gs_platform_key_pressed(GS_KEYCODE_ESC)) 
     {
         gs_quit();
-    } 
+    }
 
-    /*
-    gs_timed_action(60, { 
-        gs_editor_app_hot_reload();
-    });
-    */
+    // App update
+    if (editor->app.app && editor->app.app->state == GS_CORE_APP_STATE_PLAYING)
+    { 
+        _gs_core_app_update();
+    }
 
     // Check if application needs to be reloaded
-    gs_platform_file_stats_t cfstats = gs_platform_file_stats(gs_app_dll_path());
+    gs_platform_file_stats_t cfstats = gs_platform_file_stats(g_app_path);
     if (gs_platform_file_compare_time(editor->app.fstats.modified_time, cfstats.modified_time))
     { 
         if (!editor->app.hot_reload_begin)
@@ -109,7 +151,7 @@ gs_editor_update(void* app)
     }
     else if (editor->app.hot_reload_begin)
     { 
-        gs_editor_app_hot_reload();
+        gs_core_editor_app_hot_reload();
     } 
     
     editor->app.fstats = cfstats;
@@ -130,7 +172,7 @@ gs_editor_update(void* app)
             GS_GUI_OPT_NOFOCUS | 
             GS_GUI_OPT_NORESIZE;
 
-        gs_gui_window_begin_ex(gui, "Dockspace##editor", gs_gui_rect(350, 40, 600, 500), NULL, NULL, opt);
+        gs_gui_window_begin_ex(gui, "Dockspace##gs_core_editor", gs_gui_rect(350, 40, 600, 500), NULL, NULL, opt);
         {
             // Empty dockspace...
         }
@@ -143,7 +185,7 @@ gs_editor_update(void* app)
             gs_hash_table_iter_advance(editor->views, it)
         )
         { 
-            gs_editor_view_t* view = gs_hash_table_iter_getp(editor->views, it);
+            gs_core_editor_view_t* view = gs_hash_table_iter_getp(editor->views, it);
             gs_gui_window_begin_ex(gui, view->name, gs_gui_rect(350, 40, 600, 500), NULL, NULL, GS_GUI_OPT_NOSCROLL);
             {
                 view->cb(view);
@@ -164,22 +206,22 @@ gs_editor_update(void* app)
 }
 
 GS_API_DECL void 
-gs_editor_shutdown(void* app)
+gs_core_editor_shutdown()
 {
-    gs_editor_t* editor = (gs_editor_t*)app;
+    gs_core_editor_t* editor = gs_user_data(gs_core_editor_t);
 
     // Unload app 
-    gs_editor_library_unload();
+    gs_core_editor_library_unload();
 
     // Shutdown core
     gs_core_free(editor->core);
 }
 
 GS_API_DECL void
-gs_editor_view_register(const gs_editor_view_desc_t* desc)
+gs_core_editor_view_register(const gs_core_editor_view_desc_t* desc)
 { 
     // Assert desc has a valid name
-    gs_editor_t* editor = gs_user_data(gs_editor_t);
+    gs_core_editor_t* editor = gs_user_data(gs_core_editor_t);
     gs_assert(desc->name);
 
     // Assert view doesn't already exist
@@ -187,10 +229,10 @@ gs_editor_view_register(const gs_editor_view_desc_t* desc)
     gs_assert(!gs_hash_table_exists(editor->views, hash));
 
     // Construct new editor view
-    gs_editor_view_t view = (gs_editor_view_t){
+    gs_core_editor_view_t view = (gs_core_editor_view_t){
         .cb = desc->cb
     };
-    memcpy(view.name, desc->name, GS_EDITOR_VIEW_STR_MAX);
+    memcpy(view.name, desc->name, GS_CORE_EDITOR_VIEW_STR_MAX);
 
     // Add to table
     gs_hash_table_insert(editor->views, hash, view); 
@@ -210,11 +252,11 @@ gs_editor_view_register(const gs_editor_view_desc_t* desc)
 }
 
 GS_API_DECL void 
-gs_editor_library_load()
+gs_core_editor_library_load()
 {
-    gs_editor_t* editor = gs_user_data(gs_editor_t);
+    gs_core_editor_t* editor = gs_user_data(gs_core_editor_t);
 
-    editor->app.dll = gs_platform_library_load(gs_editor_dll_path()); 
+    editor->app.dll = gs_platform_library_load(g_editor_path); 
 
     if (editor->app.dll) 
     {
@@ -231,27 +273,31 @@ gs_editor_library_load()
         // Construct application pointer (this should just register everything, honestly...)
         editor->app.app = editor->app.new(gs_instance(), editor->core);
 
+        // Set app instance
+        gs_core_app_instance_set(editor->app.app); 
+
         // Register meta information
         editor->app.meta_register();
 
         // Initialize application
-        _gs_core_app_init(editor->app.app);
+        _gs_core_app_init();
     } 
 }
 
 GS_API_DECL void 
-gs_editor_library_unload()
+gs_core_editor_library_unload()
 { 
-    gs_editor_t* editor = gs_user_data(gs_editor_t);
+    gs_core_editor_t* editor = gs_user_data(gs_core_editor_t);
 
     if (editor->app.dll) 
     {
         // Shutdown application and free memory 
-        _gs_core_app_shutdown(editor->app.app);
+        _gs_core_app_shutdown();
         editor->app.meta_unregister();
         editor->app.free(editor->app.app);
         gs_println("App Unloaded!");
-        gs_platform_library_unload(editor->app.dll);
+        gs_platform_library_unload(editor->app.dll); 
+        gs_core_app_instance_set(NULL); 
         editor->app.dll = NULL;
         editor->app.app = NULL;
         editor->app.new = NULL;
@@ -261,29 +307,29 @@ gs_editor_library_unload()
 } 
 
 GS_API_DECL void 
-gs_editor_app_hot_reload()
+gs_core_editor_app_hot_reload()
 {
-    gs_editor_t* editor = gs_user_data(gs_editor_t); 
+    gs_core_editor_t* editor = gs_user_data(gs_core_editor_t); 
 
     // Determine if can copy first before unloading
-    if (!gs_platform_file_exists(gs_app_dll_path()))
+    if (!gs_platform_file_exists(g_app_path))
     {
         return;
     }
 
     // Remove previous .dll
-    if (gs_platform_file_exists(gs_editor_dll_path()))
+    if (gs_platform_file_exists(g_editor_path))
     {
-        gs_editor_library_unload();
+        gs_core_editor_library_unload();
         gs_println("Deleting old dll...");
-        gs_assert(gs_platform_file_delete(gs_editor_dll_path())); 
+        gs_assert(gs_platform_file_delete(g_editor_path)); 
     } 
 
     // Copy over new
-    if (gs_platform_file_copy(gs_app_dll_path(), gs_editor_dll_path()))
+    if (gs_platform_file_copy(g_app_path, g_editor_path))
     {
         gs_println("Copied new dll!");
-        gs_editor_library_load();
+        gs_core_editor_library_load();
     }
     editor->app.hot_reload_begin = false; 
     gs_println("Hot reload finished..."); 

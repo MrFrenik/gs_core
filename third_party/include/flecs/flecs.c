@@ -2211,7 +2211,7 @@ void flecs_table_init_data(
 
     if (count) {
         ecs_entity_t *ids = ecs_vector_first(type, ecs_entity_t);
-        storage->columns = ecs_os_calloc_n(ecs_column_t, count);
+        storage->columns = ecs_os_calloc(count, sizeof(ecs_column_t));
 
         for (i = 0; i < count; i ++) {
             ecs_entity_t id = ids[i];
@@ -2239,7 +2239,7 @@ void flecs_table_init_data(
     if (sw_count) {
         ecs_entity_t *ids = ecs_vector_first(table->type, ecs_entity_t);
         int32_t sw_offset = table->sw_column_offset;
-        storage->sw_columns = ecs_os_calloc_n(ecs_sw_column_t, sw_count);
+        storage->sw_columns = ecs_os_calloc(sw_count, sizeof(ecs_sw_column_t));
 
         for (i = 0; i < sw_count; i ++) {
             ecs_entity_t e = ids[i + sw_offset];
@@ -2264,7 +2264,7 @@ void flecs_table_init_data(
     }
 
     if (bs_count) {
-        storage->bs_columns = ecs_os_calloc_n(ecs_bs_column_t, bs_count);
+        storage->bs_columns = ecs_os_calloc(bs_count, sizeof(ecs_bs_column_t));
         for (i = 0; i < bs_count; i ++) {
             flecs_bitset_init(&storage->bs_columns[i].data);
         }
@@ -2328,8 +2328,8 @@ void notify_component_info(
         }
         
         if (!table->c_info) {
-            table->c_info = ecs_os_calloc(
-                ECS_SIZEOF(ecs_type_info_t*) * column_count);
+            table->c_info = ecs_os_calloc(column_count, 
+                ECS_SIZEOF(ecs_type_info_t*));
         }
 
         /* Reset lifecycle flags before recomputing */
@@ -9054,7 +9054,7 @@ bool ecs_stage_is_readonly(
 ecs_world_t* ecs_async_stage_new(
     ecs_world_t *world)
 {
-    ecs_stage_t *stage = ecs_os_calloc(sizeof(ecs_stage_t));
+    ecs_stage_t *stage = ecs_os_calloc_t(ecs_stage_t);
     flecs_stage_init(world, stage);
 
     stage->id = -1;
@@ -9667,12 +9667,12 @@ chunk_t* chunk_new(
      * sparse element has not been paired with a dense element. Use zero
      * as this means we can take advantage of calloc having a possibly better 
      * performance than malloc + memset. */
-    result->sparse = ecs_os_calloc(ECS_SIZEOF(int32_t) * CHUNK_COUNT);
+    result->sparse = ecs_os_calloc(CHUNK_COUNT, ECS_SIZEOF(int32_t));
 
     /* Initialize the data array with zero's to guarantee that data is 
      * always initialized. When an entry is removed, data is reset back to
      * zero. Initialize now, as this can take advantage of calloc. */
-    result->data = ecs_os_calloc(sparse->size * CHUNK_COUNT);
+    result->data = ecs_os_calloc(CHUNK_COUNT, sparse->size);
 
     ecs_assert(result->sparse != NULL, ECS_INTERNAL_ERROR, NULL);
     ecs_assert(result->data != NULL, ECS_INTERNAL_ERROR, NULL);
@@ -9927,7 +9927,7 @@ void swap_dense(
 ecs_sparse_t* _flecs_sparse_new(
     ecs_size_t size)
 {
-    ecs_sparse_t *result = ecs_os_calloc(ECS_SIZEOF(ecs_sparse_t));
+    ecs_sparse_t *result = ecs_os_calloc(1, ECS_SIZEOF(ecs_sparse_t));
     ecs_assert(result != NULL, ECS_OUT_OF_MEMORY, NULL);
     result->size = size;
     result->max_id_local = UINT64_MAX;
@@ -10518,7 +10518,7 @@ ecs_switch_t* flecs_switch_new(
     result->max = (uint32_t)max;
 
     int32_t count = (int32_t)(max - min) + 1;
-    result->headers = ecs_os_calloc(ECS_SIZEOF(flecs_switch_header_t) * count);
+    result->headers = ecs_os_calloc(count, ECS_SIZEOF(flecs_switch_header_t));
     result->nodes = ecs_vector_new(flecs_switch_node_t, elements);
     result->values = ecs_vector_new(uint64_t, elements);
 
@@ -11146,7 +11146,7 @@ void ensure(
     if (!bs->size) {
         int32_t new_size = ((size - 1) / 64 + 1) * ECS_SIZEOF(uint64_t);
         bs->size = ((size - 1) / 64 + 1) * 64;
-        bs->data = ecs_os_calloc(new_size);
+        bs->data = ecs_os_calloc(1, new_size);
     } else if (size > bs->size) {
         int32_t prev_size = ((bs->size - 1) / 64 + 1) * ECS_SIZEOF(uint64_t);
         bs->size = ((size - 1) / 64 + 1) * 64;
@@ -12141,7 +12141,7 @@ ecs_map_t* _ecs_map_new(
     ecs_size_t elem_size,
     int32_t element_count)
 {
-    ecs_map_t *result = ecs_os_calloc(ECS_SIZEOF(ecs_map_t) * 1);
+    ecs_map_t *result = ecs_os_calloc(1, ECS_SIZEOF(ecs_map_t));
     ecs_assert(result != NULL, ECS_OUT_OF_MEMORY, NULL);
     ecs_assert(elem_size < INT16_MAX, ECS_INVALID_PARAMETER, NULL);
 
@@ -15872,7 +15872,7 @@ const char* parse_fluff(
 
         if (len > 0) {
             clear_comment(expr, ptr, state);
-            state->comment = ecs_os_calloc_n(char, len + 1);
+            state->comment = ecs_os_calloc(len + 1, sizeof(char));
             ecs_os_strncpy(state->comment, comment, len);
         } else {
             ecs_parser_error(state->name, expr, ptr - expr, 
@@ -19866,7 +19866,7 @@ ecs_iter_t ecs_rule_iter(
             it->variables = ecs_os_malloc_n(ecs_entity_t, rule->var_count);
         }
         
-        it->op_ctx = ecs_os_calloc_n(ecs_rule_op_ctx_t, rule->operation_count);
+        it->op_ctx = ecs_os_calloc(rule->operation_count, sizeof(ecs_rule_op_ctx_t));
 
         if (rule->filter.term_count) {
             it->columns = ecs_os_malloc_n(int32_t, 
@@ -25082,7 +25082,7 @@ ecs_data_t* duplicate_data(
         return NULL;
     }
 
-    ecs_data_t *result = ecs_os_calloc(ECS_SIZEOF(ecs_data_t));
+    ecs_data_t *result = ecs_os_calloc(1, ECS_SIZEOF(ecs_data_t));
 
     ecs_type_t storage_type = table->storage_type;
     int32_t i, column_count = ecs_vector_count(storage_type);
@@ -37559,7 +37559,7 @@ bool get_match_monitor(
         return false;
     }
 
-    int32_t *monitor = ecs_os_calloc_n(int32_t, query->filter.term_count + 1);
+    int32_t *monitor = ecs_os_calloc(query->filter.term_count + 1, sizeof(int32_t));
 
     /* Mark terms that don't need to be monitored. This saves time when reading
      * and/or updating the monitor. */
@@ -38207,8 +38207,8 @@ void add_table(
      * iteration we can start the search from the correct offset type. */
     pair_offset_t *pair_offsets = NULL;
     if (pair_count) {
-        pair_offsets = ecs_os_calloc(
-            ECS_SIZEOF(pair_offset_t) * term_count);
+        pair_offsets = ecs_os_calloc(term_count,
+            ECS_SIZEOF(pair_offset_t));
     }
 
     /* From here we recurse */
@@ -38227,20 +38227,20 @@ add_pair:
 
     if (term_count) {
         /* Array that contains the system column to table column mapping */
-        table_data->columns = ecs_os_calloc_n(int32_t, query->filter.term_count_actual);
+        table_data->columns = ecs_os_calloc(query->filter.term_count_actual, sizeof(int32_t));
         ecs_assert(table_data->columns != NULL, ECS_OUT_OF_MEMORY, NULL);
 
         /* Store the components of the matched table. In the case of OR expressions,
          * components may differ per matched table. */
-        table_data->ids = ecs_os_calloc_n(ecs_entity_t, query->filter.term_count_actual);
+        table_data->ids = ecs_os_calloc(query->filter.term_count_actual, sizeof(ecs_entity_t));
         ecs_assert(table_data->ids != NULL, ECS_OUT_OF_MEMORY, NULL);
 
         /* Cache subject (source) entity ids for components */
-        table_data->subjects = ecs_os_calloc_n(ecs_entity_t, query->filter.term_count_actual);
+        table_data->subjects = ecs_os_calloc(query->filter.term_count_actual, sizeof(ecs_entity_t));
         ecs_assert(table_data->subjects != NULL, ECS_OUT_OF_MEMORY, NULL);
 
         /* Cache subject (source) entity ids for components */
-        table_data->sizes = ecs_os_calloc_n(ecs_size_t, query->filter.term_count_actual);
+        table_data->sizes = ecs_os_calloc(query->filter.term_count_actual, sizeof(ecs_size_t));
         ecs_assert(table_data->sizes != NULL, ECS_OUT_OF_MEMORY, NULL);                     
     }
 
@@ -40530,7 +40530,7 @@ ecs_edge_t* ensure_edge(
 {
     if (id < ECS_HI_COMPONENT_ID) {
         if (!edges->lo) {
-            edges->lo = ecs_os_calloc_n(ecs_edge_t, ECS_HI_COMPONENT_ID);
+            edges->lo = ecs_os_calloc(ECS_HI_COMPONENT_ID, sizeof(ecs_edge_t));
         }
         return &edges->lo[id];
     } else {
@@ -41499,7 +41499,7 @@ ecs_table_t* ecs_table_remove_id(
             it->f = it->priv.cache.f;\
             it->priv.cache.f##_alloc = false;\
         } else {\
-            it->f = ecs_os_calloc(ECS_SIZEOF(*(it->f)) * term_count);\
+            it->f = ecs_os_calloc(term_count, ECS_SIZEOF(*(it->f)));\
             it->priv.cache.f##_alloc = true;\
         }\
     }

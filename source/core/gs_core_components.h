@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: gs_core_unity.c
+    * File: gs_core_components.h
 
     All Rights Reserved
 
@@ -32,16 +32,53 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-=================================================================================================================*/ 
+=================================================================================================================*/
 
-#include "gs_core_config.c" 
-#include "gs_core_asset.c" 
-#include "gs_core_graphics.c"
-#include "gs_core_entity.c"
-#include "gs_core_components.c"
-#include "gs_core_object.c"
-#include "gs_core_network.c" 
-#include "gs_core.c"
-#include "core/generated/gs_core_generated.c"
+#ifndef GS_CORE_COMPONENTS_H
+#define GS_CORE_COMPONENTS_H 
 
+// Core Includes
+#include "gs_core_entity.h" 
 
+// Components
+
+_introspect()
+typedef struct
+{ 
+    gs_core_base(gs_core_entities_component_t);
+
+    _dtor( 
+        gs_core_graphics_scene_renderable_destroy(&gs_core_instance()->gfx->scene, this->hndl);
+    ) 
+
+    _field() 
+    uint32_t hndl;
+
+} gs_core_component_renderable_t;
+
+_introspect()
+typedef struct
+{ 
+    gs_core_base(gs_core_entities_component_t);
+
+    _field() 
+    gs_vqs transform;
+
+} gs_core_component_transform_t;
+
+// Systems
+
+_introspect()
+typedef struct
+{ 
+    gs_core_base(gs_core_entities_system_t);
+
+    _field() 
+    gs_core_component_renderable_t* renderable;
+
+    _field() 
+    gs_core_component_transform_t* transform;
+
+} gs_core_system_renderable_t;
+
+#endif GS_CORE_COMPONENTS_H

@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: gs_core_unity.c
+    * File: gs_core_components.c
 
     All Rights Reserved
 
@@ -32,16 +32,28 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-=================================================================================================================*/ 
+=================================================================================================================*/
 
-#include "gs_core_config.c" 
-#include "gs_core_asset.c" 
-#include "gs_core_graphics.c"
-#include "gs_core_entity.c"
-#include "gs_core_components.c"
-#include "gs_core_object.c"
-#include "gs_core_network.c" 
-#include "gs_core.c"
-#include "core/generated/gs_core_generated.c"
+#include "gs_core_components.h"
+
+GS_API_DECL void 
+gs_core_system_renderable_t_cb(gs_core_entities_system_t* system)
+{ 
+    gs_core_t* core = gs_core_instance();
+    gs_core_system_renderable_t* sdata = (gs_core_system_renderable_t*)system;
+    gs_core_entity_iter_t* iter = system->iter; 
+	gs_core_graphics_renderable_t* rend = NULL;
+
+    // Set renderable's model mtx using transform
+    for (uint32_t i = 0; i < iter->count; ++i)
+    {
+        gs_core_component_transform_t* tc = &sdata->transform[i];
+        gs_core_component_renderable_t* rc = &sdata->renderable[i];
+
+        // Get renderable from graphics scene using handle
+        rend = gs_core_graphics_scene_renderable_get(&core->gfx->scene, rc->hndl);
+        rend->model = gs_vqs_to_mat4(&tc->transform);
+    } 
+}
 
 

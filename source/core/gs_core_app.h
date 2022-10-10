@@ -42,41 +42,57 @@
 // Forward decl
 struct gs_core_s;
 
+typedef enum 
+{ 
+    GS_CORE_APP_STATE_STOPPED = 0,
+    GS_CORE_APP_STATE_PLAYING, 
+    GS_CORE_APP_STATE_PAUSED
+} gs_core_app_state;
+
 _introspect()
 typedef struct gs_core_app_s
 { 
+    // Base
     gs_core_base(gs_core_obj_t); 
-    struct gs_core_s* core;         // Core framework 
-    gs_vec4 viewport; 
+
+    // Vtable
     _vtable(
-        void (* init)(void* app) = NULL;
-        void (* update)(void* app) = NULL;
-        void (* shutdown)(void* app) = NULL;
-        void (* render)(void* app, gs_command_buffer_t* cb) = NULL;
+        void (* init)() = NULL;
+        void (* update)() = NULL;
+        void (* shutdown)() = NULL;
+        void (* render)(gs_command_buffer_t* cb) = NULL;
         void (* editor)(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd) = NULL;
     )
+
+    // Fields
+    _field() float run_time;
+    _field() gs_vec4 viewport; 
+
+    struct gs_core_s* core;         // Core framework 
+    gs_core_app_state state;
+
 } gs_core_app_t; 
 
 GS_API_DECL gs_core_app_t*
 gs_core_app_instance(); 
 
 GS_API_DECL void
-_gs_core_app_instance_set(gs_core_app_t* app);
+gs_core_app_instance_set(gs_core_app_t* app); 
 
 GS_API_PRIVATE void* 
 _gs_app_new(gs_t* gs, struct gs_core_s* core);
 
 GS_API_PRIVATE void
-_gs_core_app_init(void* app);
+_gs_core_app_init();
 
 GS_API_PRIVATE void
-_gs_core_app_update(void* app);
+_gs_core_app_update();
 
 GS_API_PRIVATE void
-_gs_core_app_shutdown(void* app);
+_gs_core_app_shutdown();
 
 GS_API_PRIVATE void 
-_gs_core_app_render(void* app, gs_command_buffer_t* cb);
+_gs_core_app_render(gs_command_buffer_t* cb);
 
 GS_API_PRIVATE void 
 _gs_core_app_editor(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd); 

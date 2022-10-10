@@ -108,7 +108,7 @@ GS_API_DECL void
         gs_camera_t cam = gs_camera_perspective();
         cam.transform.position = gs_v3(0.f, 0.f, 5.f);
         const float _t = gs_platform_elapsed_time() * 0.0001f;
-        gs_mat4 view_proj = gs_camera_get_view_projection(&cam, fbs.x, fbs.y);
+        gs_mat4 view_proj = gs_camera_get_view_projection(&cam, vp.z, vp.w);
 
         // Set view port
         gs_graphics_set_viewport(cb, vp.x, vp.y, vp.z, vp.w); 

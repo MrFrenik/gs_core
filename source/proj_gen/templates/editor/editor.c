@@ -14,13 +14,6 @@ GS_API_DECL void
 {
     // Super
     gs_editor_update(app);
-
-    // App update
-    gs_editor_t* editor = (gs_editor_t*)app;
-    if (editor->app.app)
-    { 
-        _gs_core_app_update(editor->app.app);
-    }
 }
 
 GS_API_DECL void
@@ -59,9 +52,13 @@ GS_API_DECL const char*
 gs_app_dll_path()
 { 
     #if GS_DEBUG
-        const char* path = gs_platform_dir_exists(gs_to_str(bin/%APP%)) ? gs_to_str(bin/%APP%/%APP%_d.dll) : gs_to_str(../%APP%/%APP%_d.dll);
+            const char* path = gs_platform_dir_exists(gs_to_str(bin/%APP%)) ? 
+                gs_to_str(bin/%APP%/%APP%_d) : 
+                gs_to_str(../%APP%/%APP%_d);
     #else
-        const char* path = gs_platform_dir_exists(gs_to_str(bin/%APP%)) ? gs_to_str(bin/%APP%/%APP%.dll) : gs_to_str(../%APP%/%APP%.dll);
+            const char* path = gs_platform_dir_exists(gs_to_str(bin/%APP%)) ? 
+                gs_to_str(bin/%APP%/%APP%) : 
+                gs_to_str(../%APP%/%APP%);
     #endif
             
     return path;
@@ -71,9 +68,13 @@ GS_API_DECL const char*
 gs_editor_dll_path()
 {
     #if GS_DEBUG
-        const char* path = gs_platform_dir_exists(gs_to_str(bin/editor)) ? gs_to_str(bin/editor/%APP%_d.dll) : gs_to_str(%APP%_d.dll);
+        const char* path = gs_platform_dir_exists(gs_to_str(bin/editor)) ? 
+            gs_to_str(bin/editor/%APP%_d) : 
+            gs_to_str(%APP%_d);
     #else
-        const char* path = gs_platform_dir_exists(gs_to_str(bin/editor)) ? gs_to_str(bin/editor/%APP%.dll) : gs_to_str(%APP%.dll);
+        const char* path = gs_platform_dir_exists(gs_to_str(bin/editor)) ? 
+            gs_to_str(bin/editor/%APP%) : 
+            gs_to_str(%APP%);
     #endif
             
     return path;

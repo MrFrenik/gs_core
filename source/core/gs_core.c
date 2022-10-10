@@ -110,6 +110,9 @@ gs_core_new()
     // Graphics
     core->gfx = gs_core_graphics_new();
 
+    // Register core ecs meta information
+    gs_core_meta_ecs_register();
+
     return core;
 }
 

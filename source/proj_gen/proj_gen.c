@@ -36,7 +36,6 @@
 
 // GS Includes
 #define GS_NO_HIJACK_MAIN
-#define GS_OS_MEMORY_ALLOC_DEFAULT
 #define GS_IMPL
 #include <gs/gs.h>
 

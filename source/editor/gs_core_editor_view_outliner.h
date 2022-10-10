@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: gs_core_unity.c
+    * File: gs_core_editor_view_outliner.h
 
     All Rights Reserved
 
@@ -32,16 +32,28 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-=================================================================================================================*/ 
+=================================================================================================================*/
 
-#include "gs_core_config.c" 
-#include "gs_core_asset.c" 
-#include "gs_core_graphics.c"
-#include "gs_core_entity.c"
-#include "gs_core_components.c"
-#include "gs_core_object.c"
-#include "gs_core_network.c" 
-#include "gs_core.c"
-#include "core/generated/gs_core_generated.c"
+#ifndef GS_CORE_EDITOR_VIEW_OUTLINER_H
+#define GS_CORE_EDITOR_VIEW_OUTLINER_H 
 
+// Editor Includes
+#include "editor\gs_core_editor.h" 
 
+GS_API_DECL void 
+gs_core_editor_view_outliner_cb(struct gs_core_editor_view_s* view);
+
+#ifdef GS_CORE_EDITOR_IMPL
+
+GS_API_DECL void 
+gs_core_editor_view_outliner_cb(struct gs_core_editor_view_s* view)
+{
+    gs_core_editor_t* editor = gs_user_data(gs_core_editor_t); 
+    gs_gui_context_t* gui = &editor->gui;
+
+    // Iterate through all entities within entity manager, show their...names?
+    // Show their ids, I suppose. This is where it gets kind of odd in a 'generic' sense.
+}
+
+#endif // GS_CORE_EDITOR_IMPL 
+#endif // GS_CORE_EDITOR_VIEW_OUTLINER_H

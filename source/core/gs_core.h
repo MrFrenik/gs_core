@@ -46,6 +46,7 @@
 #include "gs_core_graphics.h"
 #include "gs_core_physics.h"
 #include "gs_core_util.h"
+#include "gs_core_components.h"
 #include "gs_core_app.h"
 #include "core/generated/gs_core_generated.h"
 
@@ -56,7 +57,7 @@ extern void* gs_core_os_malloc(size_t sz);
 extern void* gs_core_os_malloc_init(size_t sz);
 extern void gs_core_os_free(void* ptr); 
 extern void* gs_core_os_realloc(void* ptr, size_t sz); 
-extern void* gs_core_os_calloc(size_t sz);
+extern void* gs_core_os_calloc(size_t num, size_t sz);
 extern char* gs_core_os_strdup(const char* str);
 
 typedef struct gs_core_s

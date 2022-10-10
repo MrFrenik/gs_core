@@ -84,12 +84,14 @@ typedef struct
 
 #define gs_core_entities_register_component(T)\
     do {\
-        gs_core_entities_register_component_internal(&(gs_core_entities_component_desc_t){\
-            .id = gs_core_entity_id(T),\
+        uint64_t hash = gs_hash_str64(T);\
+        gs_core_entity_t comp = gs_core_entities_register_component_internal(&(gs_core_entities_component_desc_t){\
+            .id = hash,\
             .name = gs_to_str(T),\
             .size = sizeof(T),\
             .alignment = ECS_ALIGNOF(T)\
         });\
+        gs_hash_table_insert(gs_core_entities_instance()->components, hash, comp);\
     } while (0) 
 
 _introspect()
@@ -104,24 +106,27 @@ typedef void (*gs_core_entities_system_func_t)(gs_core_entities_system_t* system
 
 #define gs_core_entities_component_add(WORLD, ENT, T, ...)\
     do {\
-        ecs_set_id((WORLD), (ENT), gs_core_entity_id(T), sizeof(T), &(T)__VA_ARGS__);\
-        T* _COMP = ecs_get((WORLD), (ENT), T);\
+        gs_core_entity_t comp = gs_hash_table_get(gs_core_entities_instance()->components, gs_hash_str64(gs_to_str(T)));\
+        ecs_set_id((WORLD), (ENT), comp, sizeof(T), &(T)__VA_ARGS__);\
+        T* _COMP = ecs_get_id((WORLD), (ENT), comp);\
         gs_core_cls_init(T, _COMP);\
     } while (0)
 
 #define gs_core_entities_component_remove(ENT, T)\
     do {\
-        T* _COMP = ecs_get((WORLD), (ENT), T);\
+        gs_core_entity_t comp = gs_hash_table_get(gs_core_entities_instance()->components, gs_hash_str64(gs_to_str(T)));\
+        T* _COMP = ecs_get_id((WORLD), (ENT), comp);\
         gs_assert(_COMP);\
         gs_core_obj_dtor(T, _COMP);\
-        gs_core_entities_component_remove_internal((WORLD), (ENT), ecs_id(T));\
+        gs_core_entities_component_remove_internal((WORLD), (ENT), comp);\
+        gs_hash_table_erase(gs_core_entities_instance()->components, comp);\
     } while (0)
 
 #define gs_core_entities_component_has(WORLD, ENT, T)\
-    ecs_has((WORLD), (ENT), T)
+    ecs_has_id((WORLD), (ENT), gs_hash_table_get(gs_core_entities_instance()->components, gs_hash_str64(gs_to_str(T))))
 
 #define gs_core_entities_component_get(WORLD, ENT, T)\
-    ecs_get((WORLD), (ENT), T)
+    ecs_get_id((WORLD), (ENT), gs_hash_table_get(gs_core_entities_instance()->components, gs_hash_str64(gs_to_str(T))))
 
 #define gs_core_entities_term(IT, T, V)\
     ecs_term((IT), T, ((V) + 1))
@@ -130,7 +135,7 @@ typedef void (*gs_core_entities_system_func_t)(gs_core_entities_system_t* system
 
 typedef struct
 { 
-    gs_core_entity_t component_list[CORE_ENTITIES_SYSTEM_COMPONENT_MAX]; 
+    gs_core_entity_t component_list[CORE_ENTITIES_SYSTEM_COMPONENT_MAX];
 } gs_core_entities_system_filter_t; 
 
 typedef struct 
@@ -147,6 +152,8 @@ typedef struct gs_core_entities_s
     void (* component_unregister)(gs_core_entity_t comp);
     ecs_entity_t (* system_register)(const gs_core_entities_system_desc_t* desc);
     void (* system_unregister)(gs_core_entity_t system);
+    gs_hash_table(uint64_t, gs_core_entity_t) components;
+    gs_hash_table(uint64_t, gs_core_entity_t) systems;
 } gs_core_entities_t; 
 
 GS_API_DECL gs_core_entities_t* 

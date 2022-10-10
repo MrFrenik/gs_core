@@ -1912,7 +1912,7 @@ void* (*ecs_os_api_realloc_t)(
     ecs_size_t size);
 
 typedef
-void* (*ecs_os_api_calloc_t)(
+void* (*ecs_os_api_calloc_t)(ecs_size_t count, 
     ecs_size_t size);
 
 typedef
@@ -2133,7 +2133,8 @@ void ecs_os_set_api_defaults(void);
 #define ecs_os_realloc(ptr, size) ecs_os_api.realloc_(ptr, size)
 #endif
 #ifndef ecs_os_calloc
-#define ecs_os_calloc(size) ecs_os_api.calloc_(size)
+#define ecs_os_calloc(count, size) ecs_os_api.calloc_(count, size)
+// #define ecs_os_calloc calloc(count, size)
 #endif
 #if defined(ECS_TARGET_WINDOWS)
 #define ecs_os_alloca(size) _alloca((size_t)(size))
@@ -2143,8 +2144,8 @@ void ecs_os_set_api_defaults(void);
 
 #define ecs_os_malloc_t(T) ECS_CAST(T*, ecs_os_malloc(ECS_SIZEOF(T)))
 #define ecs_os_malloc_n(T, count) ECS_CAST(T*, ecs_os_malloc(ECS_SIZEOF(T) * (count)))
-#define ecs_os_calloc_t(T) ECS_CAST(T*, ecs_os_calloc(ECS_SIZEOF(T)))
-#define ecs_os_calloc_n(T, count) ECS_CAST(T*, ecs_os_calloc(ECS_SIZEOF(T) * (count)))
+#define ecs_os_calloc_t(T) ECS_CAST(T*, ecs_os_calloc(1, ECS_SIZEOF(T)))
+#define ecs_os_calloc_n(T, count) ECS_CAST(T*, ecs_os_calloc(count, ECS_SIZEOF(T)))
 #define ecs_os_realloc_t(ptr, T) ECS_CAST(T*, ecs_os_realloc([ptr, ECS_SIZEOF(T)))
 #define ecs_os_realloc_n(ptr, T, count) ECS_CAST(T*, ecs_os_realloc(ptr, ECS_SIZEOF(T) * (count)))
 #define ecs_os_alloca_t(T) ECS_CAST(T*, ecs_os_alloca(ECS_SIZEOF(T)))
