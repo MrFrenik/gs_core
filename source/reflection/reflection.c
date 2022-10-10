@@ -1322,6 +1322,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
             gs_fprintln(fp, "{");
 
             gs_fprintln(fp, "\t%s sdata = {._base.iter = iter};", cls->name);
+            gs_fprintln(fp, "\tgs_core_cls_init(%s, &sdata);", cls->name);
 
             for (uint32_t i = 0; i < gs_dyn_array_size(cls->properties); ++i)
             {
@@ -1330,7 +1331,12 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
                 gs_fprintln(fp, "\tsdata.%s = gs_core_entities_term(iter, %.*s, %zu);", 
                     p->name, strlen, p->type, i);
             } 
-            gs_fprintln(fp, "\t%s_cb(&sdata);", cls->name);
+
+            // Get vtable, then do callback, if available
+            gs_fprintln(fp, "\tif (gs_core_cast_vt(&sdata, %s)->callback)", cls->name);
+            gs_fprintln(fp, "\t{");
+            gs_fprintln(fp, "\t\tgs_core_cast_vt(&sdata, %s)->callback(&sdata);", cls->name);
+            gs_fprintln(fp, "\t}");
             gs_fprintln(fp, "}");
 
         }

@@ -974,6 +974,7 @@ GS_API_DECL void
 gs_core_system_renderable_t_vtable_t_init(gs_core_system_renderable_t_vtable_t* vt)
 {
 	gs_core_entities_system_t_vtable_t_init((gs_core_entities_system_t_vtable_t*)vt);
+	vt->callback = gs_core_system_renderable_cb;
 	vt->cls_id = gs_core_system_renderable_t_class_id;
 	vt->cls = gs_core_system_renderable_t_class;
 }
@@ -1116,6 +1117,7 @@ GS_API_DECL void
 gs_core_entities_system_t_vtable_t_init(gs_core_entities_system_t_vtable_t* vt)
 {
 	gs_core_obj_t_vtable_t_init((gs_core_obj_t_vtable_t*)vt);
+	vt->callback = NULL;
 	vt->cls_id = gs_core_entities_system_t_class_id;
 	vt->cls = gs_core_entities_system_t_class;
 }
@@ -2006,7 +2008,11 @@ GS_API_DECL void
 _gs_core_system_renderable_t_cb(gs_core_entity_t* iter)
 {
 	gs_core_system_renderable_t sdata = {._base.iter = iter};
+	gs_core_cls_init(gs_core_system_renderable_t, &sdata);
 	sdata.renderable = gs_core_entities_term(iter, gs_core_component_renderable_t, 0);
 	sdata.transform = gs_core_entities_term(iter, gs_core_component_transform_t, 1);
-	gs_core_system_renderable_t_cb(&sdata);
+	if (gs_core_cast_vt(&sdata, gs_core_system_renderable_t)->callback)
+	{
+		gs_core_cast_vt(&sdata, gs_core_system_renderable_t)->callback(&sdata);
+	}
 }

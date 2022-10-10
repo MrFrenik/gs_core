@@ -73,6 +73,11 @@ typedef struct
 { 
     gs_core_base(gs_core_entities_system_t);
 
+    // Vtable
+    _vtable( 
+        _override: callback = gs_core_system_renderable_cb;
+    )
+
     _field() 
     gs_core_component_renderable_t* renderable;
 

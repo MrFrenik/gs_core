@@ -37,7 +37,7 @@
 #include "gs_core_components.h"
 
 GS_API_DECL void 
-gs_core_system_renderable_t_cb(gs_core_entities_system_t* system)
+gs_core_system_renderable_cb(gs_core_entities_system_t* system)
 { 
     gs_core_t* core = gs_core_instance();
     gs_core_system_renderable_t* sdata = (gs_core_system_renderable_t*)system;

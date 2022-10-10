@@ -98,7 +98,14 @@ _introspect()
 typedef struct
 {
     gs_core_base(gs_core_obj_t); 
+
+    // Vtable
+    _vtable( 
+        void (* callback)(gs_core_entities_system_t* system) = NULL;
+    )
+
     gs_core_entity_iter_t* iter;
+
 } gs_core_entities_system_t;
 
 // Internal system function

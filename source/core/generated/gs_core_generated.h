@@ -129,7 +129,8 @@ gs_core_system_renderable_t_cb(gs_core_entities_system_t* system);
 	gs_core_entities_component_t_vtable_t_methods
 
 #define gs_core_entities_system_t_vtable_t_methods\
-	gs_core_obj_t_vtable_t_methods
+	gs_core_obj_t_vtable_t_methods\
+	void (* callback)(gs_core_entities_system_t* system) ;
 
 #define gs_core_component_renderable_t_vtable_t_methods\
 	gs_core_entities_component_t_vtable_t_methods
