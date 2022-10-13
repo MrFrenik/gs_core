@@ -35,6 +35,7 @@
 =================================================================================================================*/
 
 #include "core/gs_core_app.h"
+#include "core/gs_core_entity.h"
 
 static gs_core_app_t* g_app = NULL;
 
@@ -80,11 +81,16 @@ _gs_core_app_update()
     // Need to get framebuffer and window size for placing gui elements within scene view 
     #ifdef GS_CORE_APP_STANDALONE
         gs_vec2 fbs = gs_platform_framebuffer_sizev(gs_platform_main_window());
-        gs_core_cast(app, gs_core_app_t)->viewport = gs_v4(0.f, 0.f, fbs.x, fbs.y);
+        app->viewport = gs_v4(0.f, 0.f, fbs.x, fbs.y);
     #endif 
-    
+
     // Update application
-    gs_core_cast_vt(app, gs_core_app_t)->update(); 
+    if (app->state == GS_CORE_APP_STATE_PLAYING) { 
+        gs_core_cast_vt(app, gs_core_app_t)->update(); 
+    }
+
+    // Update entities
+    gs_core_entities_update();
 
     // Render application
     #ifdef GS_CORE_APP_STANDALONE

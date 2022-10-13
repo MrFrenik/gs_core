@@ -134,8 +134,16 @@ gs_core_editor_update()
     }
 
     // App update
-    if (editor->app.app && editor->app.app->state == GS_CORE_APP_STATE_PLAYING)
+    if (editor->app.app)
     { 
+        if (gs_platform_key_pressed(GS_KEYCODE_O))
+        { 
+            gs_core_app_state state = editor->app.app->state;
+            state = state == GS_CORE_APP_STATE_STOPPED ? GS_CORE_APP_STATE_PLAYING : 
+                                                         GS_CORE_APP_STATE_STOPPED;
+            editor->app.app->state = state;
+        }
+
         _gs_core_app_update();
     }
 

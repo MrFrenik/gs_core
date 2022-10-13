@@ -45,7 +45,7 @@
 _introspect()
 typedef struct
 { 
-    gs_core_base(gs_core_entities_component_t);
+    gs_core_base(gs_core_entities_component_t); 
 
     _dtor( 
         gs_core_graphics_scene_renderable_destroy(&gs_core_instance()->gfx->scene, this->hndl);
@@ -73,6 +73,10 @@ typedef struct
 { 
     gs_core_base(gs_core_entities_system_t);
 
+    _ctor(
+        gs_core_cast(this, gs_core_entities_system_t)->tick = GS_CORE_ENTITIES_TICK_ALWAYS;
+    )
+
     // Vtable
     _vtable( 
         _override: callback = gs_core_system_renderable_cb;
@@ -85,5 +89,8 @@ typedef struct
     gs_core_component_transform_t* transform;
 
 } gs_core_system_renderable_t;
+
+GS_API_DECL void 
+gs_core_system_renderable_cb(gs_core_entities_system_t* system);
 
 #endif GS_CORE_COMPONENTS_H

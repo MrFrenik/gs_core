@@ -49,7 +49,6 @@ typedef ecs_iter_t   gs_core_entity_iter_t;
 typedef ecs_world_t  gs_core_entity_world_t;
 
 // Component
-
 _introspect()
 typedef struct
 {
@@ -89,10 +88,31 @@ typedef struct
             .id = hash,\
             .name = gs_to_str(T),\
             .size = sizeof(T),\
-            .alignment = ECS_ALIGNOF(T)\
+            .alignment = ECS_ALIGNOF(T),\
+            .lifecycle = {\
+                .ctor = _gs_core_entities_component_ctor_internal,\
+                .dtor = _gs_core_entities_component_dtor_internal\
+            }\
         });\
         gs_hash_table_insert(gs_core_entities_instance()->components, hash, comp);\
     } while (0) 
+
+GS_API_PRIVATE void 
+_gs_core_entities_component_ctor_internal(gs_core_entity_world_t* world, gs_core_entity_t comp, 
+        const gs_core_entity_t* ent, void* ptr, size_t size, int32_t cnt, void* ctx); 
+
+GS_API_PRIVATE void 
+_gs_core_entities_component_dtor_internal(gs_core_entity_world_t* world, gs_core_entity_t comp, 
+        const gs_core_entity_t* ent, void* ptr, size_t size, int32_t cnt, void* ctx);
+
+// Tickable state
+typedef enum
+{
+    GS_CORE_ENTITIES_TICK_ON_PLAY    = (1 << 0),
+    GS_CORE_ENTITIES_TICK_ON_PAUSE   = (1 << 1),
+    GS_CORE_ENTITIES_TICK_ON_STOP    = (1 << 2),
+    GS_CORE_ENTITIES_TICK_ALWAYS     = (1 << 3)
+} gs_core_entities_system_tick_flags;
 
 _introspect()
 typedef struct
@@ -104,7 +124,8 @@ typedef struct
         void (* callback)(gs_core_entities_system_t* system) = NULL;
     )
 
-    gs_core_entity_iter_t* iter;
+    gs_core_entity_iter_t* iter; 
+    gs_core_entities_system_tick_flags tick;
 
 } gs_core_entities_system_t;
 
@@ -150,6 +171,7 @@ typedef struct
     const char* name; 
     gs_core_entities_system_func_t callback; 
     gs_core_entities_system_filter_t filter;
+    gs_core_entities_system_tick_flags tick;
 } gs_core_entities_system_desc_t; 
 
 typedef struct gs_core_entities_s

@@ -116,6 +116,8 @@ typedef struct gs_core_base_s
 #define gs_core_vtable_t_methods\
     const gs_meta_class_t* (* cls)();\
     uint32_t (* cls_id)();\
+    void (* obj_init)(struct gs_core_obj_s*);\
+    void (* obj_dtor)(struct gs_core_obj_s*);\
     const struct gs_core_meta_info_s* (* info)();
 
 typedef struct gs_core_vtable_s

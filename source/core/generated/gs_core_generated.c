@@ -115,6 +115,8 @@ gs_core_asset_texture_t_vtable_t_init(gs_core_asset_texture_t_vtable_t* vt)
 	vt->deserialize = gs_core_asset_texture_deserialize;
 	vt->cls_id = gs_core_asset_texture_t_class_id;
 	vt->cls = gs_core_asset_texture_t_class;
+	vt->obj_init= gs_core_asset_texture_t_init;
+	vt->obj_dtor= gs_core_asset_texture_t_dtor;
 }
 
 GS_API_DECL gs_core_asset_texture_t_vtable_t
@@ -191,6 +193,8 @@ gs_core_app_t_vtable_t_init(gs_core_app_t_vtable_t* vt)
 	vt->editor = NULL;
 	vt->cls_id = gs_core_app_t_class_id;
 	vt->cls = gs_core_app_t_class;
+	vt->obj_init= gs_core_app_t_init;
+	vt->obj_dtor= gs_core_app_t_dtor;
 }
 
 GS_API_DECL gs_core_app_t_vtable_t
@@ -263,6 +267,8 @@ gs_core_asset_t_vtable_t_init(gs_core_asset_t_vtable_t* vt)
 	vt->importer = NULL;
 	vt->cls_id = gs_core_asset_t_class_id;
 	vt->cls = gs_core_asset_t_class;
+	vt->obj_init= gs_core_asset_t_init;
+	vt->obj_dtor= gs_core_asset_t_dtor;
 }
 
 GS_API_DECL gs_core_asset_t_vtable_t
@@ -334,6 +340,8 @@ gs_core_asset_pipeline_t_vtable_t_init(gs_core_asset_pipeline_t_vtable_t* vt)
 	gs_core_asset_t_vtable_t_init((gs_core_asset_t_vtable_t*)vt);
 	vt->cls_id = gs_core_asset_pipeline_t_class_id;
 	vt->cls = gs_core_asset_pipeline_t_class;
+	vt->obj_init= gs_core_asset_pipeline_t_init;
+	vt->obj_dtor= gs_core_asset_pipeline_t_dtor;
 }
 
 GS_API_DECL gs_core_asset_pipeline_t_vtable_t
@@ -405,6 +413,8 @@ gs_core_asset_font_t_vtable_t_init(gs_core_asset_font_t_vtable_t* vt)
 	gs_core_asset_t_vtable_t_init((gs_core_asset_t_vtable_t*)vt);
 	vt->cls_id = gs_core_asset_font_t_class_id;
 	vt->cls = gs_core_asset_font_t_class;
+	vt->obj_init= gs_core_asset_font_t_init;
+	vt->obj_dtor= gs_core_asset_font_t_dtor;
 }
 
 GS_API_DECL gs_core_asset_font_t_vtable_t
@@ -476,6 +486,8 @@ gs_core_asset_mesh_t_vtable_t_init(gs_core_asset_mesh_t_vtable_t* vt)
 	gs_core_asset_t_vtable_t_init((gs_core_asset_t_vtable_t*)vt);
 	vt->cls_id = gs_core_asset_mesh_t_class_id;
 	vt->cls = gs_core_asset_mesh_t_class;
+	vt->obj_init= gs_core_asset_mesh_t_init;
+	vt->obj_dtor= gs_core_asset_mesh_t_dtor;
 }
 
 GS_API_DECL gs_core_asset_mesh_t_vtable_t
@@ -547,6 +559,8 @@ gs_core_asset_audio_t_vtable_t_init(gs_core_asset_audio_t_vtable_t* vt)
 	gs_core_asset_t_vtable_t_init((gs_core_asset_t_vtable_t*)vt);
 	vt->cls_id = gs_core_asset_audio_t_class_id;
 	vt->cls = gs_core_asset_audio_t_class;
+	vt->obj_init= gs_core_asset_audio_t_init;
+	vt->obj_dtor= gs_core_asset_audio_t_dtor;
 }
 
 GS_API_DECL gs_core_asset_audio_t_vtable_t
@@ -618,6 +632,8 @@ gs_core_network_rpc_t_vtable_t_init(gs_core_network_rpc_t_vtable_t* vt)
 	gs_core_obj_t_vtable_t_init((gs_core_obj_t_vtable_t*)vt);
 	vt->cls_id = gs_core_network_rpc_t_class_id;
 	vt->cls = gs_core_network_rpc_t_class;
+	vt->obj_init= gs_core_network_rpc_t_init;
+	vt->obj_dtor= gs_core_network_rpc_t_dtor;
 }
 
 GS_API_DECL gs_core_network_rpc_t_vtable_t
@@ -692,6 +708,8 @@ gs_core_obj_t_vtable_t_init(gs_core_obj_t_vtable_t* vt)
 	vt->net_deserialize = gs_core_obj_net_deserialize_impl;
 	vt->cls_id = gs_core_obj_t_class_id;
 	vt->cls = gs_core_obj_t_class;
+	vt->obj_init= gs_core_obj_t_init;
+	vt->obj_dtor= gs_core_obj_t_dtor;
 }
 
 GS_API_DECL gs_core_obj_t_vtable_t
@@ -763,6 +781,8 @@ gs_core_asset_ui_stylesheet_t_vtable_t_init(gs_core_asset_ui_stylesheet_t_vtable
 	gs_core_asset_t_vtable_t_init((gs_core_asset_t_vtable_t*)vt);
 	vt->cls_id = gs_core_asset_ui_stylesheet_t_class_id;
 	vt->cls = gs_core_asset_ui_stylesheet_t_class;
+	vt->obj_init= gs_core_asset_ui_stylesheet_t_init;
+	vt->obj_dtor= gs_core_asset_ui_stylesheet_t_dtor;
 }
 
 GS_API_DECL gs_core_asset_ui_stylesheet_t_vtable_t
@@ -834,6 +854,8 @@ gs_core_entities_component_t_vtable_t_init(gs_core_entities_component_t_vtable_t
 	gs_core_obj_t_vtable_t_init((gs_core_obj_t_vtable_t*)vt);
 	vt->cls_id = gs_core_entities_component_t_class_id;
 	vt->cls = gs_core_entities_component_t_class;
+	vt->obj_init= gs_core_entities_component_t_init;
+	vt->obj_dtor= gs_core_entities_component_t_dtor;
 }
 
 GS_API_DECL gs_core_entities_component_t_vtable_t
@@ -905,6 +927,8 @@ gs_core_asset_material_t_vtable_t_init(gs_core_asset_material_t_vtable_t* vt)
 	gs_core_asset_t_vtable_t_init((gs_core_asset_t_vtable_t*)vt);
 	vt->cls_id = gs_core_asset_material_t_class_id;
 	vt->cls = gs_core_asset_material_t_class;
+	vt->obj_init= gs_core_asset_material_t_init;
+	vt->obj_dtor= gs_core_asset_material_t_dtor;
 }
 
 GS_API_DECL gs_core_asset_material_t_vtable_t
@@ -947,6 +971,9 @@ GS_API_DECL void
 gs_core_system_renderable_t_init(gs_core_system_renderable_t* obj)
 {
 	gs_core_cast(obj, gs_core_base_t)->id = gs_core_system_renderable_t_class_id();
+	gs_core_system_renderable_t* this = (gs_core_system_renderable_t*)obj;
+	gs_core_cast(this, gs_core_entities_system_t)->tick = GS_CORE_ENTITIES_TICK_ALWAYS;
+    
 }
 
 GS_API_DECL gs_core_system_renderable_t*
@@ -977,6 +1004,8 @@ gs_core_system_renderable_t_vtable_t_init(gs_core_system_renderable_t_vtable_t* 
 	vt->callback = gs_core_system_renderable_cb;
 	vt->cls_id = gs_core_system_renderable_t_class_id;
 	vt->cls = gs_core_system_renderable_t_class;
+	vt->obj_init= gs_core_system_renderable_t_init;
+	vt->obj_dtor= gs_core_system_renderable_t_dtor;
 }
 
 GS_API_DECL gs_core_system_renderable_t_vtable_t
@@ -1048,6 +1077,8 @@ gs_core_component_transform_t_vtable_t_init(gs_core_component_transform_t_vtable
 	gs_core_entities_component_t_vtable_t_init((gs_core_entities_component_t_vtable_t*)vt);
 	vt->cls_id = gs_core_component_transform_t_class_id;
 	vt->cls = gs_core_component_transform_t_class;
+	vt->obj_init= gs_core_component_transform_t_init;
+	vt->obj_dtor= gs_core_component_transform_t_dtor;
 }
 
 GS_API_DECL gs_core_component_transform_t_vtable_t
@@ -1120,6 +1151,8 @@ gs_core_entities_system_t_vtable_t_init(gs_core_entities_system_t_vtable_t* vt)
 	vt->callback = NULL;
 	vt->cls_id = gs_core_entities_system_t_class_id;
 	vt->cls = gs_core_entities_system_t_class;
+	vt->obj_init= gs_core_entities_system_t_init;
+	vt->obj_dtor= gs_core_entities_system_t_dtor;
 }
 
 GS_API_DECL gs_core_entities_system_t_vtable_t
@@ -1183,7 +1216,7 @@ gs_core_component_renderable_t_ctor()
 GS_API_DECL void
 gs_core_component_renderable_t_dtor(gs_core_obj_t* obj)
 {
-	gs_core_component_renderable_t* this = obj;
+	gs_core_component_renderable_t* this = (gs_core_component_renderable_t*)obj;
 	gs_core_graphics_scene_renderable_destroy(&gs_core_instance()->gfx->scene, this->hndl);
     
 }
@@ -1194,6 +1227,8 @@ gs_core_component_renderable_t_vtable_t_init(gs_core_component_renderable_t_vtab
 	gs_core_entities_component_t_vtable_t_init((gs_core_entities_component_t_vtable_t*)vt);
 	vt->cls_id = gs_core_component_renderable_t_class_id;
 	vt->cls = gs_core_component_renderable_t_class;
+	vt->obj_init= gs_core_component_renderable_t_init;
+	vt->obj_dtor= gs_core_component_renderable_t_dtor;
 }
 
 GS_API_DECL gs_core_component_renderable_t_vtable_t
@@ -1266,6 +1301,8 @@ gs_core_graphics_renderpass_t_vtable_t_init(gs_core_graphics_renderpass_t_vtable
 	vt->execute = NULL;
 	vt->cls_id = gs_core_graphics_renderpass_t_class_id;
 	vt->cls = gs_core_graphics_renderpass_t_class;
+	vt->obj_init= gs_core_graphics_renderpass_t_init;
+	vt->obj_dtor= gs_core_graphics_renderpass_t_dtor;
 }
 
 GS_API_DECL gs_core_graphics_renderpass_t_vtable_t
@@ -2007,11 +2044,18 @@ gs_core_meta_ecs_register()
 GS_API_DECL void
 _gs_core_system_renderable_t_cb(gs_core_entity_t* iter)
 {
+	gs_core_app_t* app = gs_core_app_instance();
 	gs_core_system_renderable_t sdata = {._base.iter = iter};
 	gs_core_cls_init(gs_core_system_renderable_t, &sdata);
+	gs_core_cast(&sdata, gs_core_entities_system_t)->tick |= GS_CORE_ENTITIES_TICK_ON_PLAY;
 	sdata.renderable = gs_core_entities_term(iter, gs_core_component_renderable_t, 0);
 	sdata.transform = gs_core_entities_term(iter, gs_core_component_transform_t, 1);
-	if (gs_core_cast_vt(&sdata, gs_core_system_renderable_t)->callback)
+	gs_core_entities_system_tick_flags tick = gs_core_cast(&sdata, gs_core_entities_system_t)->tick;
+	bool can_tick = (tick & GS_CORE_ENTITIES_TICK_ALWAYS) ||
+		(tick & GS_CORE_ENTITIES_TICK_ON_PLAY && app->state == GS_CORE_APP_STATE_PLAYING) ||
+		(tick & GS_CORE_ENTITIES_TICK_ON_PAUSE && app->state == GS_CORE_APP_STATE_PAUSED) ||
+		(tick & GS_CORE_ENTITIES_TICK_ON_STOP && app->state == GS_CORE_APP_STATE_STOPPED);
+	if (can_tick && gs_core_cast_vt(&sdata, gs_core_system_renderable_t)->callback)
 	{
 		gs_core_cast_vt(&sdata, gs_core_system_renderable_t)->callback(&sdata);
 	}

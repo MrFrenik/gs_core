@@ -116,6 +116,10 @@ gs_core_entities_component_register_internal(const gs_core_entities_component_de
         .size = desc->size, 
         .alignment = desc->alignment
     }); 
+    ecs_set_component_actions_w_id(ecs->world, comp, &(EcsComponentLifecycle) {
+        .ctor = _gs_core_entities_component_ctor_internal,
+        .dtor = _gs_core_entities_component_dtor_internal
+    });
     return (gs_core_entity_t)comp;
 }
 
@@ -177,6 +181,30 @@ gs_core_entities_component_remove_internal(gs_core_entity_world_t* world,
     gs_core_entity_t entity, gs_core_entity_t comp)
 {
 } 
+
+GS_API_PRIVATE void 
+_gs_core_entities_component_ctor_internal(gs_core_entity_world_t* world, gs_core_entity_t comp, 
+        const gs_core_entity_t* ent, void* ptr, size_t size, int32_t cnt, void* ctx) 
+{ 
+    // Get raw component data as object, call init on vtable
+    gs_core_obj_t* cp = ecs_get_id(world, *ent, comp);
+    if (cp) {
+        gs_core_cast_vt(cp, gs_core_obj_t)->obj_init(cp);
+    }
+}
+
+GS_API_PRIVATE void 
+_gs_core_entities_component_dtor_internal(gs_core_entity_world_t* world, gs_core_entity_t comp, 
+        const gs_core_entity_t* ent, void* ptr, size_t size, int32_t cnt, void* ctx)
+{ 
+    // Get raw component data as object, call dtor on vtable
+    gs_core_obj_t* cp = ecs_get_id(world, *ent, comp);
+    if (cp) {
+        gs_core_cast_vt(cp, gs_core_obj_t)->obj_dtor(cp);
+    }
+}
+
+
 
 
 

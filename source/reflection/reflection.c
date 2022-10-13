@@ -970,7 +970,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         if (gs_hash_table_exists(cls->methods, gs_hash_str64("_ctor")))
         {
             method_t* func = gs_hash_table_getp(cls->methods, gs_hash_str64("_ctor"));
-            gs_fprintln(fp, "\t%s* this = &obj;", cls->name);
+            gs_fprintln(fp, "\t%s* this = (%s*)obj;", cls->name, cls->name);
             gs_fprintln(fp, "\t%s", func->content);
         }
 
@@ -1002,7 +1002,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         if (gs_hash_table_exists(cls->methods, gs_hash_str64("_dtor")))
         {
             method_t* func = gs_hash_table_getp(cls->methods, gs_hash_str64("_dtor"));
-            gs_fprintln(fp, "\t%s* this = obj;", cls->name);
+            gs_fprintln(fp, "\t%s* this = (%s*)obj;", cls->name, cls->name);
             gs_fprintln(fp, "\t%s", func->content);
         }
 
@@ -1028,14 +1028,15 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
             gs_hash_table_iter_advance(cls->vtable.methods, mit)
         )
         {
-            method_t* mt = gs_hash_table_iter_getp(cls->vtable.methods, mit);
-
+            method_t* mt = gs_hash_table_iter_getp(cls->vtable.methods, mit); 
             gs_fprintln(fp, "\tvt->%s = %s;", mt->name, mt->function);
         }
 
         // Init base stuff
         gs_fprintln(fp, "\tvt->cls_id = %s_class_id;", cls->name); 
-        gs_fprintln(fp, "\tvt->cls = %s_class;", cls->name);
+        gs_fprintln(fp, "\tvt->cls = %s_class;", cls->name); 
+        gs_fprintln(fp, "\tvt->obj_init= %s_init;", cls->name); 
+        gs_fprintln(fp, "\tvt->obj_dtor= %s_dtor;", cls->name); 
 
         gs_fprintln(fp, "}\n");
 
@@ -1321,8 +1322,10 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
             gs_fprintln(fp, "%s", CB);
             gs_fprintln(fp, "{");
 
+            gs_fprintln(fp, "\tgs_core_app_t* app = gs_core_app_instance();");
             gs_fprintln(fp, "\t%s sdata = {._base.iter = iter};", cls->name);
             gs_fprintln(fp, "\tgs_core_cls_init(%s, &sdata);", cls->name);
+            gs_fprintln(fp, "\tgs_core_cast(&sdata, gs_core_entities_system_t)->tick |= GS_CORE_ENTITIES_TICK_ON_PLAY;");
 
             for (uint32_t i = 0; i < gs_dyn_array_size(cls->properties); ++i)
             {
@@ -1332,8 +1335,15 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
                     p->name, strlen, p->type, i);
             } 
 
+            // Get tick rate, compare with application 
+            gs_fprintln(fp, "\tgs_core_entities_system_tick_flags tick = gs_core_cast(&sdata, gs_core_entities_system_t)->tick;");
+            gs_fprintln(fp, "\tbool can_tick = (tick & GS_CORE_ENTITIES_TICK_ALWAYS) ||");
+            gs_fprintln(fp, "\t\t(tick & GS_CORE_ENTITIES_TICK_ON_PLAY && app->state == GS_CORE_APP_STATE_PLAYING) ||");
+            gs_fprintln(fp, "\t\t(tick & GS_CORE_ENTITIES_TICK_ON_PAUSE && app->state == GS_CORE_APP_STATE_PAUSED) ||");
+            gs_fprintln(fp, "\t\t(tick & GS_CORE_ENTITIES_TICK_ON_STOP && app->state == GS_CORE_APP_STATE_STOPPED);");
+
             // Get vtable, then do callback, if available
-            gs_fprintln(fp, "\tif (gs_core_cast_vt(&sdata, %s)->callback)", cls->name);
+            gs_fprintln(fp, "\tif (can_tick && gs_core_cast_vt(&sdata, %s)->callback)", cls->name);
             gs_fprintln(fp, "\t{");
             gs_fprintln(fp, "\t\tgs_core_cast_vt(&sdata, %s)->callback(&sdata);", cls->name);
             gs_fprintln(fp, "\t}");
