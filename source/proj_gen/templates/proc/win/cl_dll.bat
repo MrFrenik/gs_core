@@ -59,7 +59,7 @@ set l_options=/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib
 rem Reflection Dirs
 set in_dir="%root%/source" 
 set out_dir="%root%/source/generated" 
-set id_offset="17"
+set id_offset="200"
 
 rem Run Reflection
 %gs_core%\bin\reflection\reflection.exe %in_dir% %out_dir% %proj_name% %id_offset%

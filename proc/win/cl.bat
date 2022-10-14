@@ -53,7 +53,7 @@ rem Link options
 set l_options=/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib 
 
 rem Reflection Dir
-set refl_dir=%root%\source\core
+set refl_dir=%root%\source\core\
 
 rem Out Dir
 set out_dir=%root%\source\core\generated\

@@ -35,10 +35,12 @@
 =================================================================================================================*/
 
 // Core Includes
-#include "editor/gs_core_editor.h" 
-#include "editor/gs_core_editor_view_scene.h"
-#include "editor/gs_core_editor_view_outliner.h"
-#include "editor/gs_core_editor_view_properties.h"
+#include "editor/views/gs_core_editor_view_outliner.h"
+#include "editor/views/gs_core_editor_view_properties.h"
+#include "editor/views/gs_core_editor_view_pie.h"
+#include "editor/views/gs_core_editor_view_assets.h"
+#include "editor/views/gs_core_editor_view_scene.h"
+#include "editor/gs_core_editor.h"
 #include "core/gs_core_app.h" 
 
 GS_API_DECL void gs_core_editor_app_hot_reload();
@@ -68,6 +70,9 @@ gs_core_editor_init()
     // Init core
     editor->core = gs_core_new();
 
+    // Register editor meta
+    _gs_core_editor_meta_register();
+
     // Init gui
     editor->gui = gs_gui_context_new(gs_platform_main_window()); 
 
@@ -78,38 +83,15 @@ gs_core_editor_init()
     // Dock editor views (set for now by default)
     gs_gui_context_t* gui = &editor->gui;
 
-    // Scene view
-    gs_core_editor_view_register(&(gs_core_editor_view_desc_t){
-        .name = "Scene##gs_core_editor",
-        .cb = gs_core_editor_view_scene_cb,
-        .split = {
-            .parent = GS_CORE_EDITOR_DOCKSPACE_NAME,
-            .type = GS_GUI_SPLIT_BOTTOM,
-            .amount = 1.f
-        }
-    });
-    
-    // Outliner view
-    gs_core_editor_view_register(&(gs_core_editor_view_desc_t){
-        .name = "Outliner##gs_core_editor", 
-        .cb = gs_core_editor_view_outliner_cb,
-        .split = {
-            .parent = "Scene##gs_core_editor", 
-            .type = GS_GUI_SPLIT_RIGHT, 
-            .amount = 0.3f
-        }
-    });
+    // Register core editor views
+    gs_core_editor_view_t* scene = gs_core_editor_view_register(gs_core_editor_view_scene_t);
+    gs_core_editor_view_t* outliner = gs_core_editor_view_register(gs_core_editor_view_outliner_t);
+    gs_core_editor_view_t* properties = gs_core_editor_view_register(gs_core_editor_view_properties_t);
 
-    // Properties view
-    gs_core_editor_view_register(&(gs_core_editor_view_desc_t){
-        .name = "Properties##gs_core_editor", 
-        .cb = gs_core_editor_view_properties_cb,
-        .split = {
-            .parent = "Outliner##gs_core_editor",
-            .type = GS_GUI_SPLIT_BOTTOM, 
-            .amount = 0.7f
-        }
-    }); 
+    // Set up splits
+    gs_gui_dock_ex(gui, scene->name, GS_CORE_EDITOR_DOCKSPACE_NAME, GS_GUI_SPLIT_BOTTOM, 1.f);
+    gs_gui_dock_ex(gui, outliner->name, scene->name, GS_GUI_SPLIT_RIGHT, 0.3f);
+    gs_gui_dock_ex(gui, properties->name, outliner->name, GS_GUI_SPLIT_BOTTOM, 0.7f);
 
     // Load app .dll if available
     gs_core_editor_app_hot_reload();
@@ -193,10 +175,11 @@ gs_core_editor_update()
             gs_hash_table_iter_advance(editor->views, it)
         )
         { 
-            gs_core_editor_view_t* view = gs_hash_table_iter_getp(editor->views, it);
+            gs_core_editor_view_t* view = gs_hash_table_iter_get(editor->views, it);
             gs_gui_window_begin_ex(gui, view->name, gs_gui_rect(350, 40, 600, 500), NULL, NULL, GS_GUI_OPT_NOSCROLL);
             {
-                view->cb(view);
+                // Editor callback
+                gs_core_cast_vt(view, gs_core_editor_view_t)->callback(view);
             }
             gs_gui_window_end(gui);
         } 
@@ -221,42 +204,56 @@ gs_core_editor_shutdown()
     // Unload app 
     gs_core_editor_library_unload();
 
+    // Unegister editor meta
+    _gs_core_editor_meta_unregister();
+
     // Shutdown core
     gs_core_free(editor->core);
 }
 
 GS_API_DECL void
-gs_core_editor_view_register(const gs_core_editor_view_desc_t* desc)
+gs_core_editor_view_set_name(gs_core_editor_view_t* view, const char* name)
 { 
-    // Assert desc has a valid name
-    gs_core_editor_t* editor = gs_user_data(gs_core_editor_t);
-    gs_assert(desc->name);
-
-    // Assert view doesn't already exist
-    uint64_t hash = gs_hash_str64(desc->name);
-    gs_assert(!gs_hash_table_exists(editor->views, hash));
-
-    // Construct new editor view
-    gs_core_editor_view_t view = (gs_core_editor_view_t){
-        .cb = desc->cb
-    };
-    memcpy(view.name, desc->name, GS_CORE_EDITOR_VIEW_STR_MAX);
-
-    // Add to table
-    gs_hash_table_insert(editor->views, hash, view); 
-
-    // Dock view
-    gs_gui_context_t* gui = &editor->gui;
-    const char* parent = "Dockspace##editor";
-    gs_gui_split_type split = GS_GUI_SPLIT_BOTTOM;
-    float amount = 0.5f;
-    if (desc->split.parent)
+    if (!view || !name)
     {
-        parent = desc->split.parent;
-        amount = desc->split.amount;
-        split = desc->split.type;
+        return;
     }
-    gs_gui_dock_ex(gui, desc->name, parent, split, amount); 
+
+    memcpy(view->name, name, GS_CORE_EDITOR_VIEW_STR_MAX);
+}
+
+GS_API_PRIVATE gs_core_editor_view_t*
+_gs_core_editor_view_register_internal(gs_core_editor_t* (* obj_new_f)(), const char* name) 
+{ 
+    gs_core_editor_t* editor = gs_user_data(gs_core_editor_t);
+
+    // Construct view on heap and cast
+    gs_core_obj_t* obj = obj_new_f();
+    gs_core_editor_view_t* view = gs_core_cast(obj, gs_core_editor_view_t);
+
+    // Assert if required vtable functions not provided 
+    gs_core_vt(gs_core_editor_view_t)* vt = gs_core_cast_vt(view, gs_core_editor_view_t);
+
+    if (!vt || !vt->callback) {
+        gs_log_error("View required to override callback vtable function: %s", view->name); 
+    }
+
+    // If not provided a valid name, then use type
+    if (!gs_string_length(view->name)) {
+        memcpy(view->name, name, GS_CORE_EDITOR_VIEW_STR_MAX);
+    }
+
+    // If exists, error
+    uint64_t hash = gs_hash_str64(view->name);
+    if (gs_hash_table_exists(editor->views, hash)) {
+        gs_log_error("View already registered with name: %s", view->name);
+    }
+    gs_hash_table_insert(editor->views, hash, view);
+
+    // If no docking available, then need to dock to dockspace...
+    // gs_gui_dock_ex(gui, desc->name, parent, split, amount); 
+
+    return view;
 }
 
 GS_API_DECL void 
@@ -342,6 +339,7 @@ gs_core_editor_app_hot_reload()
     editor->app.hot_reload_begin = false; 
     gs_println("Hot reload finished..."); 
 }
+
 
 
 

@@ -40,8 +40,11 @@
 // Core Includes
 #include "core/gs_core.h"
 
+// Forward Decls
+struct gs_core_s;
+
 // Defines 
-#define GS_CORE_EDITOR_VIEW_STR_MAX    64
+#define GS_CORE_EDITOR_VIEW_STR_MAX    128
 
 #ifdef GS_PLATFORM_WIN
     #define GS_CORE_EDITOR_DYNAMIC_LIB_EXT  "dll"
@@ -49,22 +52,27 @@
     #define GS_CORE_EDITOR_DYNAMIC_LIB_EXT  "so"
 #endif
 
-struct gs_core_editor_view_s;
-
-typedef void (* gs_core_editor_view_cb)(struct gs_core_editor_view_s* view);
-typedef void (* gs_core_editor_scene_draw_cb)(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd);
+struct gs_core_editor_view_s; 
 
 // Editor view base
+_introspect()
 typedef struct gs_core_editor_view_s
 {
+    gs_core_base(gs_core_obj_t);
+
+    _vtable(
+        void (* callback)(struct gs_core_editor_view_t* view) = NULL;
+    )
+
     char name[GS_CORE_EDITOR_VIEW_STR_MAX]; // Name for editor view
-    gs_core_editor_view_cb cb;              // Callback for view
 } gs_core_editor_view_t;
+
+GS_API_DECL void
+gs_core_editor_view_set_name(gs_core_editor_view_t* view, const char* name);
 
 typedef struct gs_core_editor_view_desc_s
 {
     const char* name;
-    gs_core_editor_view_cb cb;
     struct {
         const char* parent;
         gs_gui_split_type type;
@@ -75,15 +83,15 @@ typedef struct gs_core_editor_view_desc_s
 
 typedef struct gs_core_editor_s
 {
-    gs_core_t* core;                                       // Core 
-    gs_hash_table(uint64_t, gs_core_editor_view_t) views;  // All registered editor views 
+    struct gs_core_s* core;                                // Core 
+    gs_hash_table(uint64_t, gs_core_editor_view_t*) views; // All registered editor views 
     gs_gui_context_t gui;                                  // Gui context for all editor views
     gs_camera_t camera;                                    // Camera for scene (this should be held in a specific view instead)
     struct {
         gs_platform_file_stats_t fstats;    // To track dll hot reloading
         bool32 hot_reload_begin;            // Change detected for hot-reload             
         void* dll;                          // Pointer to library
-        void* (* new)(gs_t* gs, gs_core_t* core);
+        void* (* new)(gs_t* gs, struct gs_core_s* core);
         void (* free)(void* app);
         void (* meta_register)();
         void (* meta_unregister)();
@@ -92,8 +100,31 @@ typedef struct gs_core_editor_s
     } app;                                  // Struct for loaded application
 } gs_core_editor_t;
 
-GS_API_DECL void
-gs_core_editor_view_register(const gs_core_editor_view_desc_t* view);
+#define gs_core_editor_view_register(T)\
+    (_gs_core_editor_view_register_internal(T##_new, gs_to_str(T)))
+
+GS_API_PRIVATE gs_core_editor_view_t*
+_gs_core_editor_view_register_internal(gs_core_editor_t* (* obj_new_f)(), const char* name);
+
+GS_API_PRIVATE void 
+_gs_core_editor_meta_register();
+
+GS_API_PRIVATE void 
+_gs_core_editor_meta_unregister();
+
+#define GS_CORE_EDITOR_DEFINE(_NAME)\
+    GS_API_DECL void\
+    _gs_core_editor_meta_register()\
+    {\
+        _NAME##_editor_meta_register();\
+        _NAME##_editor_meta_ecs_register();\
+    }\
+\
+    GS_API_DECL void\
+    _gs_core_editor_meta_unregister()\
+    {\
+        _NAME##_editor_meta_unregister();\
+    }\
 
 GS_API_DECL void 
 gs_core_editor_init(void* data);

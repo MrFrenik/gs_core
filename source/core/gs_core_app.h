@@ -37,6 +37,7 @@
 #ifndef CORE_APP_H
 #define CORE_APP_H 
 
+#include "core/gs_core_gs.h"
 #include "core/gs_core_object.h"
 
 // Forward decl

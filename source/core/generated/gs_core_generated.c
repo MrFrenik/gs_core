@@ -972,7 +972,7 @@ gs_core_system_renderable_t_init(gs_core_system_renderable_t* obj)
 {
 	gs_core_cast(obj, gs_core_base_t)->id = gs_core_system_renderable_t_class_id();
 	gs_core_system_renderable_t* this = (gs_core_system_renderable_t*)obj;
-	gs_core_cast(this, gs_core_entities_system_t)->tick = GS_CORE_ENTITIES_TICK_ALWAYS;
+	gs_core_cast(this, gs_core_entities_system_t)->tick = GS_CORE_ENTITIES_TICK_ALWAYS;
     
 }
 
@@ -1217,7 +1217,7 @@ GS_API_DECL void
 gs_core_component_renderable_t_dtor(gs_core_obj_t* obj)
 {
 	gs_core_component_renderable_t* this = (gs_core_component_renderable_t*)obj;
-	gs_core_graphics_scene_renderable_destroy(&gs_core_instance()->gfx->scene, this->hndl);
+	gs_core_graphics_scene_renderable_destroy(&gs_core_instance()->gfx->scene, this->hndl);
     
 }
 

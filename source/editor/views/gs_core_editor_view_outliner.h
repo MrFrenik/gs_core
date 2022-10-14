@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: gs_core_editor_view_assets.h
+    * File: gs_core_editor_view_outliner.h
 
     All Rights Reserved
 
@@ -34,25 +34,41 @@
 
 =================================================================================================================*/
 
-#ifndef GS_CORE_EDITOR_VIEW_ASSETS_H
-#define GS_CORE_EDITOR_VIEW_ASSETS_H 
+#ifndef GS_CORE_EDITOR_VIEW_OUTLINER_H
+#define GS_CORE_EDITOR_VIEW_OUTLINER_H 
 
 // Editor Includes
-#include "editor\gs_core_editor.h" 
+#include "../gs_core_editor.h" 
+
+_introspect()
+typedef struct
+{
+    gs_core_base(gs_core_editor_view_t);
+
+    _ctor( 
+        gs_core_editor_view_set_name(this, "Outliner##gs_core_editor_view");
+    )
+
+    _vtable( 
+        _override: callback = gs_core_editor_view_outliner_cb;
+    )
+
+} gs_core_editor_view_outliner_t;
 
 GS_API_DECL void 
-gs_core_editor_view_assets_cb(struct gs_core_editor_view_s* view);
+gs_core_editor_view_outliner_cb(struct gs_core_editor_view_s* view);
 
 #ifdef GS_CORE_EDITOR_IMPL
 
 GS_API_DECL void 
-gs_core_editor_view_assets_cb(struct gs_core_editor_view_s* view)
+gs_core_editor_view_outliner_cb(struct gs_core_editor_view_s* view)
 {
     gs_core_editor_t* editor = gs_user_data(gs_core_editor_t); 
-    gs_gui_context_t* gui = &editor->gui; 
+    gs_gui_context_t* gui = &editor->gui;
 
-    // Iterate through all available assets in virtual directory
-}
+    // Iterate through all entities within entity manager, show their...names?
+    // Show their ids, I suppose. This is where it gets kind of odd in a 'generic' sense.
+} 
 
-#endif // GS_CORE_EDITOR_IMPL 
-#endif // GS_CORE_EDITOR_VIEW_ASSETS_H
+#endif // GS_CORE_EDITOR_IMPL
+#endif // GS_CORE_EDITOR_VIEW_OUTLINER_H

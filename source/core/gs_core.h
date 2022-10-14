@@ -50,7 +50,7 @@
 #include "gs_core_app.h"
 #include "core/generated/gs_core_generated.h"
 
-#define GS_CORE_REFL_CLASS_MAX     100 
+#define GS_CORE_REFL_CLASS_MAX     1000
 
 // Want a way to track all allocations and log if they've been freed
 extern void* gs_core_os_malloc(size_t sz); 

@@ -1,6 +1,6 @@
 /*==============================================================================================================
     * Copyright: 2022 John Jackson 
-    * File: gs_core_editor_view_scene.h
+    * File: gs_core_editor_view_properties.h
 
     All Rights Reserved
 
@@ -34,36 +34,57 @@
 
 =================================================================================================================*/
 
-#ifndef GS_CORE_EDITOR_VIEW_SCENE_H
-#define GS_CORE_EDITOR_VIEW_SCENE_H 
+#ifndef GS_CORE_EDITOR_VIEW_PROPERTIES_H
+#define GS_CORE_EDITOR_VIEW_PROPERTIES_H
 
 // Editor Includes
 #include "editor/gs_core_editor.h" 
-#include "core/gs_core_app.h"
+
+_introspect()
+typedef struct
+{
+    gs_core_base(gs_core_editor_view_t);
+
+    _ctor( 
+        gs_core_editor_view_set_name(this, "Properties##gs_core_editor_view");
+    )
+
+    _vtable( 
+        _override: callback = gs_core_editor_view_properties_cb;
+    )
+
+} gs_core_editor_view_properties_t;
 
 GS_API_DECL void 
-gs_core_editor_view_scene_cb(struct gs_core_editor_view_s* view);
+gs_core_editor_view_properties_cb(struct gs_core_editor_view_s* view);
 
-#ifdef GS_CORE_EDITOR_IMPL 
+#ifdef GS_CORE_EDITOR_IMPL
 
 GS_API_DECL void 
-gs_core_editor_view_scene_cb(struct gs_core_editor_view_s* view)
+gs_core_editor_view_properties_cb(struct gs_core_editor_view_s* view)
 {
     gs_core_editor_t* editor = gs_user_data(gs_core_editor_t); 
+    gs_core_meta_registry_t* meta = gs_core_meta_registry_instance();
     gs_gui_context_t* gui = &editor->gui;
+    gs_gui_container_t* cnt = gs_gui_get_current_container(gui);
+    gs_gui_label(gui, "PROPERTIES");
 
-    gs_gui_layout_t* layout = gs_gui_get_layout(gui);
-    gs_gui_layout_row(gui, 1, (int[]){-1}, -1); 
-    gs_gui_rect_t rect = gs_gui_layout_next(gui);
-    gs_gui_layout_set_next(gui, rect, 0);
-    gs_gui_container_t* cnt = gs_gui_get_current_container(gui); 
+    gs_gui_layout_row(gui, 1, (int16_t[]){cnt->body.w * 0.8f}, 0);
 
-    gs_core_app_t* app = editor->app.app;
-    if (app)
-    { 
-        gs_gui_draw_custom(gui, rect, _gs_core_app_editor, NULL, 0); 
+    // Get all registered components from meta
+    for (
+        gs_slot_array_iter it = gs_slot_array_iter_new(meta->info);
+        gs_slot_array_iter_valid(meta->info, it);
+        gs_slot_array_iter_advance(meta->info, it)
+    )
+    {
+        gs_core_meta_info_t* info = gs_slot_array_iter_getp(meta->info, it);
+        if (gs_core_info_derived_from(info, gs_core_entities_component_t))
+        {
+            gs_gui_label(gui, "%s", info->cls->name);
+        }
     }
-} 
+}
 
-#endif // GS_CORE_EDITOR_IMPL 
-#endif // GS_CORE_EDITOR_VIEW_SCENE_H
+#endif // GS_CORE_EDITOR_IMPL
+#endif  // GS_CORE_EDITOR_VIEW_PROPERTIES_H

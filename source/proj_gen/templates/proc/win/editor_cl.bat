@@ -56,6 +56,14 @@ set tp_libs=%gs_core%\third_party\libs\win\rel\Bullet3Collision.lib ^
 rem Link options
 set l_options=/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib 
 
+rem Reflection Dirs
+set in_dir="%root%/source/editor" 
+set out_dir="%root%/source/editor/generated" 
+set id_offset="100"
+
+rem Run Reflection
+%gs_core%\bin\reflection\reflection.exe %in_dir% %out_dir% %proj_name% %id_offset%
+
 rem Compile Release
 rem cl /MP /FS /Ox /W0 /Fe%proj_name%.exe %src_all% %inc% ^
 rem /EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib /NODEFAULTLIB:LIBCMT ^

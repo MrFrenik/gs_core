@@ -492,7 +492,7 @@ void refl_iterate_dir_cb(const char* path, struct dirent* entry)
     gs_snprintf(fp.path, 512, "%s", path); 
     gs_dyn_array_push(g_files, fp);
 
-    char* contents = gs_platform_read_file_contents(path, "r", NULL); 
+    char* contents = gs_platform_read_file_contents(path, "rb", NULL); 
     gs_lexer_t lex = gs_lexer_c_ctor(contents);
 
     while (lex.can_lex(&lex))
