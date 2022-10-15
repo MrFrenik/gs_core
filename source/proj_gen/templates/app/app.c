@@ -8,10 +8,10 @@ GS_CORE_APP_MAIN(%APP%)
 GS_CORE_APP_DEFINE(%APP%)
 
 GS_API_DECL void 
-%APP%_init(void* app)
+%APP%_init()
 {
     // Get instance
-    %APP%_t* %APP% = (%APP%_t*)app;
+    %APP%_t* app = (%APP%_t*)gs_core_app_instance(); 
 
     // Get core instance
     gs_core_t* core = gs_core_instance();
@@ -31,25 +31,25 @@ GS_API_DECL void
         .pip_func.hndl = &((gs_core_asset_pipeline_t*)gs_core_asset_handle_get(&pip))->resource
     }); 
     gs_gfxt_material_set_uniform(&mat->resource, "u_tex", &((gs_core_asset_texture_t*)gs_core_asset_handle_get(&tex))->resource); 
-    %APP%->mat_hndl = gs_core_assets_add(mat, false);
+    app->mat_hndl = gs_core_assets_add(mat, false);
 
     // Allocate new entity and attach components
-    %APP%->ent = gs_core_entities_allocate();
+    app->ent = gs_core_entities_allocate();
 
     // Transform component
-    gs_core_entities_component_add(gs_core_entities_world(), %APP%->ent, %APP%_component_transform_t, { 
+    gs_core_entities_component_add(gs_core_entities_world(), app->ent, gs_core_component_transform_t, { 
         .transform = (gs_vqs) { 
 			.translation = gs_v3(0.f, 0.f, 0.f),
 			.scale = gs_vec3_scale(gs_v3(1.f, 0.3f, 1.f), 2.f),
-			.rotation = gs_quat_default()
+			.rotation = gs_quat_angle_axis(gs_deg2rad(180.f), GS_XAXIS)
         }
     });
-    %APP%_component_transform_t* tc =gs_core_entities_component_get(gs_core_entities_world(), %APP%->ent, %APP%_component_transform_t);
+    gs_core_component_transform_t* tc =gs_core_entities_component_get(gs_core_entities_world(), app->ent, gs_core_component_transform_t);
 
     // Renderable component
-    gs_core_entities_component_add(gs_core_entities_world(), %APP%->ent, %APP%_component_renderable_t, {
+    gs_core_entities_component_add(gs_core_entities_world(), app->ent, gs_core_component_renderable_t, {
         .hndl = gs_core_graphics_scene_renderable_create(&core->gfx->scene, &(gs_core_graphics_renderable_t){ 
-            .material = %APP%->mat_hndl,
+            .materials[0] = app->mat_hndl,
             .mesh = msh,
             .model = gs_vqs_to_mat4(&tc->transform)
         }) 
@@ -57,10 +57,10 @@ GS_API_DECL void
 }
 
 GS_API_DECL void 
-%APP%_update(void* app)
+%APP%_update()
 { 
     // Grab application and all required gs structures
-    %APP%_t* %APP% = (%APP%_t*)app; 
+    %APP%_t* app = (%APP%_t*)gs_core_app_instance(); 
     gs_core_t* core = gs_core_instance();
     gs_command_buffer_t* cb = &core->cb;
     gs_immediate_draw_t* gsi = &core->gsi;
@@ -72,9 +72,6 @@ GS_API_DECL void
     {
         gs_quit();
     } 
-
-    // Update entities
-    gs_core_entities_update();
 
     // Gui
     gs_gui_begin(gui, &(gs_gui_hints_t){.framebuffer_size = fbs, .viewport = gs_gui_rect(vp.x, vp.y, vp.z, vp.w)});
@@ -91,8 +88,9 @@ GS_API_DECL void
 }
 
 GS_API_DECL void
-%APP%_render(void* app, gs_command_buffer_t* cb)
+%APP%_render(gs_command_buffer_t* cb)
 { 
+    %APP%_t* app = (%APP%_t*)gs_core_app_instance(); 
     gs_core_t* core = gs_core_instance();
     gs_immediate_draw_t* gsi = &core->gsi;
     gs_gui_context_t* gui = &core->gui;
@@ -130,7 +128,7 @@ GS_API_DECL void
             gs_mat4 mvp = gs_mat4_mul(view_proj, renderable->model);
 
             // Get material from renderable 
-            gs_core_asset_material_t* mat = gs_core_asset_handle_get(&renderable->material);
+            gs_core_asset_material_t* mat = gs_core_asset_handle_get(&renderable->materials[0]);
             gs_core_asset_mesh_t* mesh = gs_core_asset_handle_get(&renderable->mesh);
 
             // Set default material uniforms for this pass
@@ -153,54 +151,13 @@ GS_API_DECL void
 }
 
 GS_API_DECL void 
-%APP%_shutdown(void* app)
+%APP%_shutdown()
 {
-    %APP%_t* %APP% = (%APP%_t*)app; 
+    %APP%_t* app = (%APP%_t*)gs_core_app_instance(); 
 
     // Free entity
-    %APP%_component_renderable_t* rend = gs_core_entities_component_get(gs_core_entities_world(), %APP%->ent, %APP%_component_renderable_t); 
-    if (rend) %APP%_component_renderable_t_dtor(rend); 
-    gs_core_entities_deallocate(gs_core_entities_world(), %APP%->ent); 
+    gs_core_entities_deallocate(gs_core_entities_world(), app->ent); 
 
     // Free material 
-    gs_core_asset_handle_free(&%APP%->mat_hndl);
+    gs_core_asset_handle_free(&app->mat_hndl);
 } 
-
-GS_API_DECL void 
-%APP%_system_transform_t_cb(gs_core_entities_system_t* system)
-{ 
-    %APP%_t* dd = (%APP%_t*)gs_core_app_instance(); 
-    %APP%_system_transform_t* sdata = (%APP%_system_transform_t*)system;
-    gs_core_entity_iter_t* iter = system->iter; 
-
-    // Rotate transform over time 
-    for (uint32_t i = 0; i < iter->count; ++i)
-    {
-        %APP%_component_transform_t* tc = &sdata->transform[i];
-        tc->transform.rotation = gs_quat_mul_list(2, 
-            gs_quat_angle_axis(gs_deg2rad(180.f), GS_YAXIS),
-            gs_quat_angle_axis(gs_platform_elapsed_time() * 0.0003f, GS_ZAXIS)
-        );
-    } 
-} 
-
-GS_API_DECL void 
-%APP%_system_renderable_t_cb(gs_core_entities_system_t* system)
-{ 
-    %APP%_t* dd = (%APP%_t*)gs_core_app_instance(); 
-    gs_core_t* core = gs_core_instance();
-    %APP%_system_renderable_t* sdata = (%APP%_system_renderable_t*)system;
-    gs_core_entity_iter_t* iter = system->iter; 
-	gs_core_graphics_renderable_t* rend = NULL;
-
-    // Set renderable's model mtx using transform
-    for (uint32_t i = 0; i < iter->count; ++i)
-    {
-        %APP%_component_transform_t* tc = &sdata->transform[i];
-        %APP%_component_renderable_t* rc = &sdata->renderable[i];
-
-        // Get renderable from graphics scene using handle
-        rend = gs_core_graphics_scene_renderable_get(&core->gfx->scene, rc->hndl);
-        rend->model = gs_vqs_to_mat4(&tc->transform);
-    } 
-}

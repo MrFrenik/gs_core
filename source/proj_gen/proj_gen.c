@@ -68,8 +68,10 @@ int32_t main(int32_t argc, char** argv)
     gs_snprintfc(PROC_WIN_DIR, 256, "%s/win", PROC_DIR);
     gs_snprintfc(PROJ_SRC, 256, "source/%s.c", proj_name);
     gs_snprintfc(PROJ_HDR, 256, "source/%s.h", proj_name);
+    gs_snprintfc(PROJ_UNITY_SRC, 256, "source/%s_unity.c", proj_name);
     gs_snprintfc(EDITOR_HDR, 256, "source/editor/%s_editor.h", proj_name);
     gs_snprintfc(EDITOR_SRC, 256, "source/editor/%s_editor.c", proj_name);
+    gs_snprintfc(EDITOR_UNITY_SRC, 256, "source/editor/%s_editor_unity.c", proj_name);
 
     if (gs_platform_dir_exists(ROOT_DIR))
     {
@@ -95,10 +97,10 @@ int32_t main(int32_t argc, char** argv)
         {.read_path = "templates/proc/win/editor_cl.bat", .write_path = "proc/win/editor_cl.bat"},
         {.read_path = "templates/app/app.h", .write_path = PROJ_HDR},
         {.read_path = "templates/app/app.c", .write_path = PROJ_SRC},
-        {.read_path = "templates/app/unity.c", .write_path = "source/unity.c"},
+        {.read_path = "templates/app/unity.c", .write_path = PROJ_UNITY_SRC},
         {.read_path = "templates/editor/editor.c", .write_path = EDITOR_SRC},
         {.read_path = "templates/editor/editor.h", .write_path = EDITOR_HDR},
-        {.read_path = "templates/editor/unity.c", .write_path = "source/editor/unity.c"},
+        {.read_path = "templates/editor/unity.c", .write_path = EDITOR_UNITY_SRC},
         {NULL}
     }; 
 

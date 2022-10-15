@@ -16,7 +16,7 @@ rem Include directories
 set inc=/I %gs_core%\third_party\include\ /I %root%\source\ /I %gs_core%\source\
 
 rem Source files
-set src_main=%root%\source\unity.c
+set src_main=%root%\source\%proj_name%_unity.c
 
 rem All source together
 set src_all=%src_main%

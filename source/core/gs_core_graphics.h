@@ -40,11 +40,13 @@
 #include "gs_core_gs.h"
 #include "gs_core_asset.h"
 
+#define GS_CORE_GRAPHICS_MATERIAL_SLOT_MAX    8
+
 typedef struct
 {
-    gs_core_asset_handle_t material;
-    gs_core_asset_handle_t mesh;
-    gs_mat4 model;
+    gs_core_asset_handle_t materials[GS_CORE_GRAPHICS_MATERIAL_SLOT_MAX];    // List of materials per mesh primitive
+    gs_core_asset_handle_t mesh;                                              // Mesh to render for material
+    gs_mat4 model;                                                            // Model matrix for renderable
 } gs_core_graphics_renderable_t;
 
 typedef struct

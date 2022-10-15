@@ -58,10 +58,14 @@ _gs_core_app_init()
 
     // Register meta information
     #ifdef GS_CORE_APP_STANDALONE
+
 		app = gs_user_data(gs_core_app_t);
 		gs_core_app_instance_set(app);
         gs_core_cast(app, gs_core_app_t)->core = gs_core_new(); 
         _gs_core_app_meta_register();
+
+        // Set to playing
+        app->state = GS_CORE_APP_STATE_PLAYING;
     #endif
 
 	// Core app instance 

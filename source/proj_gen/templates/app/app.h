@@ -22,49 +22,17 @@ typedef struct %APP%_s
 } %APP%_t; 
 
 GS_API_DECL void 
-%APP%_init(void* app); 
+%APP%_init(); 
 
 GS_API_DECL void 
-%APP%_update(void* app); 
+%APP%_update(); 
 
 GS_API_DECL void 
-%APP%_shutdown(void* app); 
+%APP%_shutdown(); 
 
 GS_API_DECL void 
-%APP%_render(void* app, gs_command_buffer_t* cb); 
+%APP%_render(gs_command_buffer_t* cb); 
 
-// Components/Systems
-
-_introspect()
-typedef struct
-{ 
-    gs_core_base(gs_core_entities_component_t);
-    _dtor( 
-        gs_core_graphics_scene_renderable_destroy(&gs_core_instance()->gfx->scene, this->hndl);
-    ) 
-    _field() uint32_t hndl;
-} %APP%_component_renderable_t;
-
-_introspect()
-typedef struct
-{ 
-    gs_core_base(gs_core_entities_component_t);
-    _field() gs_vqs transform;
-} %APP%_component_transform_t;
-
-_introspect()
-typedef struct
-{ 
-    gs_core_base(gs_core_entities_system_t);
-    _field() %APP%_component_renderable_t* renderable;
-    _field() %APP%_component_transform_t* transform;
-} %APP%_system_renderable_t;
-
-_introspect()
-typedef struct
-{ 
-    gs_core_base(gs_core_entities_system_t);
-    _field() %APP%_component_transform_t* transform;
-} %APP%_system_transform_t;
+// Components/Systems 
 
 #endif
