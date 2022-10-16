@@ -123,6 +123,13 @@ _gs_core_assets_register_importer(gs_core_assets_t* assets, gs_core_asset_import
     importer.class_id = desc->class_id;
     memcpy(importer.file_extension, desc->asset_file_extension, GS_CORE_ASSETS_FILE_EXTENSION_MAX_LENGTH);
 
+    // Insert empty asset handle/record into assets
+    gs_core_asset_handle_t inv_hndl = {0};
+    gs_core_asset_record_t inv_recd = {0}; 
+    inv_hndl.hndl = gs_slot_array_insert(importer.assets, NULL);
+    inv_recd.hndl = inv_hndl.hndl;
+    gs_slot_array_insert(importer.records, inv_recd);
+
     uint32_t ihndl = gs_slot_array_insert(assets->importers, importer);
     gs_hash_table_insert(assets->cid2importer, desc->class_id, ihndl); 
     for (uint32_t i = 0; desc->resource_file_extensions[i] != NULL; ++i) {
@@ -287,6 +294,9 @@ gs_core_assets_shutdown()
         {
             gs_core_asset_record_t* record = gs_slot_array_iter_getp(importer->records, ait);
 			gs_core_asset_t* asset = gs_slot_array_get(importer->assets, record->hndl);
+
+			// Can't delete invalid asset or record
+			if (!asset) continue;
 
 			// Free asset
 			importer->free_asset(asset);
