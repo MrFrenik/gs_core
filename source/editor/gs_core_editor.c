@@ -147,7 +147,8 @@ gs_core_editor_update()
     editor->app.fstats = cfstats;
 
     // Gui 
-    gs_gui_begin(gui, &(gs_gui_hints_t){.framebuffer_size = fbs, .viewport = gs_gui_rect(0.f, 0.f, fbs.x, fbs.y)});
+    gs_gui_begin(gui, &(gs_gui_hints_t){.framebuffer_size = fbs, .viewport = gs_gui_rect(0.f, 0.f, fbs.x, fbs.y), 
+        .flags = GS_GUI_HINT_FLAG_NO_INVERT_Y | GS_GUI_HINT_FLAG_NO_SCALE_BIAS_MOUSE});
     {
         // Dockspace
         int32_t opt = 
