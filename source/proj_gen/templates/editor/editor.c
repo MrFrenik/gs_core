@@ -1,6 +1,8 @@
 
 // Core Includes
-#include <editor\gs_editor.h>
+#include <editor/gs_core/editor.h>
+
+GS_CORE_EDITOR_DEFINE(%APP%)
 
 GS_API_DECL void 
 %APP%_editor_init(void* app)

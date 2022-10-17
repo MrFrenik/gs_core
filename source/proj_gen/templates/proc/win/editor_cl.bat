@@ -57,7 +57,7 @@ rem Link options
 set l_options=/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib 
 
 rem Reflection Dirs
-set in_dir="%root%/source/editor" 
+set in_dir="%gs_core%/source/editor" 
 set out_dir="%root%/source/editor/generated" 
 set id_offset="100"
 
