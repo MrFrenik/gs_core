@@ -1,6 +1,6 @@
 
 // Core Includes
-#include <editor/gs_core/editor.h>
+#include <editor/gs_core_editor.h>
 
 GS_CORE_EDITOR_DEFINE(%APP%)
 
@@ -8,21 +8,21 @@ GS_API_DECL void
 %APP%_editor_init(void* app)
 {
     // Super
-    gs_editor_init(app); 
+    gs_core_editor_init(app); 
 }
 
 GS_API_DECL void
 %APP%_editor_update(void* app)
 {
     // Super
-    gs_editor_update(app);
+    gs_core_editor_update(app);
 }
 
 GS_API_DECL void
 %APP%_editor_shutdown(void* app)
 {
     // Super
-    gs_editor_shutdown(app);
+    gs_core_editor_shutdown(app);
 }
 
 GS_API_DECL int32_t
@@ -30,7 +30,7 @@ main(int32_t argc, char** argv)
 {
     // Create gs instance
     gs_t* inst = gs_create((gs_app_desc_t) {
-        .user_data = gs_core_os_malloc_init(sizeof(gs_editor_t)),
+        .user_data = gs_core_os_malloc_init(sizeof(gs_core_editor_t)),
         .window_width = 800,
         .window_height = 600,
         .window_title = gs_to_str(%APP%_editor),
@@ -67,7 +67,7 @@ gs_app_dll_path()
 }
 
 GS_API_DECL const char*
-gs_editor_dll_path()
+gs_core_editor_dll_path()
 {
     #if GS_DEBUG
         const char* path = gs_platform_dir_exists(gs_to_str(bin/editor)) ? 
