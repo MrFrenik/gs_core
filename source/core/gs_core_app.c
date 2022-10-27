@@ -113,7 +113,7 @@ _gs_core_app_render(gs_command_buffer_t* cb)
 
     // Submit command buffer for GPU
     #ifdef GS_CORE_APP_STANDALONE 
-        gs_core_graphics_instance()->submit(cb);
+        gs_graphics_command_buffer_submit(cb);
     #endif
 }
 
