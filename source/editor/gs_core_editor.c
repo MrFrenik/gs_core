@@ -188,7 +188,7 @@ gs_core_editor_update()
     gs_gui_end(gui);
 
     // Submit gsi
-    gsi_renderpass_submit(gsi, cb, (uint32_t)fbs.x, (uint32_t)fbs.y, gs_color(10, 10, 10, 255)); 
+    gsi_renderpass_submit(gsi, cb, gs_v4(0.f, 0.f, fbs.x, fbs.y), gs_color(10, 10, 10, 255)); 
 
     // Submit gui
     gs_gui_renderpass_submit_ex(gui, cb, NULL);
