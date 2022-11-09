@@ -66,6 +66,10 @@ _gs_core_app_init()
 
         // Set to playing
         app->state = GS_CORE_APP_STATE_PLAYING;
+
+        // Need to get framebuffer and window size for placing gui elements within scene view 
+        gs_vec2 fbs = gs_platform_framebuffer_sizev(gs_platform_main_window());
+        app->viewport = gs_v4(0.f, 0.f, fbs.x, fbs.y);
     #endif
 
 	// Core app instance 
