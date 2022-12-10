@@ -62,36 +62,36 @@ rem Run Reflection
 %root%\bin\reflection\reflection.exe %refl_dir% %out_dir% %proj_name%
 
 rem Compile Cpp objects (dbg)
-rem cl /MTd /EHsc /c /w /MP -Z7 ^
+cl /MTd /EHsc /c /w /MP -Z7 ^
+%inc% %root%\source\core\gs_core_ai.cpp %root%\source\core\gs_core_physics.cpp ^
+%root%\source\core\gs_core_util.cpp /link /NODEFAULTLIB:libcmtd.lib ^
+rem/NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib
+
+rem Compile Cpp objects (rel)
+rem cl /MT /EHsc /c /w /MP ^
 rem %inc% %root%\source\core\gs_core_ai.cpp %root%\source\core\gs_core_physics.cpp ^
 rem %root%\source\core\gs_core_util.cpp /link /NODEFAULTLIB:libcmtd.lib ^
 rem /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib
-
-rem Compile Cpp objects (rel)
-cl /MT /EHsc /c /w /MP ^
-%inc% %root%\source\core\gs_core_ai.cpp %root%\source\core\gs_core_physics.cpp ^
-%root%\source\core\gs_core_util.cpp /link /NODEFAULTLIB:libcmtd.lib ^
-/NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib
 
 rem Set cpp objects
 set cpp_obj=gs_core_ai.obj gs_core_physics.obj
 
 rem Compile objects (dbg)
-rem cl /MTd /EHsc /c /w /MP /Fd -Z7 -D _WINSOCKAPI_ -D GS_DEBUG ^
-rem %src_all% %inc% /DEBUG ^
-rem /link /NODEFAULTLIB:libcmtd.lib ^
-rem /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib
-
-rem Compile objects (rel)
-cl /MT /EHsc /c /w /MP /Fd -D _WINSOCKAPI_ ^
-%src_all% %inc% ^
+cl /MTd /EHsc /c /w /MP /Fd -Z7 -D _WINSOCKAPI_ -D GS_DEBUG ^
+%src_all% %inc% /DEBUG ^
 /link /NODEFAULTLIB:libcmtd.lib ^
 /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib
 
+rem Compile objects (rel)
+rem cl /MT /EHsc /c /w /MP /Fd -D _WINSOCKAPI_ ^
+rem %src_all% %inc% ^
+rem /link /NODEFAULTLIB:libcmtd.lib ^
+rem /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib
+
 rem Compile static lib (dbg)
-rem lib *obj /out:%proj_name%_d.lib
+lib *obj /out:%proj_name%_d.lib
 
 rem Compile static lib (rel)
-lib *obj /out:%proj_name%.lib
+rem lib *obj /out:%proj_name%.lib
 
 popd 
