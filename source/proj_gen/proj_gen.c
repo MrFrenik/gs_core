@@ -198,6 +198,16 @@ void write_template_to_disk(const char* read_path, const char* write_path)
                     gs_snprintfc(TMP, 256, "%s_editor.h", proj_name);
                     REPLACE_TXT(TMP, true);
                 }
+                else if (gs_token_compare_text(&peek, "EDITOR_GENERATED_HEADER_PATH"))
+                {
+                    gs_snprintfc(TMP, 256, "generated/%s_editor_generated.h", proj_name);
+                    REPLACE_TXT(TMP, true);
+                }
+                else if (gs_token_compare_text(&peek, "EDITOR_GENERATED_SOURCE_PATH"))
+                {
+                    gs_snprintfc(TMP, 256, "generated/%s_editor_generated.c", proj_name);
+                    REPLACE_TXT(TMP, true);
+                }
                 else
                 {
                     gs_fprintf(fp, "%.*s", token.len, token.text); 
