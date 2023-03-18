@@ -31,9 +31,9 @@ main(int32_t argc, char** argv)
     // Create gs instance
     gs_t* inst = gs_create((gs_app_desc_t) {
         .user_data = gs_core_os_malloc_init(sizeof(gs_core_editor_t)),
-        .window_width = 800,
-        .window_height = 600,
-        .window_title = gs_to_str(%APP%_editor),
+        .window.width = 800,
+        .window.height = 600,
+        .window.title = gs_to_str(%APP%_editor),
         .init = %APP%_editor_init,
         .update = %APP%_editor_update,
         .shutdown = %APP%_editor_shutdown
