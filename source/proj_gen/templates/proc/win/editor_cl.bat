@@ -48,10 +48,11 @@ set tp_libs=%gs_core%\third_party\libs\win\rel\Bullet3Collision.lib ^
     %gs_core%\third_party\libs\win\rel\BulletCollision.lib ^
     %gs_core%\third_party\libs\win\rel\LinearMath.lib ^
     %gs_core%\third_party\libs\win\rel\enet.lib ^
-    %gs_core%\third_party\libs\win\dbg\Recast.lib ^
-    %gs_core%\third_party\libs\win\dbg\Detour.lib ^
-    %gs_core%\third_party\libs\win\dbg\DetourCrowd.lib ^
-    %gs_core%\third_party\libs\win\dbg\DetourTileCache.lib
+    %gs_core%\bin\core\gs_core.lib
+    rem %gs_core%\third_party\libs\win\dbg\Recast.lib ^
+    rem %gs_core%\third_party\libs\win\dbg\Detour.lib ^
+    rem %gs_core%\third_party\libs\win\dbg\DetourCrowd.lib ^
+    rem %gs_core%\third_party\libs\win\dbg\DetourTileCache.lib ^
 
 rem Link options
 set l_options=/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib 
@@ -64,15 +65,31 @@ set id_offset="100"
 rem Run Reflection
 %gs_core%\bin\reflection\reflection.exe %in_dir% %out_dir% %proj_name% %id_offset%
 
-rem Compile Release
-rem cl /MP /FS /Ox /W0 /Fe%proj_name%.exe %src_all% %inc% ^
-rem /EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib /NODEFAULTLIB:LIBCMT ^
-rem %os_libs% %tp_libs%
+if [%1]==[] goto :error
+if [%1]==[dbg] goto :dbg 
+if [%1]==[rel] goto :rel
+goto :error
 
-rem Compile Debug
-cl /w /MTd /MP -Zi -D _WINSOCKAPI_ -D GS_DEBUG /DEBUG:FULL /Fe%proj_name%.exe %src_all% %inc% ^
-/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:libcmtd.lib ^
-/NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib ^
-%os_libs% %tp_libs_dbg%
+:rel
+    rem Compile (rel)
+    echo Compiling Release...
+    cl /w /MT /MP -D _WINSOCKAPI_ /Fe%proj_name%.exe %src_all% %inc% ^
+    /EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:libcmt.lib ^
+    /NODEFAULTLIB:msvcrt.lib /NODEFAULTLIB:libcmt.lib ^
+    %os_libs% %tp_libs%
+    goto :end
 
-popd 
+:dbg
+    rem Compile (dbg)
+    echo Compiling Debug...
+    cl /w /MTd /MP -Zi -D _WINSOCKAPI_ -D GS_DEBUG /DEBUG:FULL /Fe%proj_name%.exe %src_all% %inc% ^
+    /EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:libcmtd.lib ^
+    /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib ^
+    %os_libs% %tp_libs_dbg%
+    goto :end
+
+:error
+    echo Configuration missing: 'rel' or 'dbg' 
+
+:end
+    popd 

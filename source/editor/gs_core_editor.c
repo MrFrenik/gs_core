@@ -110,10 +110,12 @@ gs_core_editor_update()
     gs_gui_context_t* gui = &editor->gui;
     const gs_vec2 fbs = gs_platform_framebuffer_sizev(gs_platform_main_window()); 
 
+    /*
     if (gs_platform_key_pressed(GS_KEYCODE_ESC)) 
     {
         gs_quit();
     }
+    */
 
     // App update
     if (editor->app.app)
@@ -136,7 +138,7 @@ gs_core_editor_update()
         if (!editor->app.hot_reload_begin)
         {
             gs_println("Initialize hot reload..."); 
-            editor->app.hot_reload_begin = true; 
+            editor->app.hot_reload_begin = true;
         }
     }
     else if (editor->app.hot_reload_begin)

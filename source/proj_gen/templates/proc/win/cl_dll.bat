@@ -48,10 +48,11 @@ set tp_libs=%gs_core%\third_party\libs\win\rel\Bullet3Collision.lib ^
     %gs_core%\third_party\libs\win\rel\BulletCollision.lib ^
     %gs_core%\third_party\libs\win\rel\LinearMath.lib ^
     %gs_core%\third_party\libs\win\rel\enet.lib ^
-    %gs_core%\third_party\libs\win\dbg\Recast.lib ^
-    %gs_core%\third_party\libs\win\dbg\Detour.lib ^
-    %gs_core%\third_party\libs\win\dbg\DetourCrowd.lib ^
-    %gs_core%\third_party\libs\win\dbg\DetourTileCache.lib
+    %gs_core%\bin\core\gs_core.lib
+    rem %gs_core%\third_party\libs\win\dbg\Recast.lib ^
+    rem %gs_core%\third_party\libs\win\dbg\Detour.lib ^
+    rem %gs_core%\third_party\libs\win\dbg\DetourCrowd.lib ^
+    rem %gs_core%\third_party\libs\win\dbg\DetourTileCache.lib
 
 rem Link options
 set l_options=/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib 
@@ -75,11 +76,33 @@ For /f "tokens=1-2 delims=/:" %%a in ("%TIME%") do (set my_time=%%a%%b)
 
 set pdb_name=%proj_name%_%_my_datetime%
 
-rem Compile Debug DLL
-cl /w /MTd /MP -Z7 -D _WINSOCKAPI_ -D GS_API_DLL_EXPORT ^
--D GS_DEBUG /D_USRDLL /D_WINDLL /DEBUG:FULL %src_all% %inc% ^
-/EHsc /link /PDB:%pdb_name%.pdb /DLL /SUBSYSTEM:CONSOLE /NODEFAULTLIB:libcmtd.lib ^
-/NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib ^
-%os_libs% %tp_libs_dbg% /OUT:%proj_name%_d.dll 
+if [%1]==[] goto :error
+if [%1]==[dbg] goto :dbg 
+if [%1]==[rel] goto :rel
+goto :error
 
+:dbg
+    echo Compiling Debug...
+    rem Compile DLL (dbg)
+    cl /w /MTd /MP -Z7 -D _WINSOCKAPI_ -D GS_API_DLL_EXPORT ^
+    -D GS_DEBUG /D_USRDLL /D_WINDLL /DEBUG:FULL %src_all% %inc% ^
+    /EHsc /link /PDB:%pdb_name%.pdb /DLL /SUBSYSTEM:CONSOLE /NODEFAULTLIB:libcmtd.lib ^
+    /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib ^
+    %os_libs% %tp_libs_dbg% /OUT:%proj_name%_d.dll 
+    goto :end
+
+:rel
+    echo Compiling Release...
+    rem Compile DLL (rel)
+    cl /w /MT /MP /O2 -D _WINSOCKAPI_ -D GS_API_DLL_EXPORT ^
+    /D_USRDLL /D_WINDLL %src_all% %inc% ^
+    /EHsc /link /DLL /SUBSYSTEM:CONSOLE /NODEFAULTLIB:libcmt.lib ^
+    /NODEFAULTLIB:msvcrt.lib /NODEFAULTLIB:libcmt.lib ^
+    %os_libs% %tp_libs% /OUT:%proj_name%.dll 
+    goto :end
+
+:error
+    echo Configuration missing: 'rel' or 'dbg' 
+
+:end
 popd 
