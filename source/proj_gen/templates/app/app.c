@@ -74,7 +74,11 @@ GS_API_DECL void
     } 
 
     // Gui
-    gs_gui_begin(gui, &(gs_gui_hints_t){.framebuffer_size = fbs, .viewport = gs_gui_rect(vp.x, vp.y, vp.z, vp.w)});
+    gs_gui_begin(gui, &(gs_gui_hints_t){
+        .framebuffer_size = fbs, 
+        .viewport = gs_gui_rect(vp.x, vp.y, vp.z, vp.w), 
+        .flags = GS_GUI_HINT_FLAG_NO_SCALE_BIAS_MOUSE | GS_GUI_HINT_FLAG_NO_INVERT_Y}
+    );
     {
         // Any game gui can go in between begin/end calls...
         gs_gui_window_begin(gui, "dbg", gs_gui_rect(100, 100, 200, 200));
