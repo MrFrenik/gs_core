@@ -94,6 +94,15 @@ gs_core_meta_static_ref_w_cls_id(uint32_t id)
 //===[ Object Internal / Defaults ]===//
 
 GS_API_DECL bool
+gs_core_info_instance_of_internal(const gs_core_meta_info_t* info, uint32_t compare)
+{
+    if (!info || !compare) return false;
+
+    // If the same class
+    return (info->cid == compare);
+}
+
+GS_API_DECL bool
 gs_core_info_base_of_internal(const gs_core_meta_info_t* info, uint32_t compare)
 {
     if (!info || !compare) return false;

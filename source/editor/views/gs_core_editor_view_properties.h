@@ -71,7 +71,9 @@ gs_core_editor_view_properties_cb(struct gs_core_editor_view_s* view)
 
     gs_gui_layout_row(gui, 1, (int16_t[]){cnt->body.w * 0.8f}, 0);
 
-    // Get all registered components from meta
+    // Get all registered components from meta, determine if selected entity group has given component
+    // Want this to play well across editors, so if you select an entity, then it can be referenced elsewhere (without it getting ridiculous)
+    // Maybe an editor context?
     for (
         gs_slot_array_iter it = gs_slot_array_iter_new(meta->info);
         gs_slot_array_iter_valid(meta->info, it);
@@ -81,6 +83,7 @@ gs_core_editor_view_properties_cb(struct gs_core_editor_view_s* view)
         gs_core_meta_info_t* info = gs_slot_array_iter_getp(meta->info, it);
         if (gs_core_info_derived_from(info, gs_core_entities_component_t))
         {
+            // Need a selection box...
             gs_gui_label(gui, "%s", info->cls->name);
         }
     }

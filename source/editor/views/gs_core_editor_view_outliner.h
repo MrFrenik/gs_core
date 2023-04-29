@@ -50,8 +50,11 @@ typedef struct
     )
 
     _vtable( 
-        _override: callback = gs_core_editor_view_outliner_cb;
+        _override: callback = gs_core_editor_view_outliner_cb; 
     )
+    
+    // Query for all tag components in scene
+    gs_core_entity_query_t* component_tag_query;
 
 } gs_core_editor_view_outliner_t;
 
@@ -64,10 +67,30 @@ GS_API_DECL void
 gs_core_editor_view_outliner_cb(struct gs_core_editor_view_s* view)
 {
     gs_core_editor_t* editor = gs_user_data(gs_core_editor_t); 
-    gs_gui_context_t* gui = &editor->gui;
+    gs_gui_context_t* gui = &editor->gui; 
+    gs_core_editor_view_outliner_t* outliner = gs_core_cast(view, gs_core_editor_view_outliner_t);
+    gs_core_entity_world_t* eworld = gs_core_entities_world();
+
+    // Initialize query if necessary
+    if (!outliner->component_tag_query)
+    {
+        outliner->component_tag_query = gs_core_entities_query_init(eworld, &(gs_core_entity_query_desc_t){.filter.terms = {{.id = 
+            gs_core_entities_component_id(gs_core_component_tag_t)}}});
+    } 
 
     // Iterate through all entities within entity manager, show their...names?
-    // Show their ids, I suppose. This is where it gets kind of odd in a 'generic' sense.
+    // Show their ids, I suppose. This is where it gets kind of odd in a 'generic' sense. 
+
+    gs_core_entity_query_t* q = outliner->component_tag_query;     
+    gs_core_entity_iter_t it = gs_core_entities_query_iter(eworld, q);
+    while (gs_core_entities_query_next(&it))
+    {
+        for (uint32_t i = 0; i < it.count; ++i)
+        {
+            const char* name = gs_core_entities_get_name(eworld, it.entities[i]);
+            gs_gui_label(gui, "%s", name);
+        }
+    }
 } 
 
 #endif // GS_CORE_EDITOR_IMPL

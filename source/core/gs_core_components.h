@@ -40,7 +40,11 @@
 // Core Includes
 #include "gs_core_entity.h" 
 
-// Components
+_introspect()
+typedef struct
+{
+    gs_core_base(gs_core_entities_component_t);
+} gs_core_component_tag_t;
 
 _introspect()
 typedef struct

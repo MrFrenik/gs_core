@@ -1,7 +1,8 @@
+// Define and generated (MUST BE FIRST)
+#define GS_CORE_EDITOR_IMPL
+#include %EDITOR_GENERATED_SOURCE_PATH%
 
 // Core Includes
-#define GS_CORE_EDITOR_IMPL
-#include %EDITOR_GENERATEED_SOURCE_PATH%
 #include <editor/gs_core_editor.c>
 #include <core/gs_core_app.c>
 

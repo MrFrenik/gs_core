@@ -46,6 +46,7 @@
 
 // Forward Decls.
 struct gs_core_asset_importer_s;
+struct gs_core_asset_record_s;
 
 typedef enum
 {
@@ -53,10 +54,17 @@ typedef enum
     GS_CORE_ASSET_STATE_LOADED
 } gs_core_asset_state_t; 
 
+_introspect()
 typedef struct 
 { 
+    gs_core_base(gs_core_obj_t);
+
+    _field()
     uint32_t hndl;      // Slot array handle to raw asset in importer
+
+    _field()
     uint32_t importer;  // Slot array handle to raw importer data in asset manager
+
 } gs_core_asset_handle_t;
 
 enum {
@@ -72,8 +80,7 @@ typedef struct
         gs_core_asset_importer_t* (* importer)() = NULL;
     )
 
-    _field() uint32_t record_hndl;
-
+    uint32_t record_hndl;
     gs_core_asset_state_t state;
     uint32_t flags;
 
@@ -84,6 +91,24 @@ gs_core_asset_handle_get(const gs_core_asset_handle_t* hndl);
 
 GS_API_DECL gs_core_asset_handle_t
 gs_core_asset_handle_from_asset(const gs_core_asset_t* asset);
+
+GS_API_DECL uint64_t 
+gs_core_asset_handle_cls_id(const gs_core_asset_handle_t* hndl);
+
+GS_API_DECL gs_meta_class_t* 
+gs_core_asset_handle_cls(const gs_core_asset_handle_t* hndl);
+
+GS_API_DECL struct gs_core_asset_record_s*
+gs_core_asset_handle_record(const gs_core_asset_handle_t* hndl);
+
+GS_API_DECL struct gs_core_asset_record_s*
+gs_core_asset_handle_name(const gs_core_asset_handle_t* hndl);
+
+GS_API_DECL struct gs_core_asset_importer_s*
+gs_core_asset_handle_importer(const gs_core_asset_handle_t* hndl);
+
+GS_API_DECL gs_core_asset_handle_t
+gs_core_asset_handle_from_record(const struct gs_core_asset_record_s* record);
 
 //====[ Texture ]====//
 
@@ -98,6 +123,7 @@ typedef struct
         _override: deserialize = gs_core_asset_texture_deserialize;
     )
 
+    gs_graphics_texture_desc_t desc;  // I don't like it, it's redundant, but I need it for now...
     gs_gfxt_texture_t resource;
 
 } gs_core_asset_texture_t; 
@@ -179,13 +205,19 @@ typedef struct
 
 //====[ Asset Record ]====//
 
-typedef struct
+typedef struct gs_core_asset_record_s
 { 
-    uint32_t hndl;                  // Handle to asset slot array in storage
-    char path[GS_CORE_ASSET_STR_MAX];  // Absolute path to asset on disk
-    gs_uuid_t uuid;                 // UUID for asset
-    char name[GS_CORE_ASSET_STR_MAX];  // Qualified name for asset
-} gs_core_asset_record_t; 
+    uint32_t hndl;                      // Handle to asset slot array in storage
+    char path[GS_CORE_ASSET_STR_MAX];   // Absolute path to asset on disk
+    gs_uuid_t uuid;                     // UUID for asset
+    char name[GS_CORE_ASSET_STR_MAX];   // Qualified name for asset 
+    uint32_t importer;                  // Slot array handle to raw importer data in asset manager
+} gs_core_asset_record_t;
+
+enum {
+    GS_CORE_ASSET_IMPORT_OPT_NO_SERIALIZE	        = (1 << 0),
+    GS_CORE_ASSET_IMPORT_OPT_ABSOLUTE_IMPORT_PATH   = (1 << 1)
+};
 
 typedef struct
 {
@@ -193,7 +225,7 @@ typedef struct
     {
         struct 
         {
-            gs_graphics_texture_desc_t desc;
+            gs_graphics_texture_desc_t* desc;
         } texture;
 
         struct
@@ -203,7 +235,7 @@ typedef struct
 
         struct 
         { 
-            gs_gfxt_mesh_import_options_t desc;
+            gs_gfxt_mesh_import_options_t* desc;
         } mesh; 
 
         struct
@@ -211,6 +243,11 @@ typedef struct
             gs_gui_context_t* ctx;
         } gui;
     };
+
+    const char* import_path;        // Path for importing
+    const char* save_dir;           // Relative directory for saving asset
+    uint32_t flags;                 // Flags for importing
+
 } gs_core_asset_import_options_t;
 
 typedef struct
@@ -221,7 +258,9 @@ typedef struct
     const char* resource_file_extensions[5];
     const char* asset_file_extension;
     uint64_t class_id;
-} gs_core_asset_importer_desc_t; 
+    const char* save_dir;
+    const char* file_name;
+} gs_core_asset_importer_desc_t;
 
 typedef struct gs_core_asset_importer_s
 {
@@ -235,6 +274,8 @@ typedef struct gs_core_asset_importer_s
     char file_extension[GS_CORE_ASSETS_FILE_EXTENSION_MAX_LENGTH];  // File extension for asset
     uint64_t class_id;                                              // Class ID
     gs_core_asset_handle_t default_asset;                           // Default asset for this importer
+    char save_dir[GS_CORE_ASSET_STR_MAX];                           // Default save directory for importer
+    char file_name[GS_CORE_ASSET_STR_MAX];                          // Default file name for importer
 } gs_core_asset_importer_t; 
 
 //=====[ Texture Importer ]=====//
@@ -333,10 +374,10 @@ GS_API_DECL gs_core_assets_t*
 gs_core_assets_instance();
 
 GS_API_DECL gs_core_asset_handle_t 
-gs_core_assets_import(const char* path, gs_core_asset_import_options_t* options, bool serialize); 
+gs_core_assets_import(gs_core_asset_import_options_t* options);
 
 GS_API_DECL gs_core_asset_handle_t
-gs_core_assets_add(gs_core_asset_t* asset, bool serialize);
+gs_core_assets_add(gs_core_asset_t* asset, gs_core_asset_import_options_t* options);
 
 GS_API_PRIVATE gs_core_asset_handle_t
 gs_core_assets_get_default_impl(uint64_t cls_id);

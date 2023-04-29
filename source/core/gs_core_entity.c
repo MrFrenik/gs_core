@@ -34,7 +34,11 @@
 
 =================================================================================================================*/ 
 
+// Core Includes
 #include "gs_core_entity.h"
+#include "gs_core_components.h"
+
+// Third Party Includes
 #include <flecs/flecs.h>
 #include <flecs/flecs.c>
 
@@ -60,7 +64,7 @@ gs_core_entities_new()
     gs_core_entities_t* ents = gs_malloc_init(gs_core_entities_t); 
     ents->data = gs_malloc_init(gs_core_entity_data_t); 
 
-    // Set up os api for flecs
+    // Set up os api for flecs 
 	gs_core_entity_data_t* data = (gs_core_entity_data_t*)ents->data;
     ecs_os_set_api_defaults(); 
     data->api = ecs_os_api; 
@@ -71,6 +75,7 @@ gs_core_entities_new()
     ents->component_unregister = gs_core_entities_component_unregister_internal;
     ents->system_register = gs_core_entities_system_register_internal;
     ents->system_unregister = gs_core_entities_system_unregister_internal;
+
     return ents;
 }
 
@@ -78,7 +83,8 @@ GS_API_DECL void
 gs_core_entities_set_instance(gs_core_entities_t* ents)
 { 
     // Set up os api for flecs
-    gs_core_entity_data_t* data = (gs_core_entity_data_t*)ents->data;
+    gs_core_entity_data_t* data = (gs_core_entity_data_t*)ents->data; 
+
     ecs_os_set_api(&data->api);
 }
 
@@ -157,12 +163,13 @@ gs_core_entities_system_unregister_internal(gs_core_entity_t system)
 }
 
 GS_API_DECL gs_core_entity_t 
-gs_core_entities_allocate()
+gs_core_entities_allocate(const char* name)
 {
     gs_core_entity_data_t* ecs = CORE_ECS(); 
 
     // Allocate a new entity
-    ecs_entity_t e = ecs_new(ecs->world, 0); 
+    ecs_entity_t e = ecs_new_entity(ecs->world, name);
+    gs_core_entities_component_add(ecs->world, e, gs_core_component_tag_t, {0});
     return (gs_core_entity_t)e;
 }
 

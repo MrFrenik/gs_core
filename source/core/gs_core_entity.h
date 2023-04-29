@@ -44,9 +44,11 @@
 // Third Party Includes
 #include <flecs/flecs.h>
 
-typedef ecs_entity_t gs_core_entity_t;
-typedef ecs_iter_t   gs_core_entity_iter_t;
-typedef ecs_world_t  gs_core_entity_world_t;
+typedef ecs_entity_t        gs_core_entity_t;
+typedef ecs_iter_t          gs_core_entity_iter_t;
+typedef ecs_world_t         gs_core_entity_world_t;
+typedef ecs_query_desc_t    gs_core_entity_query_desc_t;
+typedef ecs_query_t         gs_core_entity_query_t;
 
 // Component
 _introspect()
@@ -73,6 +75,9 @@ typedef struct
     gs_core_entity_t id;
 } gs_core_entities_component_desc_t; 
 
+#define gs_core_entities_tag_declare(T)\
+    ECS_DECLARE(T)
+
 #define gs_core_entities_component_declare(T)\
     ECS_COMPONENT_DECLARE(T)
 
@@ -80,6 +85,8 @@ typedef struct
     ECS_SYSTEM_DECLARE(T)
 
 #define gs_core_entity_id(T) ecs_id(T)
+
+#define gs_core_entities_get_name(WORLD, ENT)   ecs_get_name((WORLD), (ENT)) 
 
 #define gs_core_entities_register_component(T)\
     do {\
@@ -150,6 +157,9 @@ typedef void (*gs_core_entities_system_func_t)(gs_core_entities_system_t* system
         gs_hash_table_erase(gs_core_entities_instance()->components, comp);\
     } while (0)
 
+#define gs_core_entities_component_id(T)\
+    gs_hash_table_get(gs_core_entities_instance()->components, gs_hash_str64(gs_to_str(T)))
+
 #define gs_core_entities_component_has(WORLD, ENT, T)\
     ecs_has_id((WORLD), (ENT), gs_hash_table_get(gs_core_entities_instance()->components, gs_hash_str64(gs_to_str(T))))
 
@@ -158,6 +168,10 @@ typedef void (*gs_core_entities_system_func_t)(gs_core_entities_system_t* system
 
 #define gs_core_entities_term(IT, T, V)\
     ecs_term((IT), T, ((V) + 1))
+
+#define gs_core_entities_query_init(WORLD, DESC)   ecs_query_init((WORLD), (DESC))
+#define gs_core_entities_query_iter(WORLD, QUERY)  ecs_query_iter((WORLD), (QUERY))
+#define gs_core_entities_query_next(IT)            ecs_query_next((IT))
 
 #define CORE_ENTITIES_SYSTEM_COMPONENT_MAX    8
 
@@ -183,7 +197,7 @@ typedef struct gs_core_entities_s
     void (* system_unregister)(gs_core_entity_t system);
     gs_hash_table(uint64_t, gs_core_entity_t) components;
     gs_hash_table(uint64_t, gs_core_entity_t) systems;
-} gs_core_entities_t; 
+} gs_core_entities_t;
 
 GS_API_DECL gs_core_entities_t* 
 gs_core_entities_new();
@@ -217,7 +231,7 @@ GS_API_DECL void
 gs_core_entities_system_unregister_internal(const gs_core_entities_system_desc_t* desc);
 
 GS_API_DECL gs_core_entity_t 
-gs_core_entities_allocate();
+gs_core_entities_allocate(const char* name);
 
 GS_API_DECL void 
 gs_core_entities_deallocate(gs_core_entity_world_t* world, gs_core_entity_t entity);

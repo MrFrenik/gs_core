@@ -1,0 +1,12 @@
+to_do: 
+
+doing: 
+
+    [serialization]: default serialization method for objects {};
+    [scene]: come up with scene management system {
+        * similar to Godot
+        * scenes are like archetypes
+        * can be instantiated and nested in a hierarchical structure
+    };
+
+done: 

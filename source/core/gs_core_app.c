@@ -152,10 +152,11 @@ _gs_core_app_editor(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd)
     const gs_vec2 fbs = gs_platform_framebuffer_sizev(gs_platform_main_window());
 
     // Set viewport of application to use for rendering
-    app->viewport = gs_v4(cmd->viewport.x, fbs.y - cmd->viewport.h - cmd->viewport.y, cmd->viewport.w, cmd->viewport.h);
+    // app->viewport = gs_v4(cmd->viewport.x, fbs.y - cmd->viewport.h - cmd->viewport.y, cmd->viewport.w, cmd->viewport.h);
+    app->viewport = gs_v4(cmd->viewport.x, cmd->viewport.y, cmd->viewport.w, cmd->viewport.h);
     
     // Render scene 
-    gs_core_cast_vt(app, gs_core_app_t)->render(&ctx->gsi.commands);
+    gs_core_cast_vt(app, gs_core_app_t)->render(&ctx->gsi.commands); 
 }
 
 

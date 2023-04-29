@@ -41,97 +41,96 @@
 #include "core/generated/gs_core_generated.h"
 
 // Class Ids
-#define gs_core_asset_texture_t_cls_id 1
+#define gs_core_asset_handle_t_cls_id 1
 #define gs_core_app_t_cls_id 2
 #define gs_core_asset_t_cls_id 3
-#define gs_core_asset_pipeline_t_cls_id 4
-#define gs_core_asset_font_t_cls_id 5
+#define gs_core_asset_texture_t_cls_id 4
+#define gs_core_asset_pipeline_t_cls_id 5
 #define gs_core_asset_mesh_t_cls_id 6
-#define gs_core_asset_audio_t_cls_id 7
-#define gs_core_network_rpc_t_cls_id 8
-#define gs_core_obj_t_cls_id 9
-#define gs_core_asset_ui_stylesheet_t_cls_id 10
-#define gs_core_entities_component_t_cls_id 11
-#define gs_core_asset_material_t_cls_id 12
+#define gs_core_asset_font_t_cls_id 7
+#define gs_core_obj_t_cls_id 8
+#define gs_core_asset_ui_stylesheet_t_cls_id 9
+#define gs_core_entities_component_t_cls_id 10
+#define gs_core_asset_material_t_cls_id 11
+#define gs_core_component_tag_t_cls_id 12
 #define gs_core_system_renderable_t_cls_id 13
 #define gs_core_component_transform_t_cls_id 14
 #define gs_core_entities_system_t_cls_id 15
-#define gs_core_component_renderable_t_cls_id 16
-#define gs_core_graphics_renderpass_t_cls_id 17
+#define gs_core_asset_audio_t_cls_id 16
+#define gs_core_component_renderable_t_cls_id 17
+#define gs_core_network_rpc_t_cls_id 18
+#define gs_core_graphics_renderpass_t_cls_id 19
 
-/* gs_core_asset_texture_t */
+/* gs_core_asset_handle_t */
 
 GS_API_DECL uint32_t
-gs_core_asset_texture_t_class_id()
+gs_core_asset_handle_t_class_id()
 {
-	return gs_core_asset_texture_t_cls_id;
+	return gs_core_asset_handle_t_cls_id;
 }
 
 GS_API_DECL const gs_meta_class_t*
-gs_core_asset_texture_t_class()
+gs_core_asset_handle_t_class()
 {
-	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_texture_t_cls_id)->cls;
+	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_handle_t_cls_id)->cls;
 }
 
 GS_API_DECL const gs_core_meta_info_t*
-gs_core_asset_texture_t_info()
+gs_core_asset_handle_t_info()
 {
-	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_texture_t_cls_id);
+	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_handle_t_cls_id);
 }
 
 GS_API_DECL void
-gs_core_asset_texture_t_init(gs_core_asset_texture_t* obj)
+gs_core_asset_handle_t_init(gs_core_asset_handle_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_texture_t_class_id();
+	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_handle_t_class_id();
 }
 
-GS_API_DECL gs_core_asset_texture_t*
-gs_core_asset_texture_t_new()
+GS_API_DECL gs_core_asset_handle_t*
+gs_core_asset_handle_t_new()
 {
-	gs_core_asset_texture_t* obj = gs_malloc_init(gs_core_asset_texture_t);
-	gs_core_asset_texture_t_init(obj);
+	gs_core_asset_handle_t* obj = gs_malloc_init(gs_core_asset_handle_t);
+	gs_core_asset_handle_t_init(obj);
 	return obj;
 }
 
-GS_API_DECL gs_core_asset_texture_t
-gs_core_asset_texture_t_ctor()
+GS_API_DECL gs_core_asset_handle_t
+gs_core_asset_handle_t_ctor()
 {
-	gs_core_asset_texture_t obj = gs_default_val();
-	gs_core_asset_texture_t_init(&obj);
+	gs_core_asset_handle_t obj = gs_default_val();
+	gs_core_asset_handle_t_init(&obj);
 	return obj;
 }
 
 GS_API_DECL void
-gs_core_asset_texture_t_dtor(gs_core_obj_t* obj)
+gs_core_asset_handle_t_dtor(gs_core_obj_t* obj)
 {
 }
 
 GS_API_DECL void
-gs_core_asset_texture_t_vtable_t_init(gs_core_asset_texture_t_vtable_t* vt)
+gs_core_asset_handle_t_vtable_t_init(gs_core_asset_handle_t_vtable_t* vt)
 {
-	gs_core_asset_t_vtable_t_init((gs_core_asset_t_vtable_t*)vt);
-	vt->importer = gs_core_asset_texture_importer;
-	vt->serialize = gs_core_asset_texture_serialize;
-	vt->deserialize = gs_core_asset_texture_deserialize;
-	vt->cls_id = gs_core_asset_texture_t_class_id;
-	vt->cls = gs_core_asset_texture_t_class;
-	vt->obj_init= gs_core_asset_texture_t_init;
-	vt->obj_dtor= gs_core_asset_texture_t_dtor;
+	gs_core_obj_t_vtable_t_init((gs_core_obj_t_vtable_t*)vt);
+	vt->cls_id = gs_core_asset_handle_t_class_id;
+	vt->cls = gs_core_asset_handle_t_class;
+	vt->obj_init= gs_core_asset_handle_t_init;
+	vt->obj_dtor= gs_core_asset_handle_t_dtor;
 }
 
-GS_API_DECL gs_core_asset_texture_t_vtable_t
-gs_core_asset_texture_t_vtable_t_ctor()
+GS_API_DECL gs_core_asset_handle_t_vtable_t
+gs_core_asset_handle_t_vtable_t_ctor()
 {
-	gs_core_asset_texture_t_vtable_t vt = gs_default_val();
-	gs_core_asset_texture_t_vtable_t_init(&vt);
+	gs_core_asset_handle_t_vtable_t vt = gs_default_val();
+	gs_core_asset_handle_t_vtable_t_init(&vt);
 	return vt;
 }
 
 GS_API_DECL gs_core_vtable_t*
-gs_core_asset_texture_t_vtable_t_new()
+gs_core_asset_handle_t_vtable_t_new()
 {
-	gs_core_asset_texture_t_vtable_t* vt = gs_malloc_init(gs_core_asset_texture_t_vtable_t);
-	gs_core_asset_texture_t_vtable_t_init(vt);
+	gs_core_asset_handle_t_vtable_t* vt = gs_malloc_init(gs_core_asset_handle_t_vtable_t);
+	gs_core_asset_handle_t_vtable_t_init(vt);
 	return (gs_core_vtable_t*)vt;
 }
 
@@ -287,6 +286,82 @@ gs_core_asset_t_vtable_t_new()
 	return (gs_core_vtable_t*)vt;
 }
 
+/* gs_core_asset_texture_t */
+
+GS_API_DECL uint32_t
+gs_core_asset_texture_t_class_id()
+{
+	return gs_core_asset_texture_t_cls_id;
+}
+
+GS_API_DECL const gs_meta_class_t*
+gs_core_asset_texture_t_class()
+{
+	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_texture_t_cls_id)->cls;
+}
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_asset_texture_t_info()
+{
+	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_texture_t_cls_id);
+}
+
+GS_API_DECL void
+gs_core_asset_texture_t_init(gs_core_asset_texture_t* obj)
+{
+	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_texture_t_class_id();
+}
+
+GS_API_DECL gs_core_asset_texture_t*
+gs_core_asset_texture_t_new()
+{
+	gs_core_asset_texture_t* obj = gs_malloc_init(gs_core_asset_texture_t);
+	gs_core_asset_texture_t_init(obj);
+	return obj;
+}
+
+GS_API_DECL gs_core_asset_texture_t
+gs_core_asset_texture_t_ctor()
+{
+	gs_core_asset_texture_t obj = gs_default_val();
+	gs_core_asset_texture_t_init(&obj);
+	return obj;
+}
+
+GS_API_DECL void
+gs_core_asset_texture_t_dtor(gs_core_obj_t* obj)
+{
+}
+
+GS_API_DECL void
+gs_core_asset_texture_t_vtable_t_init(gs_core_asset_texture_t_vtable_t* vt)
+{
+	gs_core_asset_t_vtable_t_init((gs_core_asset_t_vtable_t*)vt);
+	vt->importer = gs_core_asset_texture_importer;
+	vt->serialize = gs_core_asset_texture_serialize;
+	vt->deserialize = gs_core_asset_texture_deserialize;
+	vt->cls_id = gs_core_asset_texture_t_class_id;
+	vt->cls = gs_core_asset_texture_t_class;
+	vt->obj_init= gs_core_asset_texture_t_init;
+	vt->obj_dtor= gs_core_asset_texture_t_dtor;
+}
+
+GS_API_DECL gs_core_asset_texture_t_vtable_t
+gs_core_asset_texture_t_vtable_t_ctor()
+{
+	gs_core_asset_texture_t_vtable_t vt = gs_default_val();
+	gs_core_asset_texture_t_vtable_t_init(&vt);
+	return vt;
+}
+
+GS_API_DECL gs_core_vtable_t*
+gs_core_asset_texture_t_vtable_t_new()
+{
+	gs_core_asset_texture_t_vtable_t* vt = gs_malloc_init(gs_core_asset_texture_t_vtable_t);
+	gs_core_asset_texture_t_vtable_t_init(vt);
+	return (gs_core_vtable_t*)vt;
+}
+
 /* gs_core_asset_pipeline_t */
 
 GS_API_DECL uint32_t
@@ -357,79 +432,6 @@ gs_core_asset_pipeline_t_vtable_t_new()
 {
 	gs_core_asset_pipeline_t_vtable_t* vt = gs_malloc_init(gs_core_asset_pipeline_t_vtable_t);
 	gs_core_asset_pipeline_t_vtable_t_init(vt);
-	return (gs_core_vtable_t*)vt;
-}
-
-/* gs_core_asset_font_t */
-
-GS_API_DECL uint32_t
-gs_core_asset_font_t_class_id()
-{
-	return gs_core_asset_font_t_cls_id;
-}
-
-GS_API_DECL const gs_meta_class_t*
-gs_core_asset_font_t_class()
-{
-	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_font_t_cls_id)->cls;
-}
-
-GS_API_DECL const gs_core_meta_info_t*
-gs_core_asset_font_t_info()
-{
-	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_font_t_cls_id);
-}
-
-GS_API_DECL void
-gs_core_asset_font_t_init(gs_core_asset_font_t* obj)
-{
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_font_t_class_id();
-}
-
-GS_API_DECL gs_core_asset_font_t*
-gs_core_asset_font_t_new()
-{
-	gs_core_asset_font_t* obj = gs_malloc_init(gs_core_asset_font_t);
-	gs_core_asset_font_t_init(obj);
-	return obj;
-}
-
-GS_API_DECL gs_core_asset_font_t
-gs_core_asset_font_t_ctor()
-{
-	gs_core_asset_font_t obj = gs_default_val();
-	gs_core_asset_font_t_init(&obj);
-	return obj;
-}
-
-GS_API_DECL void
-gs_core_asset_font_t_dtor(gs_core_obj_t* obj)
-{
-}
-
-GS_API_DECL void
-gs_core_asset_font_t_vtable_t_init(gs_core_asset_font_t_vtable_t* vt)
-{
-	gs_core_asset_t_vtable_t_init((gs_core_asset_t_vtable_t*)vt);
-	vt->cls_id = gs_core_asset_font_t_class_id;
-	vt->cls = gs_core_asset_font_t_class;
-	vt->obj_init= gs_core_asset_font_t_init;
-	vt->obj_dtor= gs_core_asset_font_t_dtor;
-}
-
-GS_API_DECL gs_core_asset_font_t_vtable_t
-gs_core_asset_font_t_vtable_t_ctor()
-{
-	gs_core_asset_font_t_vtable_t vt = gs_default_val();
-	gs_core_asset_font_t_vtable_t_init(&vt);
-	return vt;
-}
-
-GS_API_DECL gs_core_vtable_t*
-gs_core_asset_font_t_vtable_t_new()
-{
-	gs_core_asset_font_t_vtable_t* vt = gs_malloc_init(gs_core_asset_font_t_vtable_t);
-	gs_core_asset_font_t_vtable_t_init(vt);
 	return (gs_core_vtable_t*)vt;
 }
 
@@ -506,149 +508,76 @@ gs_core_asset_mesh_t_vtable_t_new()
 	return (gs_core_vtable_t*)vt;
 }
 
-/* gs_core_asset_audio_t */
+/* gs_core_asset_font_t */
 
 GS_API_DECL uint32_t
-gs_core_asset_audio_t_class_id()
+gs_core_asset_font_t_class_id()
 {
-	return gs_core_asset_audio_t_cls_id;
+	return gs_core_asset_font_t_cls_id;
 }
 
 GS_API_DECL const gs_meta_class_t*
-gs_core_asset_audio_t_class()
+gs_core_asset_font_t_class()
 {
-	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_audio_t_cls_id)->cls;
+	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_font_t_cls_id)->cls;
 }
 
 GS_API_DECL const gs_core_meta_info_t*
-gs_core_asset_audio_t_info()
+gs_core_asset_font_t_info()
 {
-	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_audio_t_cls_id);
+	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_font_t_cls_id);
 }
 
 GS_API_DECL void
-gs_core_asset_audio_t_init(gs_core_asset_audio_t* obj)
+gs_core_asset_font_t_init(gs_core_asset_font_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_audio_t_class_id();
+	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_font_t_class_id();
 }
 
-GS_API_DECL gs_core_asset_audio_t*
-gs_core_asset_audio_t_new()
+GS_API_DECL gs_core_asset_font_t*
+gs_core_asset_font_t_new()
 {
-	gs_core_asset_audio_t* obj = gs_malloc_init(gs_core_asset_audio_t);
-	gs_core_asset_audio_t_init(obj);
+	gs_core_asset_font_t* obj = gs_malloc_init(gs_core_asset_font_t);
+	gs_core_asset_font_t_init(obj);
 	return obj;
 }
 
-GS_API_DECL gs_core_asset_audio_t
-gs_core_asset_audio_t_ctor()
+GS_API_DECL gs_core_asset_font_t
+gs_core_asset_font_t_ctor()
 {
-	gs_core_asset_audio_t obj = gs_default_val();
-	gs_core_asset_audio_t_init(&obj);
+	gs_core_asset_font_t obj = gs_default_val();
+	gs_core_asset_font_t_init(&obj);
 	return obj;
 }
 
 GS_API_DECL void
-gs_core_asset_audio_t_dtor(gs_core_obj_t* obj)
+gs_core_asset_font_t_dtor(gs_core_obj_t* obj)
 {
 }
 
 GS_API_DECL void
-gs_core_asset_audio_t_vtable_t_init(gs_core_asset_audio_t_vtable_t* vt)
+gs_core_asset_font_t_vtable_t_init(gs_core_asset_font_t_vtable_t* vt)
 {
 	gs_core_asset_t_vtable_t_init((gs_core_asset_t_vtable_t*)vt);
-	vt->cls_id = gs_core_asset_audio_t_class_id;
-	vt->cls = gs_core_asset_audio_t_class;
-	vt->obj_init= gs_core_asset_audio_t_init;
-	vt->obj_dtor= gs_core_asset_audio_t_dtor;
+	vt->cls_id = gs_core_asset_font_t_class_id;
+	vt->cls = gs_core_asset_font_t_class;
+	vt->obj_init= gs_core_asset_font_t_init;
+	vt->obj_dtor= gs_core_asset_font_t_dtor;
 }
 
-GS_API_DECL gs_core_asset_audio_t_vtable_t
-gs_core_asset_audio_t_vtable_t_ctor()
+GS_API_DECL gs_core_asset_font_t_vtable_t
+gs_core_asset_font_t_vtable_t_ctor()
 {
-	gs_core_asset_audio_t_vtable_t vt = gs_default_val();
-	gs_core_asset_audio_t_vtable_t_init(&vt);
+	gs_core_asset_font_t_vtable_t vt = gs_default_val();
+	gs_core_asset_font_t_vtable_t_init(&vt);
 	return vt;
 }
 
 GS_API_DECL gs_core_vtable_t*
-gs_core_asset_audio_t_vtable_t_new()
+gs_core_asset_font_t_vtable_t_new()
 {
-	gs_core_asset_audio_t_vtable_t* vt = gs_malloc_init(gs_core_asset_audio_t_vtable_t);
-	gs_core_asset_audio_t_vtable_t_init(vt);
-	return (gs_core_vtable_t*)vt;
-}
-
-/* gs_core_network_rpc_t */
-
-GS_API_DECL uint32_t
-gs_core_network_rpc_t_class_id()
-{
-	return gs_core_network_rpc_t_cls_id;
-}
-
-GS_API_DECL const gs_meta_class_t*
-gs_core_network_rpc_t_class()
-{
-	return gs_core_meta_obj_info_w_cls_id(gs_core_network_rpc_t_cls_id)->cls;
-}
-
-GS_API_DECL const gs_core_meta_info_t*
-gs_core_network_rpc_t_info()
-{
-	return gs_core_meta_obj_info_w_cls_id(gs_core_network_rpc_t_cls_id);
-}
-
-GS_API_DECL void
-gs_core_network_rpc_t_init(gs_core_network_rpc_t* obj)
-{
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_network_rpc_t_class_id();
-}
-
-GS_API_DECL gs_core_network_rpc_t*
-gs_core_network_rpc_t_new()
-{
-	gs_core_network_rpc_t* obj = gs_malloc_init(gs_core_network_rpc_t);
-	gs_core_network_rpc_t_init(obj);
-	return obj;
-}
-
-GS_API_DECL gs_core_network_rpc_t
-gs_core_network_rpc_t_ctor()
-{
-	gs_core_network_rpc_t obj = gs_default_val();
-	gs_core_network_rpc_t_init(&obj);
-	return obj;
-}
-
-GS_API_DECL void
-gs_core_network_rpc_t_dtor(gs_core_obj_t* obj)
-{
-}
-
-GS_API_DECL void
-gs_core_network_rpc_t_vtable_t_init(gs_core_network_rpc_t_vtable_t* vt)
-{
-	gs_core_obj_t_vtable_t_init((gs_core_obj_t_vtable_t*)vt);
-	vt->cls_id = gs_core_network_rpc_t_class_id;
-	vt->cls = gs_core_network_rpc_t_class;
-	vt->obj_init= gs_core_network_rpc_t_init;
-	vt->obj_dtor= gs_core_network_rpc_t_dtor;
-}
-
-GS_API_DECL gs_core_network_rpc_t_vtable_t
-gs_core_network_rpc_t_vtable_t_ctor()
-{
-	gs_core_network_rpc_t_vtable_t vt = gs_default_val();
-	gs_core_network_rpc_t_vtable_t_init(&vt);
-	return vt;
-}
-
-GS_API_DECL gs_core_vtable_t*
-gs_core_network_rpc_t_vtable_t_new()
-{
-	gs_core_network_rpc_t_vtable_t* vt = gs_malloc_init(gs_core_network_rpc_t_vtable_t);
-	gs_core_network_rpc_t_vtable_t_init(vt);
+	gs_core_asset_font_t_vtable_t* vt = gs_malloc_init(gs_core_asset_font_t_vtable_t);
+	gs_core_asset_font_t_vtable_t_init(vt);
 	return (gs_core_vtable_t*)vt;
 }
 
@@ -947,6 +876,79 @@ gs_core_asset_material_t_vtable_t_new()
 	return (gs_core_vtable_t*)vt;
 }
 
+/* gs_core_component_tag_t */
+
+GS_API_DECL uint32_t
+gs_core_component_tag_t_class_id()
+{
+	return gs_core_component_tag_t_cls_id;
+}
+
+GS_API_DECL const gs_meta_class_t*
+gs_core_component_tag_t_class()
+{
+	return gs_core_meta_obj_info_w_cls_id(gs_core_component_tag_t_cls_id)->cls;
+}
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_component_tag_t_info()
+{
+	return gs_core_meta_obj_info_w_cls_id(gs_core_component_tag_t_cls_id);
+}
+
+GS_API_DECL void
+gs_core_component_tag_t_init(gs_core_component_tag_t* obj)
+{
+	gs_core_cast(obj, gs_core_base_t)->id = gs_core_component_tag_t_class_id();
+}
+
+GS_API_DECL gs_core_component_tag_t*
+gs_core_component_tag_t_new()
+{
+	gs_core_component_tag_t* obj = gs_malloc_init(gs_core_component_tag_t);
+	gs_core_component_tag_t_init(obj);
+	return obj;
+}
+
+GS_API_DECL gs_core_component_tag_t
+gs_core_component_tag_t_ctor()
+{
+	gs_core_component_tag_t obj = gs_default_val();
+	gs_core_component_tag_t_init(&obj);
+	return obj;
+}
+
+GS_API_DECL void
+gs_core_component_tag_t_dtor(gs_core_obj_t* obj)
+{
+}
+
+GS_API_DECL void
+gs_core_component_tag_t_vtable_t_init(gs_core_component_tag_t_vtable_t* vt)
+{
+	gs_core_entities_component_t_vtable_t_init((gs_core_entities_component_t_vtable_t*)vt);
+	vt->cls_id = gs_core_component_tag_t_class_id;
+	vt->cls = gs_core_component_tag_t_class;
+	vt->obj_init= gs_core_component_tag_t_init;
+	vt->obj_dtor= gs_core_component_tag_t_dtor;
+}
+
+GS_API_DECL gs_core_component_tag_t_vtable_t
+gs_core_component_tag_t_vtable_t_ctor()
+{
+	gs_core_component_tag_t_vtable_t vt = gs_default_val();
+	gs_core_component_tag_t_vtable_t_init(&vt);
+	return vt;
+}
+
+GS_API_DECL gs_core_vtable_t*
+gs_core_component_tag_t_vtable_t_new()
+{
+	gs_core_component_tag_t_vtable_t* vt = gs_malloc_init(gs_core_component_tag_t_vtable_t);
+	gs_core_component_tag_t_vtable_t_init(vt);
+	return (gs_core_vtable_t*)vt;
+}
+
 /* gs_core_system_renderable_t */
 
 GS_API_DECL uint32_t
@@ -1171,6 +1173,79 @@ gs_core_entities_system_t_vtable_t_new()
 	return (gs_core_vtable_t*)vt;
 }
 
+/* gs_core_asset_audio_t */
+
+GS_API_DECL uint32_t
+gs_core_asset_audio_t_class_id()
+{
+	return gs_core_asset_audio_t_cls_id;
+}
+
+GS_API_DECL const gs_meta_class_t*
+gs_core_asset_audio_t_class()
+{
+	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_audio_t_cls_id)->cls;
+}
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_asset_audio_t_info()
+{
+	return gs_core_meta_obj_info_w_cls_id(gs_core_asset_audio_t_cls_id);
+}
+
+GS_API_DECL void
+gs_core_asset_audio_t_init(gs_core_asset_audio_t* obj)
+{
+	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_audio_t_class_id();
+}
+
+GS_API_DECL gs_core_asset_audio_t*
+gs_core_asset_audio_t_new()
+{
+	gs_core_asset_audio_t* obj = gs_malloc_init(gs_core_asset_audio_t);
+	gs_core_asset_audio_t_init(obj);
+	return obj;
+}
+
+GS_API_DECL gs_core_asset_audio_t
+gs_core_asset_audio_t_ctor()
+{
+	gs_core_asset_audio_t obj = gs_default_val();
+	gs_core_asset_audio_t_init(&obj);
+	return obj;
+}
+
+GS_API_DECL void
+gs_core_asset_audio_t_dtor(gs_core_obj_t* obj)
+{
+}
+
+GS_API_DECL void
+gs_core_asset_audio_t_vtable_t_init(gs_core_asset_audio_t_vtable_t* vt)
+{
+	gs_core_asset_t_vtable_t_init((gs_core_asset_t_vtable_t*)vt);
+	vt->cls_id = gs_core_asset_audio_t_class_id;
+	vt->cls = gs_core_asset_audio_t_class;
+	vt->obj_init= gs_core_asset_audio_t_init;
+	vt->obj_dtor= gs_core_asset_audio_t_dtor;
+}
+
+GS_API_DECL gs_core_asset_audio_t_vtable_t
+gs_core_asset_audio_t_vtable_t_ctor()
+{
+	gs_core_asset_audio_t_vtable_t vt = gs_default_val();
+	gs_core_asset_audio_t_vtable_t_init(&vt);
+	return vt;
+}
+
+GS_API_DECL gs_core_vtable_t*
+gs_core_asset_audio_t_vtable_t_new()
+{
+	gs_core_asset_audio_t_vtable_t* vt = gs_malloc_init(gs_core_asset_audio_t_vtable_t);
+	gs_core_asset_audio_t_vtable_t_init(vt);
+	return (gs_core_vtable_t*)vt;
+}
+
 /* gs_core_component_renderable_t */
 
 GS_API_DECL uint32_t
@@ -1244,6 +1319,79 @@ gs_core_component_renderable_t_vtable_t_new()
 {
 	gs_core_component_renderable_t_vtable_t* vt = gs_malloc_init(gs_core_component_renderable_t_vtable_t);
 	gs_core_component_renderable_t_vtable_t_init(vt);
+	return (gs_core_vtable_t*)vt;
+}
+
+/* gs_core_network_rpc_t */
+
+GS_API_DECL uint32_t
+gs_core_network_rpc_t_class_id()
+{
+	return gs_core_network_rpc_t_cls_id;
+}
+
+GS_API_DECL const gs_meta_class_t*
+gs_core_network_rpc_t_class()
+{
+	return gs_core_meta_obj_info_w_cls_id(gs_core_network_rpc_t_cls_id)->cls;
+}
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_network_rpc_t_info()
+{
+	return gs_core_meta_obj_info_w_cls_id(gs_core_network_rpc_t_cls_id);
+}
+
+GS_API_DECL void
+gs_core_network_rpc_t_init(gs_core_network_rpc_t* obj)
+{
+	gs_core_cast(obj, gs_core_base_t)->id = gs_core_network_rpc_t_class_id();
+}
+
+GS_API_DECL gs_core_network_rpc_t*
+gs_core_network_rpc_t_new()
+{
+	gs_core_network_rpc_t* obj = gs_malloc_init(gs_core_network_rpc_t);
+	gs_core_network_rpc_t_init(obj);
+	return obj;
+}
+
+GS_API_DECL gs_core_network_rpc_t
+gs_core_network_rpc_t_ctor()
+{
+	gs_core_network_rpc_t obj = gs_default_val();
+	gs_core_network_rpc_t_init(&obj);
+	return obj;
+}
+
+GS_API_DECL void
+gs_core_network_rpc_t_dtor(gs_core_obj_t* obj)
+{
+}
+
+GS_API_DECL void
+gs_core_network_rpc_t_vtable_t_init(gs_core_network_rpc_t_vtable_t* vt)
+{
+	gs_core_obj_t_vtable_t_init((gs_core_obj_t_vtable_t*)vt);
+	vt->cls_id = gs_core_network_rpc_t_class_id;
+	vt->cls = gs_core_network_rpc_t_class;
+	vt->obj_init= gs_core_network_rpc_t_init;
+	vt->obj_dtor= gs_core_network_rpc_t_dtor;
+}
+
+GS_API_DECL gs_core_network_rpc_t_vtable_t
+gs_core_network_rpc_t_vtable_t_ctor()
+{
+	gs_core_network_rpc_t_vtable_t vt = gs_default_val();
+	gs_core_network_rpc_t_vtable_t_init(&vt);
+	return vt;
+}
+
+GS_API_DECL gs_core_vtable_t*
+gs_core_network_rpc_t_vtable_t_new()
+{
+	gs_core_network_rpc_t_vtable_t* vt = gs_malloc_init(gs_core_network_rpc_t_vtable_t);
+	gs_core_network_rpc_t_vtable_t_init(vt);
 	return (gs_core_vtable_t*)vt;
 }
 
@@ -1324,23 +1472,25 @@ gs_core_graphics_renderpass_t_vtable_t_new()
 //============[ Registry ]===============//
 
 //Static Objects
-static gs_core_asset_texture_t g_1 = {0};
+static gs_core_asset_handle_t g_1 = {0};
 static gs_core_app_t g_2 = {0};
 static gs_core_asset_t g_3 = {0};
-static gs_core_asset_pipeline_t g_4 = {0};
-static gs_core_asset_font_t g_5 = {0};
+static gs_core_asset_texture_t g_4 = {0};
+static gs_core_asset_pipeline_t g_5 = {0};
 static gs_core_asset_mesh_t g_6 = {0};
-static gs_core_asset_audio_t g_7 = {0};
-static gs_core_network_rpc_t g_8 = {0};
-static gs_core_obj_t g_9 = {0};
-static gs_core_asset_ui_stylesheet_t g_10 = {0};
-static gs_core_entities_component_t g_11 = {0};
-static gs_core_asset_material_t g_12 = {0};
+static gs_core_asset_font_t g_7 = {0};
+static gs_core_obj_t g_8 = {0};
+static gs_core_asset_ui_stylesheet_t g_9 = {0};
+static gs_core_entities_component_t g_10 = {0};
+static gs_core_asset_material_t g_11 = {0};
+static gs_core_component_tag_t g_12 = {0};
 static gs_core_system_renderable_t g_13 = {0};
 static gs_core_component_transform_t g_14 = {0};
 static gs_core_entities_system_t g_15 = {0};
-static gs_core_component_renderable_t g_16 = {0};
-static gs_core_graphics_renderpass_t g_17 = {0};
+static gs_core_asset_audio_t g_16 = {0};
+static gs_core_component_renderable_t g_17 = {0};
+static gs_core_network_rpc_t g_18 = {0};
+static gs_core_graphics_renderpass_t g_19 = {0};
 
 GS_API_DECL void
 gs_core_meta_register()
@@ -1354,25 +1504,27 @@ gs_core_meta_register()
 	uint32_t cnt = 0;
 	uint32_t idx = 0;
 
-	/* gs_core_asset_texture_t */
+	/* gs_core_asset_handle_t */
 	{
 		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
-			.name = gs_to_str(gs_core_asset_texture_t),
-			.properties = (gs_meta_property_t[]){0},
-			.size = 0 * sizeof(gs_meta_property_t)
+			.name = gs_to_str(gs_core_asset_handle_t),
+			.properties = (gs_meta_property_t[]) {
+				gs_meta_property(gs_core_asset_handle_t, uint32_t, hndl, GS_META_PROPERTY_TYPE_INFO_U32),
+				gs_meta_property(gs_core_asset_handle_t, uint32_t, importer, GS_META_PROPERTY_TYPE_INFO_U32)
+			},
+			.size = 2 * sizeof(gs_meta_property_t)
 		}));
 
 		gs_core_meta_info_t ci = {0};
-		uint32_t hndl = gs_core_asset_texture_t_class_id();
+		uint32_t hndl = gs_core_asset_handle_t_class_id();
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
-		gs_core_cast(&g_1, gs_core_base_t)->id = gs_core_asset_texture_t_class_id();
+		gs_core_cast(&g_1, gs_core_base_t)->id = gs_core_asset_handle_t_class_id();
 		info->instance = gs_core_cast(&g_1, gs_core_obj_t);
-		info->cls = gs_meta_class_get(&meta->registry, gs_core_asset_texture_t);
+		info->cls = gs_meta_class_get(&meta->registry, gs_core_asset_handle_t);
 		info->cid = hndl;
-		uint32_t bid = gs_core_cls_cid(gs_core_asset_t);
-		info->base = gs_core_cls_info(gs_core_asset_t);
-		info->vtable = gs_core_asset_texture_t_vtable_t_new();
-		gs_core_asset_texture_t_vtable_t_init(info->vtable);
+		info->base = NULL;
+		info->vtable = gs_core_asset_handle_t_vtable_t_new();
+		gs_core_asset_handle_t_vtable_t_init(info->vtable);
 	}
 
 	/* gs_core_app_t */
@@ -1402,10 +1554,8 @@ gs_core_meta_register()
 	{
 		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
 			.name = gs_to_str(gs_core_asset_t),
-			.properties = (gs_meta_property_t[]) {
-				gs_meta_property(gs_core_asset_t, uint32_t, record_hndl, GS_META_PROPERTY_TYPE_INFO_U32)
-			},
-			.size = 1 * sizeof(gs_meta_property_t)
+			.properties = (gs_meta_property_t[]){0},
+			.size = 0 * sizeof(gs_meta_property_t)
 		}));
 
 		gs_core_meta_info_t ci = {0};
@@ -1420,6 +1570,27 @@ gs_core_meta_register()
 		gs_core_asset_t_vtable_t_init(info->vtable);
 	}
 
+	/* gs_core_asset_texture_t */
+	{
+		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
+			.name = gs_to_str(gs_core_asset_texture_t),
+			.properties = (gs_meta_property_t[]){0},
+			.size = 0 * sizeof(gs_meta_property_t)
+		}));
+
+		gs_core_meta_info_t ci = {0};
+		uint32_t hndl = gs_core_asset_texture_t_class_id();
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
+		gs_core_cast(&g_4, gs_core_base_t)->id = gs_core_asset_texture_t_class_id();
+		info->instance = gs_core_cast(&g_4, gs_core_obj_t);
+		info->cls = gs_meta_class_get(&meta->registry, gs_core_asset_texture_t);
+		info->cid = hndl;
+		uint32_t bid = gs_core_cls_cid(gs_core_asset_t);
+		info->base = gs_core_cls_info(gs_core_asset_t);
+		info->vtable = gs_core_asset_texture_t_vtable_t_new();
+		gs_core_asset_texture_t_vtable_t_init(info->vtable);
+	}
+
 	/* gs_core_asset_pipeline_t */
 	{
 		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
@@ -1431,35 +1602,14 @@ gs_core_meta_register()
 		gs_core_meta_info_t ci = {0};
 		uint32_t hndl = gs_core_asset_pipeline_t_class_id();
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
-		gs_core_cast(&g_4, gs_core_base_t)->id = gs_core_asset_pipeline_t_class_id();
-		info->instance = gs_core_cast(&g_4, gs_core_obj_t);
+		gs_core_cast(&g_5, gs_core_base_t)->id = gs_core_asset_pipeline_t_class_id();
+		info->instance = gs_core_cast(&g_5, gs_core_obj_t);
 		info->cls = gs_meta_class_get(&meta->registry, gs_core_asset_pipeline_t);
 		info->cid = hndl;
 		uint32_t bid = gs_core_cls_cid(gs_core_asset_t);
 		info->base = gs_core_cls_info(gs_core_asset_t);
 		info->vtable = gs_core_asset_pipeline_t_vtable_t_new();
 		gs_core_asset_pipeline_t_vtable_t_init(info->vtable);
-	}
-
-	/* gs_core_asset_font_t */
-	{
-		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
-			.name = gs_to_str(gs_core_asset_font_t),
-			.properties = (gs_meta_property_t[]){0},
-			.size = 0 * sizeof(gs_meta_property_t)
-		}));
-
-		gs_core_meta_info_t ci = {0};
-		uint32_t hndl = gs_core_asset_font_t_class_id();
-		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
-		gs_core_cast(&g_5, gs_core_base_t)->id = gs_core_asset_font_t_class_id();
-		info->instance = gs_core_cast(&g_5, gs_core_obj_t);
-		info->cls = gs_meta_class_get(&meta->registry, gs_core_asset_font_t);
-		info->cid = hndl;
-		uint32_t bid = gs_core_cls_cid(gs_core_asset_t);
-		info->base = gs_core_cls_info(gs_core_asset_t);
-		info->vtable = gs_core_asset_font_t_vtable_t_new();
-		gs_core_asset_font_t_vtable_t_init(info->vtable);
 	}
 
 	/* gs_core_asset_mesh_t */
@@ -1483,45 +1633,25 @@ gs_core_meta_register()
 		gs_core_asset_mesh_t_vtable_t_init(info->vtable);
 	}
 
-	/* gs_core_asset_audio_t */
+	/* gs_core_asset_font_t */
 	{
 		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
-			.name = gs_to_str(gs_core_asset_audio_t),
+			.name = gs_to_str(gs_core_asset_font_t),
 			.properties = (gs_meta_property_t[]){0},
 			.size = 0 * sizeof(gs_meta_property_t)
 		}));
 
 		gs_core_meta_info_t ci = {0};
-		uint32_t hndl = gs_core_asset_audio_t_class_id();
+		uint32_t hndl = gs_core_asset_font_t_class_id();
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
-		gs_core_cast(&g_7, gs_core_base_t)->id = gs_core_asset_audio_t_class_id();
+		gs_core_cast(&g_7, gs_core_base_t)->id = gs_core_asset_font_t_class_id();
 		info->instance = gs_core_cast(&g_7, gs_core_obj_t);
-		info->cls = gs_meta_class_get(&meta->registry, gs_core_asset_audio_t);
+		info->cls = gs_meta_class_get(&meta->registry, gs_core_asset_font_t);
 		info->cid = hndl;
 		uint32_t bid = gs_core_cls_cid(gs_core_asset_t);
 		info->base = gs_core_cls_info(gs_core_asset_t);
-		info->vtable = gs_core_asset_audio_t_vtable_t_new();
-		gs_core_asset_audio_t_vtable_t_init(info->vtable);
-	}
-
-	/* gs_core_network_rpc_t */
-	{
-		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
-			.name = gs_to_str(gs_core_network_rpc_t),
-			.properties = (gs_meta_property_t[]){0},
-			.size = 0 * sizeof(gs_meta_property_t)
-		}));
-
-		gs_core_meta_info_t ci = {0};
-		uint32_t hndl = gs_core_network_rpc_t_class_id();
-		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
-		gs_core_cast(&g_8, gs_core_base_t)->id = gs_core_network_rpc_t_class_id();
-		info->instance = gs_core_cast(&g_8, gs_core_obj_t);
-		info->cls = gs_meta_class_get(&meta->registry, gs_core_network_rpc_t);
-		info->cid = hndl;
-		info->base = NULL;
-		info->vtable = gs_core_network_rpc_t_vtable_t_new();
-		gs_core_network_rpc_t_vtable_t_init(info->vtable);
+		info->vtable = gs_core_asset_font_t_vtable_t_new();
+		gs_core_asset_font_t_vtable_t_init(info->vtable);
 	}
 
 	/* gs_core_obj_t */
@@ -1535,8 +1665,8 @@ gs_core_meta_register()
 		gs_core_meta_info_t ci = {0};
 		uint32_t hndl = gs_core_obj_t_class_id();
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
-		gs_core_cast(&g_9, gs_core_base_t)->id = gs_core_obj_t_class_id();
-		info->instance = gs_core_cast(&g_9, gs_core_obj_t);
+		gs_core_cast(&g_8, gs_core_base_t)->id = gs_core_obj_t_class_id();
+		info->instance = gs_core_cast(&g_8, gs_core_obj_t);
 		info->cls = gs_meta_class_get(&meta->registry, gs_core_obj_t);
 		info->cid = hndl;
 		info->base = NULL;
@@ -1555,8 +1685,8 @@ gs_core_meta_register()
 		gs_core_meta_info_t ci = {0};
 		uint32_t hndl = gs_core_asset_ui_stylesheet_t_class_id();
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
-		gs_core_cast(&g_10, gs_core_base_t)->id = gs_core_asset_ui_stylesheet_t_class_id();
-		info->instance = gs_core_cast(&g_10, gs_core_obj_t);
+		gs_core_cast(&g_9, gs_core_base_t)->id = gs_core_asset_ui_stylesheet_t_class_id();
+		info->instance = gs_core_cast(&g_9, gs_core_obj_t);
 		info->cls = gs_meta_class_get(&meta->registry, gs_core_asset_ui_stylesheet_t);
 		info->cid = hndl;
 		uint32_t bid = gs_core_cls_cid(gs_core_asset_t);
@@ -1576,8 +1706,8 @@ gs_core_meta_register()
 		gs_core_meta_info_t ci = {0};
 		uint32_t hndl = gs_core_entities_component_t_class_id();
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
-		gs_core_cast(&g_11, gs_core_base_t)->id = gs_core_entities_component_t_class_id();
-		info->instance = gs_core_cast(&g_11, gs_core_obj_t);
+		gs_core_cast(&g_10, gs_core_base_t)->id = gs_core_entities_component_t_class_id();
+		info->instance = gs_core_cast(&g_10, gs_core_obj_t);
 		info->cls = gs_meta_class_get(&meta->registry, gs_core_entities_component_t);
 		info->cid = hndl;
 		info->base = NULL;
@@ -1596,14 +1726,35 @@ gs_core_meta_register()
 		gs_core_meta_info_t ci = {0};
 		uint32_t hndl = gs_core_asset_material_t_class_id();
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
-		gs_core_cast(&g_12, gs_core_base_t)->id = gs_core_asset_material_t_class_id();
-		info->instance = gs_core_cast(&g_12, gs_core_obj_t);
+		gs_core_cast(&g_11, gs_core_base_t)->id = gs_core_asset_material_t_class_id();
+		info->instance = gs_core_cast(&g_11, gs_core_obj_t);
 		info->cls = gs_meta_class_get(&meta->registry, gs_core_asset_material_t);
 		info->cid = hndl;
 		uint32_t bid = gs_core_cls_cid(gs_core_asset_t);
 		info->base = gs_core_cls_info(gs_core_asset_t);
 		info->vtable = gs_core_asset_material_t_vtable_t_new();
 		gs_core_asset_material_t_vtable_t_init(info->vtable);
+	}
+
+	/* gs_core_component_tag_t */
+	{
+		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
+			.name = gs_to_str(gs_core_component_tag_t),
+			.properties = (gs_meta_property_t[]){0},
+			.size = 0 * sizeof(gs_meta_property_t)
+		}));
+
+		gs_core_meta_info_t ci = {0};
+		uint32_t hndl = gs_core_component_tag_t_class_id();
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
+		gs_core_cast(&g_12, gs_core_base_t)->id = gs_core_component_tag_t_class_id();
+		info->instance = gs_core_cast(&g_12, gs_core_obj_t);
+		info->cls = gs_meta_class_get(&meta->registry, gs_core_component_tag_t);
+		info->cid = hndl;
+		uint32_t bid = gs_core_cls_cid(gs_core_entities_component_t);
+		info->base = gs_core_cls_info(gs_core_entities_component_t);
+		info->vtable = gs_core_component_tag_t_vtable_t_new();
+		gs_core_component_tag_t_vtable_t_init(info->vtable);
 	}
 
 	/* gs_core_system_renderable_t */
@@ -1673,6 +1824,27 @@ gs_core_meta_register()
 		gs_core_entities_system_t_vtable_t_init(info->vtable);
 	}
 
+	/* gs_core_asset_audio_t */
+	{
+		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
+			.name = gs_to_str(gs_core_asset_audio_t),
+			.properties = (gs_meta_property_t[]){0},
+			.size = 0 * sizeof(gs_meta_property_t)
+		}));
+
+		gs_core_meta_info_t ci = {0};
+		uint32_t hndl = gs_core_asset_audio_t_class_id();
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
+		gs_core_cast(&g_16, gs_core_base_t)->id = gs_core_asset_audio_t_class_id();
+		info->instance = gs_core_cast(&g_16, gs_core_obj_t);
+		info->cls = gs_meta_class_get(&meta->registry, gs_core_asset_audio_t);
+		info->cid = hndl;
+		uint32_t bid = gs_core_cls_cid(gs_core_asset_t);
+		info->base = gs_core_cls_info(gs_core_asset_t);
+		info->vtable = gs_core_asset_audio_t_vtable_t_new();
+		gs_core_asset_audio_t_vtable_t_init(info->vtable);
+	}
+
 	/* gs_core_component_renderable_t */
 	{
 		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
@@ -1686,14 +1858,34 @@ gs_core_meta_register()
 		gs_core_meta_info_t ci = {0};
 		uint32_t hndl = gs_core_component_renderable_t_class_id();
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
-		gs_core_cast(&g_16, gs_core_base_t)->id = gs_core_component_renderable_t_class_id();
-		info->instance = gs_core_cast(&g_16, gs_core_obj_t);
+		gs_core_cast(&g_17, gs_core_base_t)->id = gs_core_component_renderable_t_class_id();
+		info->instance = gs_core_cast(&g_17, gs_core_obj_t);
 		info->cls = gs_meta_class_get(&meta->registry, gs_core_component_renderable_t);
 		info->cid = hndl;
 		uint32_t bid = gs_core_cls_cid(gs_core_entities_component_t);
 		info->base = gs_core_cls_info(gs_core_entities_component_t);
 		info->vtable = gs_core_component_renderable_t_vtable_t_new();
 		gs_core_component_renderable_t_vtable_t_init(info->vtable);
+	}
+
+	/* gs_core_network_rpc_t */
+	{
+		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
+			.name = gs_to_str(gs_core_network_rpc_t),
+			.properties = (gs_meta_property_t[]){0},
+			.size = 0 * sizeof(gs_meta_property_t)
+		}));
+
+		gs_core_meta_info_t ci = {0};
+		uint32_t hndl = gs_core_network_rpc_t_class_id();
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
+		gs_core_cast(&g_18, gs_core_base_t)->id = gs_core_network_rpc_t_class_id();
+		info->instance = gs_core_cast(&g_18, gs_core_obj_t);
+		info->cls = gs_meta_class_get(&meta->registry, gs_core_network_rpc_t);
+		info->cid = hndl;
+		info->base = NULL;
+		info->vtable = gs_core_network_rpc_t_vtable_t_new();
+		gs_core_network_rpc_t_vtable_t_init(info->vtable);
 	}
 
 	/* gs_core_graphics_renderpass_t */
@@ -1707,8 +1899,8 @@ gs_core_meta_register()
 		gs_core_meta_info_t ci = {0};
 		uint32_t hndl = gs_core_graphics_renderpass_t_class_id();
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
-		gs_core_cast(&g_17, gs_core_base_t)->id = gs_core_graphics_renderpass_t_class_id();
-		info->instance = gs_core_cast(&g_17, gs_core_obj_t);
+		gs_core_cast(&g_19, gs_core_base_t)->id = gs_core_graphics_renderpass_t_class_id();
+		info->instance = gs_core_cast(&g_19, gs_core_obj_t);
 		info->cls = gs_meta_class_get(&meta->registry, gs_core_graphics_renderpass_t);
 		info->cid = hndl;
 		info->base = NULL;
@@ -1726,7 +1918,7 @@ gs_core_meta_unregister()
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
-		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_texture_t_cls_id);
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_handle_t_cls_id);
 		gs_assert(info);
 		if (info->cls) {
 			gs_meta_class_unregister(&meta->registry, info->cls->id);
@@ -1774,7 +1966,7 @@ gs_core_meta_unregister()
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
-		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_pipeline_t_cls_id);
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_texture_t_cls_id);
 		gs_assert(info);
 		if (info->cls) {
 			gs_meta_class_unregister(&meta->registry, info->cls->id);
@@ -1790,7 +1982,7 @@ gs_core_meta_unregister()
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
-		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_font_t_cls_id);
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_pipeline_t_cls_id);
 		gs_assert(info);
 		if (info->cls) {
 			gs_meta_class_unregister(&meta->registry, info->cls->id);
@@ -1822,23 +2014,7 @@ gs_core_meta_unregister()
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
-		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_audio_t_cls_id);
-		gs_assert(info);
-		if (info->cls) {
-			gs_meta_class_unregister(&meta->registry, info->cls->id);
-		}
-		info->cls = NULL;
-		info->base = NULL;
-		if (info->vtable)
-		{
-			gs_free(info->vtable);
-			info->vtable = NULL;
-		}
-	}
-	{
-		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
-		gs_assert(meta);
-		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_network_rpc_t_cls_id);
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_font_t_cls_id);
 		gs_assert(info);
 		if (info->cls) {
 			gs_meta_class_unregister(&meta->registry, info->cls->id);
@@ -1918,6 +2094,23 @@ gs_core_meta_unregister()
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_component_tag_t_cls_id);
+		gs_assert(info);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
+		info->cls = NULL;
+		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
+		ents->component_unregister(gs_core_entity_id(gs_core_component_tag_t));
+	}
+	{
+		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
+		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_system_renderable_t_cls_id);
 		gs_assert(info);
 		if (info->cls) {
@@ -1968,6 +2161,22 @@ gs_core_meta_unregister()
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_asset_audio_t_cls_id);
+		gs_assert(info);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
+		info->cls = NULL;
+		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
+	}
+	{
+		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
+		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_component_renderable_t_cls_id);
 		gs_assert(info);
 		if (info->cls) {
@@ -1981,6 +2190,22 @@ gs_core_meta_unregister()
 			info->vtable = NULL;
 		}
 		ents->component_unregister(gs_core_entity_id(gs_core_component_renderable_t));
+	}
+	{
+		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
+		gs_assert(meta);
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_network_rpc_t_cls_id);
+		gs_assert(info);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
+		info->cls = NULL;
+		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
@@ -2009,6 +2234,14 @@ gs_core_meta_ecs_register()
 
 	// Components
 
+	{
+		gs_core_entity_t comp = ents->component_register(&(gs_core_entities_component_desc_t){
+			.name = gs_to_str(gs_core_component_tag_t),
+			.size = sizeof(gs_core_component_tag_t),
+			.alignment = ECS_ALIGNOF(gs_core_component_tag_t)
+		});
+		gs_hash_table_insert(ents->components, gs_hash_str64(gs_to_str(gs_core_component_tag_t)), comp);
+	}
 	{
 		gs_core_entity_t comp = ents->component_register(&(gs_core_entities_component_desc_t){
 			.name = gs_to_str(gs_core_component_transform_t),

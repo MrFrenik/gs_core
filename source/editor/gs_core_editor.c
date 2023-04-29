@@ -180,7 +180,12 @@ gs_core_editor_update()
         { 
             gs_core_editor_view_t* view = gs_hash_table_iter_get(editor->views, it);
             gs_gui_window_begin_ex(gui, view->name, gs_gui_rect(350, 40, 600, 500), NULL, NULL, GS_GUI_OPT_NOSCROLL);
-            {
+            { 
+                gs_gui_container_t* cnt = gs_gui_get_current_container(gui);
+
+                view->flags = 0x00;
+                view->flags |= (gui->hover_root == cnt) ? GS_CORE_EDITOR_VIEW_FLAG_HOVERED : 0;
+
                 // Editor callback
                 gs_core_cast_vt(view, gs_core_editor_view_t)->callback(view);
             }

@@ -48,6 +48,7 @@ gs_core_graphics_new()
     gs_core_graphics_t* gfx = gs_malloc_init(gs_core_graphics_t);
     gfx->scene = gs_core_graphics_scene_create();
     gs_camera_t cam = gs_camera_perspective();
+    cam.transform.position = gs_v3(0.f, 0.f, 5.f);
     gfx->scene.camera = gs_core_graphics_scene_camera_create(&gfx->scene, &cam);
     gfx->submit = gs_core_graphics_submit_cb;
     return gfx;

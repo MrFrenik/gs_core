@@ -54,6 +54,12 @@ struct gs_core_s;
 
 struct gs_core_editor_view_s; 
 
+enum {
+	GS_CORE_EDITOR_VIEW_FLAG_HOVERED		 = (1 << 0),
+	GS_CORE_EDITOR_VIEW_FLAG_ACTIVE			 = (1 << 1),
+	GS_CORE_EDITOR_VIEW_FLAG_OPEN			 = (1 << 2)
+}; 
+
 // Editor view base
 _introspect()
 typedef struct gs_core_editor_view_s
@@ -64,7 +70,8 @@ typedef struct gs_core_editor_view_s
         void (* callback)(struct gs_core_editor_view_t* view) = NULL;
     )
 
-    char name[GS_CORE_EDITOR_VIEW_STR_MAX]; // Name for editor view
+    char name[GS_CORE_EDITOR_VIEW_STR_MAX]; // Name for editor view 
+    uint32_t flags; 
 } gs_core_editor_view_t;
 
 GS_API_DECL void
@@ -85,8 +92,7 @@ typedef struct gs_core_editor_s
 {
     struct gs_core_s* core;                                // Core 
     gs_hash_table(uint64_t, gs_core_editor_view_t*) views; // All registered editor views 
-    gs_gui_context_t gui;                                  // Gui context for all editor views
-    gs_camera_t camera;                                    // Camera for scene (this should be held in a specific view instead)
+    gs_gui_context_t gui;                                  // Gui context for all editor views 
     struct {
         gs_platform_file_stats_t fstats;    // To track dll hot reloading
         bool32 hot_reload_begin;            // Change detected for hot-reload             
@@ -97,7 +103,10 @@ typedef struct gs_core_editor_s
         void (* meta_unregister)();
         uint32_t hot_reload_timer;
         gs_core_app_t* app;                 // Pointer to application data
-    } app;                                  // Struct for loaded application
+    } app;                                  // Struct for loaded application 
+    struct {
+        gs_core_entity_t entity;
+    } selection;
 } gs_core_editor_t;
 
 #define gs_core_editor_view_register(T)\
@@ -158,5 +167,8 @@ gs_app_scene_render_cb_name();
 
 GS_API_DECL gs_core_editor_t* 
 gs_core_editor_instance();
+
+GS_API_DECL void 
+gs_core_editor_entity_select(gs_core_entity_t entity);
 
 #endif // GS_CORE_EDITOR_H

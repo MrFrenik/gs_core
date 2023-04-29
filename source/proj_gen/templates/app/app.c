@@ -17,24 +17,25 @@ GS_API_DECL void
     gs_core_t* core = gs_core_instance();
     
     // Import texture from resource
-    gs_core_asset_handle_t tex = gs_core_assets_import("textures/gs.png", NULL, false); 
+    app->tex_hndl = gs_core_assets_import(&(gs_core_asset_import_options_t){
+        .import_path = "textures/gs.png"
+    }); 
 
     // Import pipeline from resource 
-    gs_core_asset_handle_t pip = gs_core_assets_import("pipelines/simple.sf", NULL, false);
-
-    // Get default mesh handle to use
-    gs_core_asset_handle_t msh = gs_core_assets_get_default(gs_core_asset_mesh_t);
+    app->pip_hndl = gs_core_assets_import(&(gs_core_asset_import_options_t){
+        .import_path = "pipelines/simple.sf"
+    }); 
 
     // Create and store new material 
     gs_core_asset_material_t* mat = gs_core_cls_new(gs_core_asset_material_t);
     mat->resource = gs_gfxt_material_create(&(gs_gfxt_material_desc_t) {
-        .pip_func.hndl = &((gs_core_asset_pipeline_t*)gs_core_asset_handle_get(&pip))->resource
+        .pip_func.hndl = &((gs_core_asset_pipeline_t*)gs_core_asset_handle_get(&app->pip_hndl))->resource
     }); 
-    gs_gfxt_material_set_uniform(&mat->resource, "u_tex", &((gs_core_asset_texture_t*)gs_core_asset_handle_get(&tex))->resource); 
-    app->mat_hndl = gs_core_assets_add(mat, false);
+    gs_gfxt_material_set_uniform(&mat->resource, "u_tex", &((gs_core_asset_texture_t*)gs_core_asset_handle_get(&app->tex_hndl))->resource); 
+    app->mat_hndl = gs_core_assets_add(mat, &(gs_core_asset_import_options_t){0});
 
     // Allocate new entity and attach components
-    app->ent = gs_core_entities_allocate();
+    app->ent = gs_core_entities_allocate("player");
 
     // Transform component
     gs_core_entities_component_add(gs_core_entities_world(), app->ent, gs_core_component_transform_t, { 
@@ -44,7 +45,7 @@ GS_API_DECL void
 			.rotation = gs_quat_angle_axis(gs_deg2rad(180.f), GS_XAXIS)
         }
     });
-    gs_core_component_transform_t* tc =gs_core_entities_component_get(gs_core_entities_world(), app->ent, gs_core_component_transform_t);
+    gs_core_component_transform_t* tc = gs_core_entities_component_get(gs_core_entities_world(), app->ent, gs_core_component_transform_t);
 
     // Renderable component
     gs_core_entities_component_add(gs_core_entities_world(), app->ent, gs_core_component_renderable_t, {
@@ -148,7 +149,7 @@ GS_API_DECL void
     gs_graphics_renderpass_end(cb);
 
     // Submit gsi
-    gsi_renderpass_submit_ex(gsi, cb, (uint32_t)fbs.x, (uint32_t)fbs.y, NULL); 
+    gsi_renderpass_submit_ex(gsi, cb, gs_v4(vp.x, fbs.y - vp.w - vp.y, vp.z, vp.w), NULL); 
 
     // Submit gui
     gs_gui_renderpass_submit_ex(gui, cb, NULL);

@@ -122,6 +122,8 @@ _gs_core_assets_register_importer(gs_core_assets_t* assets, gs_core_asset_import
     importer.free_asset = desc->free_asset;
     importer.class_id = desc->class_id;
     memcpy(importer.file_extension, desc->asset_file_extension, GS_CORE_ASSETS_FILE_EXTENSION_MAX_LENGTH);
+    memcpy(importer.save_dir, desc->save_dir, GS_CORE_ASSET_STR_MAX);
+    memcpy(importer.file_name, desc->file_name, GS_CORE_ASSET_STR_MAX);
 
     // Insert empty asset handle/record into assets
     gs_core_asset_handle_t inv_hndl = {0};
@@ -153,6 +155,8 @@ _gs_core_assets_register_importer(gs_core_assets_t* assets, gs_core_asset_import
         asset->flags |= GS_CORE_ASSET_FLAG_IS_DEFAULT;
 
         record.uuid = gs_platform_uuid_generate(); 
+        record.importer = ihndl;
+        memcpy(record.name, "default", GS_CORE_ASSET_STR_MAX); 
         hndl.hndl = gs_slot_array_insert(ip->assets, asset);
         hndl.importer = gs_hash_table_get(assets->cid2importer, gs_core_obj_cid(asset));
 
@@ -184,7 +188,9 @@ _gs_core_assets_register_importers(gs_core_assets_t* assets)
         .free_asset = gs_core_asset_texture_importer_free_asset,
         .resource_file_extensions = {"png", "jpg", "tga"},
         .asset_file_extension = "tex",
-        .class_id = gs_core_cls_cid(gs_core_asset_texture_t)
+        .class_id = gs_core_cls_cid(gs_core_asset_texture_t),
+        .save_dir = "textures",
+        .file_name = "texture"
     });
 
     // Register material importer
@@ -194,7 +200,9 @@ _gs_core_assets_register_importers(gs_core_assets_t* assets)
         .free_asset = gs_core_asset_material_importer_free_asset,
         .resource_file_extensions = NULL,
         .asset_file_extension = "mat",
-        .class_id = gs_core_cls_cid(gs_core_asset_material_t)
+        .class_id = gs_core_cls_cid(gs_core_asset_material_t),
+        .save_dir = "materials",
+        .file_name = "material"
     });
 
     // Register mesh importer
@@ -204,7 +212,9 @@ _gs_core_assets_register_importers(gs_core_assets_t* assets)
         .free_asset = gs_core_asset_mesh_importer_free_asset,
         .resource_file_extensions = {"glb", "gltf"},
         .asset_file_extension = "msh",
-        .class_id = gs_core_cls_cid(gs_core_asset_mesh_t)
+        .class_id = gs_core_cls_cid(gs_core_asset_mesh_t),
+        .save_dir = "meshes",
+        .file_name = "mesh"
     });
 
     // Register pipeline importer
@@ -214,7 +224,9 @@ _gs_core_assets_register_importers(gs_core_assets_t* assets)
         .free_asset = gs_core_asset_pipeline_importer_free_asset,
         .resource_file_extensions = {"sf"},
         .asset_file_extension = "pip",
-        .class_id = gs_core_cls_cid(gs_core_asset_pipeline_t)
+        .class_id = gs_core_cls_cid(gs_core_asset_pipeline_t),
+        .save_dir = "pipelines",
+        .file_name = "pipeline"
     });
 
     // Register font importer
@@ -224,7 +236,9 @@ _gs_core_assets_register_importers(gs_core_assets_t* assets)
         .free_asset = gs_core_asset_font_importer_free_asset,
         .resource_file_extensions = {"ttf", "otf"},
         .asset_file_extension = "fnt",
-        .class_id = gs_core_cls_cid(gs_core_asset_font_t)
+        .class_id = gs_core_cls_cid(gs_core_asset_font_t),
+        .save_dir = "fonts",
+        .file_name = "font"
     });
 
     // Register audio importer
@@ -234,7 +248,9 @@ _gs_core_assets_register_importers(gs_core_assets_t* assets)
         .free_asset = gs_core_asset_audio_importer_free_asset,
         .resource_file_extensions = {"wav", "mp3", "ogg"},
         .asset_file_extension = "aud",
-        .class_id = gs_core_cls_cid(gs_core_asset_audio_t)
+        .class_id = gs_core_cls_cid(gs_core_asset_audio_t),
+        .save_dir = "audio",
+        .file_name = "audio"
     });
 
     // Register style sheet importer
@@ -244,7 +260,9 @@ _gs_core_assets_register_importers(gs_core_assets_t* assets)
         .free_asset = gs_core_asset_ui_stylesheet_importer_free_asset,
         .resource_file_extensions = {"gss"},
         .asset_file_extension = "uss",
-        .class_id = gs_core_cls_cid(gs_core_asset_ui_stylesheet_t)
+        .class_id = gs_core_cls_cid(gs_core_asset_ui_stylesheet_t),
+        .save_dir = "style_sheets",
+        .file_name = "style_sheet"
     });
 }
 
@@ -327,22 +345,36 @@ gs_core_assets_instance()
 }
 
 GS_API_DECL gs_core_asset_handle_t 
-gs_core_assets_import(const char* path, gs_core_asset_import_options_t* options, bool serialize)
+gs_core_assets_import(gs_core_asset_import_options_t* options)
 {
     gs_core_assets_t* am = gs_core_assets_instance();
 
-    // Create record for asset, set path to asset using qualified name
-    gs_core_asset_record_t record = {0};
-
     // Asset handle to create and return
-    gs_core_asset_handle_t asset_hndl = {0};
+    gs_core_asset_handle_t asset_hndl = gs_core_cls_ctor(gs_core_asset_handle_t);
+
+    // Create record for asset, set path to asset using qualified name
+    gs_core_asset_record_t record = {0}; 
+
+    if (!options) 
+    {
+        gs_log_warning("Assets::import::import options cannot be null");
+        return asset_hndl; 
+    }
+
+    if (!options->import_path)
+    {
+        gs_log_warning("Assets::import::path cannot be null");
+        return asset_hndl; 
+    }
+    
+    // Get import_path
+    const char* import_path = options->import_path; 
 
     // Get importer from importers
     gs_transient_buffer(FILE_EXT, 10);
-    gs_platform_file_extension(FILE_EXT, 10, path);
+    gs_platform_file_extension(FILE_EXT, 10, import_path);
 
-    if (!gs_hash_table_exists(am->fe2importer, gs_hash_str64(FILE_EXT)))
-    { 
+    if (!gs_hash_table_exists(am->fe2importer, gs_hash_str64(FILE_EXT))) { 
         gs_log_warning("Assets::import::importer does not exist for file extension %s", FILE_EXT);
         return asset_hndl;
     }
@@ -354,36 +386,47 @@ gs_core_assets_import(const char* path, gs_core_asset_import_options_t* options,
     // Get class id from storage
     uint64_t cid = importer->class_id;
 
-    // Get absolute path to asset
-    gs_snprintfc(PATH, GS_CORE_ASSET_STR_MAX, "%s/%s", am->root_path, path);
+    // Get absolute path to asset 
+    gs_snprintfc(PATH, GS_CORE_ASSET_STR_MAX, "%s/%s", 
+        ~options->flags & GS_CORE_ASSET_IMPORT_OPT_ABSOLUTE_IMPORT_PATH ? am->root_path : "", import_path);
 
-    // Get qualified name of asset
+    // Get qualified name of asset based on import path
     gs_transient_buffer(QUAL_NAME, GS_CORE_ASSET_STR_MAX);
-    _gs_core_asset_qualified_name(path, QUAL_NAME, GS_CORE_ASSET_STR_MAX);
-    memcpy(record.name, QUAL_NAME, GS_CORE_ASSET_STR_MAX);
+    _gs_core_asset_qualified_name(import_path, QUAL_NAME, GS_CORE_ASSET_STR_MAX);
+    memcpy(record.name, QUAL_NAME, GS_CORE_ASSET_STR_MAX); 
 
-    // Create final save path for asset
-    gs_transient_buffer(FINAL_PATH_TMP, GS_CORE_ASSET_STR_MAX);
-    gs_transient_buffer(FINAL_PATH, GS_CORE_ASSET_STR_MAX);
-    gs_snprintf(FINAL_PATH_TMP, GS_CORE_ASSET_STR_MAX, "%s/%s", am->root_path, QUAL_NAME);
-    gs_util_string_replace_delim((FINAL_PATH_TMP + 1), (FINAL_PATH + 1), GS_CORE_ASSET_STR_MAX, '.', '/');
-    FINAL_PATH[0] = '.'; 
+    // Get save directory
+    const char* save_dir = options->save_dir ? options->save_dir : 
+        importer->save_dir ? importer->save_dir : NULL;
 
-    // Get file extension from registered mappings
-    const char* file_ext = importer->file_extension;
-    gs_snprintf(record.path, GS_CORE_ASSET_STR_MAX, "%s.%s", FINAL_PATH, file_ext);
+    // Get save directory (create if necessary)
+    gs_snprintfc(SAVE_DIR, GS_CORE_ASSET_STR_MAX, "%s/%s", am->root_path, save_dir ? save_dir : "");
+
+    // Create save directory if necessary
+    if (!gs_platform_dir_exists(SAVE_DIR))
+    {
+        int32_t res = gs_platform_mkdir(SAVE_DIR, 0x00);
+        if (!res)
+        { 
+            gs_log_warning("assets::import::unable to create save directory directory: %s", SAVE_DIR); 
+        }
+    }
+
+    // Set final record save path for asset with appropriate file extension
+    gs_snprintf(record.path, GS_CORE_ASSET_STR_MAX, "%s/%s.%s", SAVE_DIR, QUAL_NAME, importer->file_extension); 
 
     // Generate uuid for asset
     record.uuid = gs_platform_uuid_generate(); 
+    record.importer = importer_hndl;
 
     gs_core_asset_t* asset = importer->load_resource_from_file(PATH, options); 
     if (!asset)
     {
-        gs_log_warning("assets::import::failed to load resource from file: %s", path);
+        gs_log_warning("assets::import::failed to load resource from file: %s", PATH);
         return asset_hndl;
     } 
 
-    gs_println("assets::import::imported %s to %s", path, record.path);
+    gs_println("assets::import::imported %s to %s", PATH, record.path);
 
     // Insert into data array
     uint32_t hndl = gs_slot_array_insert(importer->assets, asset);
@@ -392,7 +435,7 @@ gs_core_assets_import(const char* path, gs_core_asset_import_options_t* options,
     gs_transient_buffer(UUID_BUF, 34);
     gs_platform_uuid_to_string(UUID_BUF, &record.uuid);
     gs_hash_table_insert(importer->uuid2id, gs_hash_str64(UUID_BUF), hndl);
-    gs_hash_table_insert(importer->name2id, gs_hash_str64(record.name), hndl); 
+    gs_hash_table_insert(importer->name2id, gs_hash_str64(record.name), hndl);
 
     // Assign asset handle to record
     record.hndl = hndl;
@@ -404,7 +447,7 @@ gs_core_assets_import(const char* path, gs_core_asset_import_options_t* options,
     asset->record_hndl = rhndl; 
 
     // Serialize asset to disk
-    if (serialize)
+    if (~options->flags & GS_CORE_ASSET_IMPORT_OPT_NO_SERIALIZE)
     {
         gs_core_assets_serialize_asset(record.path, asset);
     }
@@ -416,7 +459,7 @@ gs_core_assets_import(const char* path, gs_core_asset_import_options_t* options,
 } 
 
 GS_API_DECL gs_core_asset_handle_t
-gs_core_assets_add(gs_core_asset_t* asset, bool serialize)
+gs_core_assets_add(gs_core_asset_t* asset, gs_core_asset_import_options_t* options)
 { 
     gs_core_assets_t* am = gs_core_assets_instance();
 
@@ -424,7 +467,7 @@ gs_core_assets_add(gs_core_asset_t* asset, bool serialize)
     gs_core_asset_record_t record = {0};
 
     // Asset handle to create and return
-    gs_core_asset_handle_t asset_hndl = {0};
+    gs_core_asset_handle_t asset_hndl = gs_core_cls_ctor(gs_core_asset_handle_t);
 
     // Get importer from asset type id
     uint32_t importer_hndl = gs_hash_table_get(am->cid2importer, gs_core_obj_cid(asset));
@@ -437,8 +480,30 @@ gs_core_assets_add(gs_core_asset_t* asset, bool serialize)
     // Grab importer from id
     gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, importer_hndl); 
 
+    // Get save directory
+    const char* save_dir = options->save_dir ? options->save_dir : 
+        importer->save_dir ? importer->save_dir : am->root_path; 
+    
+    // Get save directory (create if necessary)
+    gs_snprintfc(SAVE_DIR, GS_CORE_ASSET_STR_MAX, "%s/%s", am->root_path, save_dir ? save_dir : "");
+
+    // Create save directory if necessary
+    if (!gs_platform_dir_exists(SAVE_DIR))
+    {
+        int32_t res = gs_platform_mkdir(SAVE_DIR, 0x00);
+        if (!res)
+        { 
+            gs_log_warning("assets::add::unable to create save directory directory: %s", SAVE_DIR); 
+        }
+    } 
+
     // Generate uuid for asset
     record.uuid = gs_platform_uuid_generate(); 
+    record.importer = importer_hndl;
+
+    // Set final record save path for asset with appropriate file extension
+    gs_snprintf(record.path, GS_CORE_ASSET_STR_MAX, "%s/%s_%d.%s", SAVE_DIR, importer->file_name,
+        gs_slot_array_size(importer->assets), importer->file_extension);
 
     // Insert into data array
     asset_hndl.hndl = gs_slot_array_insert(importer->assets, asset);
@@ -460,7 +525,7 @@ gs_core_assets_add(gs_core_asset_t* asset, bool serialize)
     asset->record_hndl = rhndl; 
 
     // Serialize asset to disk
-    if (serialize)
+    if (~options->flags & GS_CORE_ASSET_IMPORT_OPT_NO_SERIALIZE)
     {
         gs_core_assets_serialize_asset(record.path, asset);
     } 
@@ -494,11 +559,57 @@ gs_core_assets_serialize_asset(const char* path, const gs_core_asset_t* asset)
     // Serialize asset data 
     gs_result res = gs_core_obj_serialize(&bb, gs_core_cast(asset, gs_core_obj_t));
 
+    // Serialize default if incomplete
+    if (res == GS_RESULT_INCOMPLETE)
+    { 
+        // Default...
+    }
+
     // Write to file
     gs_byte_buffer_write_to_file(&bb, path);
 
     // Free buffer
     gs_byte_buffer_free(&bb);
+}
+
+GS_API_DECL uint64_t 
+gs_core_asset_handle_cls_id(const gs_core_asset_handle_t* hndl)
+{
+    gs_core_assets_t* am = gs_core_assets_instance();
+    const gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, hndl->importer);
+    return importer->class_id;
+}
+
+GS_API_DECL gs_meta_class_t* 
+gs_core_asset_handle_cls(const gs_core_asset_handle_t* hndl)
+{
+    gs_core_assets_t* am = gs_core_assets_instance();
+    const gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, hndl->importer); 
+    const gs_core_meta_info_t* info = gs_core_meta_obj_info_w_cls_id(importer->class_id); 
+    return info->cls;
+}
+
+GS_API_DECL struct gs_core_asset_record_s*
+gs_core_asset_handle_record(const gs_core_asset_handle_t* hndl)
+{ 
+    gs_core_assets_t* am = gs_core_assets_instance();
+    const gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, hndl->importer); 
+    const gs_core_asset_t* asset = gs_slot_array_get(importer->assets, hndl->hndl);
+    return gs_slot_array_getp(importer->records, asset->record_hndl);
+}
+
+GS_API_DECL struct gs_core_asset_record_s*
+gs_core_asset_handle_name(const gs_core_asset_handle_t* hndl)
+{ 
+    gs_core_asset_record_t* record = gs_core_asset_handle_record(hndl);
+    return record->name;
+}
+
+GS_API_DECL struct gs_core_asset_importer_s*
+gs_core_asset_handle_importer(const gs_core_asset_handle_t* hndl)
+{
+    gs_core_assets_t* am = gs_core_assets_instance();
+    return gs_slot_array_getp(am->importers, hndl->importer); 
 }
 
 // Get access to raw asset from handle
@@ -513,16 +624,25 @@ gs_core_asset_handle_get(const gs_core_asset_handle_t* hndl)
 GS_API_DECL gs_core_asset_handle_t
 gs_core_asset_handle_from_asset(const gs_core_asset_t* asset)
 {
+    gs_core_asset_handle_t hndl = gs_core_cls_ctor(gs_core_asset_handle_t);
     gs_core_assets_t* am = gs_core_assets_instance();
     uint32_t ihndl = gs_hash_table_get(am->cid2importer, gs_core_obj_cid(asset));
     const gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, ihndl);
     const gs_core_asset_record_t* record = gs_slot_array_getp(importer->records, asset->record_hndl); 
-
-    return (gs_core_asset_handle_t){
-        .hndl = record->hndl,
-        .importer = ihndl
-    };
+    hndl.hndl = record->hndl;
+    hndl.importer = ihndl;
+    return hndl;
 } 
+
+GS_API_DECL gs_core_asset_handle_t
+gs_core_asset_handle_from_record(const struct gs_core_asset_record_s* record)
+{ 
+    gs_core_assets_t* am = gs_core_assets_instance();
+    gs_core_asset_handle_t hndl = gs_core_cls_ctor(gs_core_asset_handle_t);
+    const gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, record->importer);
+    gs_core_asset_t* asset = gs_slot_array_get(importer->assets, record->hndl);
+    return gs_core_asset_handle_from_asset(asset);
+}
 
 GS_API_PRIVATE gs_core_asset_handle_t
 gs_core_assets_get_default_impl(uint64_t cid)
@@ -579,6 +699,11 @@ gs_core_asset_texture_importer()
 GS_API_DECL gs_result
 gs_core_asset_texture_serialize(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj)
 {
+    // Cast to texture
+    gs_core_asset_texture_t* tex = gs_core_cast(obj, gs_core_asset_texture_t);
+
+    // Write all texture data to buffer stream
+
     return GS_RESULT_INCOMPLETE;
 }
 
@@ -606,8 +731,11 @@ GS_API_DECL gs_core_asset_t*
 gs_core_asset_texture_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
 {
     gs_core_asset_texture_t* texture = gs_core_cls_new(gs_core_asset_texture_t); 
-    gs_graphics_texture_desc_t* tdesc = options ? &options->texture.desc : NULL;
-    texture->resource = gs_gfxt_texture_load_from_file(path, tdesc, false, false); 
+    gs_graphics_texture_desc_t* tdesc = options ? options->texture.desc : NULL;
+    texture->resource = gs_gfxt_texture_load_from_file(path, tdesc, false, true);
+    if (tdesc) {
+        texture->desc = *tdesc;
+    }
     return gs_core_cast(texture, gs_core_asset_t);
 }
 

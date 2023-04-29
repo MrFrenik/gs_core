@@ -74,12 +74,19 @@ gs_core_editor_view_scene_cb(struct gs_core_editor_view_s* view)
     gs_gui_layout_row(gui, 1, (int[]){-1}, -1); 
     gs_gui_rect_t rect = gs_gui_layout_next(gui);
     gs_gui_layout_set_next(gui, rect, 0);
-    gs_gui_container_t* cnt = gs_gui_get_current_container(gui); 
+    gs_gui_container_t* cnt = gs_gui_get_current_container(gui);
 
+    // Somehow have to interact with the scene through this... will have to detect click, get all entities, then determine if intersected
+    // Need to render out scene into gbuffer type thing for object ids to detect interactions
     gs_core_app_t* app = editor->app.app;
     if (app)
     { 
-        gs_gui_draw_custom(gui, rect, _gs_core_app_editor, NULL, 0); 
+        gs_gui_draw_custom(gui, rect, _gs_core_app_editor, NULL, 0);
+
+        // We're hovered, so now we can interact with it
+        if (view->flags & GS_CORE_EDITOR_VIEW_FLAG_HOVERED)
+        { 
+        }
     }
 } 
 
