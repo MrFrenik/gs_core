@@ -54,6 +54,8 @@ typedef struct
     char content[META_FUNCTION_STR_MAX];
     char function[META_FUNCTION_STR_MAX];
     bool32 is_overriden;
+    bool32 needs_decl;
+    bool32 is_default;
 } method_t;
 
 typedef struct
@@ -71,6 +73,8 @@ typedef struct
     struct {
         bool32 reliable; 
     } rpc;
+    bool has_base; 
+    bool should_write_meta;
 } class_t;
 
 typedef struct
@@ -85,8 +89,8 @@ GS_API_DECL void write_to_file(meta_t* meta, const char* dir, const char* proj_n
 GS_API_DECL void parse_file(meta_t* meta, const char* path);
 
 #define TOKEN_EXPECT(LEX, TYPE, MSG)\
-    if (!gs_lexer_require_token_type(LEX, TYPE)) {\
-        gs_token_t TOKEN = LEX->current_token;\
+    if (!gs_lexer_require_token_type((LEX), TYPE)) {\
+        gs_token_t TOKEN = (LEX)->current_token;\
         gs_log_warning("Unidentified token: %.*s: %s", TOKEN.len, TOKEN.text, MSG);\
         return;\
     } 
@@ -203,7 +207,8 @@ parse_class_method_vt(meta_t* meta, class_t* cls, gs_lexer_t* lex, vtable_t* vt)
     {
         char name[META_PROPERTY_STR_MAX];
         char content[META_FUNCTION_STR_MAX];
-        bool32 is_overriden;
+        bool32 is_overriden; 
+        bool32 needs_decl;
     } method_t;
 
     typedef struct
@@ -237,14 +242,37 @@ parse_class_method_vt(meta_t* meta, class_t* cls, gs_lexer_t* lex, vtable_t* vt)
 
         // Look for equal for callback to be registered
         TOKEN_EXPECT(lex, GS_TOKEN_EQUAL, "Expect equal for function pointer");
-        TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expect function name for function pointer"); 
-        TOKEN_COPY(lex->current_token, method.function);
+
+        // Look for optional _decl keytag for function declare 
+        TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expect function name or _decl for function pointer");
+
+        // Take care of decl keyword
+        if (gs_token_compare_text(&lex->current_token, "_decl"))
+        { 
+            method.needs_decl = true;
+            // gs_token_debug_print(&lex->current_token);
+            TOKEN_EXPECT(lex, GS_TOKEN_LPAREN, "Expect token LPAREN for _decl tag");
+            TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expect function name for function pointer");
+            TOKEN_COPY(lex->current_token, method.function);
+            TOKEN_EXPECT(lex, GS_TOKEN_RPAREN, "Expect token RPAREN for _decl tag");
+        }
+        else if (gs_token_compare_text(&lex->current_token, "_default"))
+        {
+            method.needs_decl = true;
+            method.is_default = true;
+            TOKEN_EXPECT(lex, GS_TOKEN_LPAREN, "Expect token LPAREN for _default tag");
+            TOKEN_EXPECT(lex, GS_TOKEN_RPAREN, "Expect token RPAREN for _default tag");
+        }
+        else
+        { 
+            TOKEN_COPY(lex->current_token, method.function);
+        }
 
         // Move to semicolon 
         gs_lexer_find_next_token_type(lex, GS_TOKEN_SEMICOLON);
         token = lex->current_token;
 
-        gs_println("%s: %s", method.name, method.function);
+        // gs_println("%s: %s", method.name, method.function);
     } 
     else
     { 
@@ -363,10 +391,11 @@ parse_class_properties(meta_t* meta, class_t* cls, gs_lexer_t* lex)
 } 
 
 GS_API_DECL void
-parse_class(meta_t* meta, gs_lexer_t* lex)
+parse_class(meta_t* meta, gs_lexer_t* lex, bool should_write_meta)
 {
     // Class to construct
     class_t cls = {0};
+    cls.should_write_meta = should_write_meta;
 
     gs_token_t token = lex->current_token;
 
@@ -418,7 +447,8 @@ parse_class(meta_t* meta, gs_lexer_t* lex)
 // List of files to iterate through for includes
 
 typedef struct {char path[512];} FILE_PATH;
-gs_dyn_array(FILE_PATH) g_files;
+gs_dyn_array(FILE_PATH) g_files; 
+bool g_should_write_meta_class = true;
 
 typedef (* iterate_dir_cb)(const char* path, struct dirent* entry);
 
@@ -504,7 +534,7 @@ void refl_iterate_dir_cb(const char* path, struct dirent* entry)
             {
                 if (gs_token_compare_text(&token, "_introspect"))
                 {
-                    parse_class(&g_meta, &lex);
+                    parse_class(&g_meta, &lex, g_should_write_meta_class);
                 }
             } break; 
         }
@@ -579,7 +609,8 @@ int32_t main(int32_t argc, char** argv)
     const char* in_dir = argv[1];
     const char* out_dir = argv[2];
     const char* proj_name = argv[3];
-    uint32_t id_offset = argc > 4 ? atoi(argv[4]) : 0;
+    const char* dep_dir = argv[4];
+    uint32_t id_offset = argc > 5 ? atoi(argv[5]) : 0;
 
     gs_println("in_dir: %s", in_dir);
     gs_println("out_dir: %s", out_dir);
@@ -592,8 +623,16 @@ int32_t main(int32_t argc, char** argv)
     // Iterate through core files
     // iterate_dir("../../gs_core/source", refl_iterate_dir_cb); 
 
+    // Iterate through dependent directory
+    if (dep_dir)
+    {
+        g_should_write_meta_class = false;
+        iterate_dir(dep_dir, refl_iterate_dir_cb);
+    }
+
     // Iterate through project files (this should be passed in) 
     // for source files to parse, ignore third party directory, generated, reflection
+    g_should_write_meta_class = true;
     iterate_dir(in_dir, refl_iterate_dir_cb);
 
     write_to_file(&g_meta, dir, proj_name, id_offset);
@@ -695,6 +734,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     )
     {
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
+        if (!cls->should_write_meta) continue;
         
         if (gs_string_compare_equal(cls->base, "gs_core_entities_component_t"))
         {
@@ -714,6 +754,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     )
     {
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
+        if (!cls->should_write_meta) continue;
         if (gs_string_compare_equal(cls->base, "gs_core_entities_system_t"))
         {
             gs_fprintln(fp, "gs_core_entities_system_declare(%s);\n", cls->name);
@@ -735,10 +776,11 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     for (
         gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
         gs_hash_table_iter_valid(meta->classes, it);
-        gs_hash_table_iter_advance(meta->classes, it), CID++
+        gs_hash_table_iter_advance(meta->classes, it)
     )
     {
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it);
+        if (!cls->should_write_meta) continue;
 
         // Vtable declaration 
         gs_fprintln(fp, "#define %s_vtable_t_methods\\", cls->name); 
@@ -746,7 +788,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         if (gs_string_compare_equal(cls->name, "gs_core_obj_t"))
         {
             gs_fprintln(fp, "\tgs_core_vtable_t_methods\\");
-        }
+        } 
 
         int32_t noc = 0;
         for (
@@ -759,6 +801,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
             if (!mt->is_overriden) noc++;
         }
 
+        
         // Do any base declaration here
         if (cls->base && !gs_string_compare_equal(cls->name, "gs_core_obj_t"))
         { 
@@ -785,30 +828,29 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
             method_t* mt = gs_hash_table_iter_getp(cls->vtable.methods, it);
             if (!mt->is_overriden)
             {
-                gs_fprintf(fp, "\t%s;", mt->content); 
+                ct++;
+                gs_fprintf(fp, "\t%s;", mt->content);  
             } 
-            if (noc && ct != noc - 1)
+            if (ct <= noc - 1)
             {
                 gs_fprintf(fp, "\\");
             }
-            if (!mt->is_overriden) 
-            {
-                ct++;
-                gs_fprintf(fp, "\n"); 
-            }
+            gs_fprintf(fp, "\n"); 
         } 
 
-        gs_fprintf(fp, "\n"); 
-
+        gs_fprintf(fp, "\n");
+       
+        CID++;
     }
 
     for (
         gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
         gs_hash_table_iter_valid(meta->classes, it);
-        gs_hash_table_iter_advance(meta->classes, it), CID++
+        gs_hash_table_iter_advance(meta->classes, it)
     )
     {
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it);
+        if (!cls->should_write_meta) continue;
 
         gs_fprintln(fp, "/* %s */\n", cls->name); 
 
@@ -833,22 +875,6 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "GS_API_DECL void");
         gs_fprintln(fp, "%s_dtor(gs_core_obj_t* obj);\n", cls->name);
 
-        // If is base of rpc, then check for cb
-        if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_t") && cls->methods)
-        {
-            method_t* rpc = gs_hash_table_getp(cls->methods, gs_hash_str64("_callback"));
-            if (rpc)
-            {
-                gs_fprintln(fp, "GS_API_DECL void");
-                gs_fprintln(fp, "%s(%s* rpc);\n", rpc->content, cls->name);
-            }
-            else
-            {
-                gs_fprintln(fp, "GS_API_DECL void");
-                gs_fprintln(fp, "%s_cb(%s* rpc);\n", cls->name, cls->name);
-            }
-        } 
-
         // VTable Struct
         gs_fprintln(fp, "typedef struct %s_vtable_s", cls->name); 
         gs_fprintln(fp, "{"); 
@@ -864,6 +890,60 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         // Ctor
         gs_fprintln(fp, "GS_API_DECL %s_vtable_t", cls->name);
         gs_fprintln(fp, "%s_vtable_t_ctor();\n", cls->name);
+
+        // Look through vtable methods for any overrides that need decls
+        for (
+            gs_hash_table_iter vit = gs_hash_table_iter_new(cls->vtable.methods);
+            gs_hash_table_iter_valid(cls->vtable.methods, vit);
+            gs_hash_table_iter_advance(cls->vtable.methods, vit)
+        )
+        { 
+            method_t* mt = gs_hash_table_iter_getp(cls->vtable.methods, vit);
+            if (mt->is_overriden && mt->needs_decl)
+            { 
+                class_t* bcls = gs_hash_table_getp(meta->classes, gs_hash_str64(cls->base));
+                method_t* bmt = NULL;
+                while (bcls)
+                { 
+                    if (gs_hash_table_exists(bcls->vtable.methods, gs_hash_str64(mt->name)))
+                    {
+                        bmt = gs_hash_table_getp(bcls->vtable.methods, gs_hash_str64(mt->name));
+                    }
+                    bcls = gs_hash_table_getp(meta->classes, gs_hash_str64(bcls->base));
+                }
+
+                // Lex bmt content for retval and func args for now...
+                if (bmt)
+                { 
+                    gs_lexer_t lex = gs_lexer_c_ctor(bmt->content);
+                    TOKEN_EXPECT(&lex, GS_TOKEN_IDENTIFIER, "Expect identifier.");
+                    gs_token_t retval = lex.current_token;
+
+                    // Handle pointers for retval...
+                    gs_lexer_find_next_token_type(&lex, GS_TOKEN_LPAREN);
+                    gs_token_t lparen = lex.current_token;
+                    retval.len = lparen.text - retval.text;
+
+                    gs_lexer_find_next_token_type(&lex, GS_TOKEN_RPAREN); 
+                    gs_lexer_find_next_token_type(&lex, GS_TOKEN_LPAREN);
+                    lparen = lex.current_token;
+                    gs_lexer_find_next_token_type(&lex, GS_TOKEN_RPAREN); 
+                    gs_token_t rparen = lex.current_token;
+                    gs_token_t contents = (gs_token_t){
+                        .text = lparen.text,
+                        .len = rparen.text - lparen.text + 1
+                    }; 
+
+                    gs_snprintfc(FUNC_NAME, 256, "%s_%s", cls->name, bmt->name);
+
+                    gs_fprintln(fp, "GS_API_DECL %.*s\n%s%.*s;\n", retval.len, retval.text, 
+                        mt->is_default ? FUNC_NAME : mt->function, contents.len, contents.text); 
+                }
+            } 
+        }
+
+        gs_fprintln(fp, ""); 
+        CID++;
     }
 
     gs_fprintln(fp, "//========================//\n");
@@ -906,11 +986,13 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     for (
         gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
         gs_hash_table_iter_valid(meta->classes, it);
-        gs_hash_table_iter_advance(meta->classes, it), CID++
+        gs_hash_table_iter_advance(meta->classes, it)
     )
     {
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
+        if (!cls->should_write_meta) continue;
         gs_fprintln(fp, "#define %s_cls_id %zu", cls->name, CID + id_offset);
+        CID++;
     }
 
     gs_fprintln(fp, "");
@@ -918,10 +1000,11 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     for (
         gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
         gs_hash_table_iter_valid(meta->classes, it);
-        gs_hash_table_iter_advance(meta->classes, it), CID++
+        gs_hash_table_iter_advance(meta->classes, it)
     )
     {
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
+        if (!cls->should_write_meta) continue;
 
         gs_fprintln(fp, "/* %s */\n", cls->name); 
 
@@ -955,16 +1038,15 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "\tgs_core_cast(obj, gs_core_base_t)->id = %s_class_id();", cls->name);
 
         // If is rpc, then need to init rpc info
-        if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_t") && cls->methods)
+        if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_reliable_t"))
         { 
-            method_t* cb = gs_hash_table_getp(cls->methods, gs_hash_str64("_callback"));
-            gs_snprintfc(CB_GEN, 128, "%s_cb", cls->name);
-            gs_snprintfc(DELIVERY_STR, 128, "%s", cls->rpc.reliable ? "GS_CORE_NETWORK_DELIVERY_RELIABLE" : 
-                    "GS_CORE_NETWORK_DELIVERY_UNRELIABLE");
-            gs_snprintfc(CB_STR, 128, "%s", cb ? cb->content : CB_GEN);
             gs_fprintln(fp, "\tgs_core_network_rpc_t* rpc = gs_core_cast(obj, gs_core_network_rpc_t);");
-            gs_fprintln(fp, "\trpc->delivery = %s;", DELIVERY_STR);
-            gs_fprintln(fp, "\trpc->callback = %s;", CB_STR);
+            gs_fprintln(fp, "\trpc->delivery = GS_CORE_NETWORK_DELIVERY_RELIABLE;");
+        }
+        else if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_unreliable_t"))
+        {
+            gs_fprintln(fp, "\tgs_core_network_rpc_t* rpc = gs_core_cast(obj, gs_core_network_rpc_t);");
+            gs_fprintln(fp, "\trpc->delivery = GS_CORE_NETWORK_DELIVERY_UNRELIABLE;"); 
         }
 
         if (gs_hash_table_exists(cls->methods, gs_hash_str64("_ctor")))
@@ -1029,7 +1111,8 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         )
         {
             method_t* mt = gs_hash_table_iter_getp(cls->vtable.methods, mit); 
-            gs_fprintln(fp, "\tvt->%s = %s;", mt->name, mt->function);
+            gs_snprintfc(FUNC_NAME, 256, "%s_%s", cls->name, mt->name);
+            gs_fprintln(fp, "\tvt->%s = %s;", mt->name, mt->is_default ? FUNC_NAME : mt->function);
         }
 
         // Init base stuff
@@ -1058,6 +1141,8 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "\t%s_vtable_t_init(vt);", cls->name);
         gs_fprintln(fp, "\treturn (gs_core_vtable_t*)vt;");
         gs_fprintln(fp, "}\n");
+
+        CID++;
     }
 
     // Registry
@@ -1069,11 +1154,13 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     for (
         gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
         gs_hash_table_iter_valid(meta->classes, it);
-        gs_hash_table_iter_advance(meta->classes, it), CID++
+        gs_hash_table_iter_advance(meta->classes, it)
     )
     {
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
+        if (!cls->should_write_meta) continue;
         gs_fprintln(fp, "static %s g_%zu = {0};", cls->name, CID);
+        CID++;
     }
 
     gs_fprintln(fp, ""); 
@@ -1095,10 +1182,11 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     for (
         gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
         gs_hash_table_iter_valid(meta->classes, it);
-        gs_hash_table_iter_advance(meta->classes, it), CID++
+        gs_hash_table_iter_advance(meta->classes, it)
     ) 
     {
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
+        if (!cls->should_write_meta) continue;
 
         gs_fprintln(fp, "\t/* %s */", cls->name);
         gs_fprintln(fp, "\t{");
@@ -1151,16 +1239,15 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "\t\tgs_core_cast(&g_%zu, gs_core_base_t)->id = %s_class_id();", CID, cls->name);
 
         // If is rpc, then need to init rpc info
-        if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_t") && cls->methods)
+        if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_reliable_t"))
         { 
-            method_t* cb = gs_hash_table_getp(cls->methods, gs_hash_str64("_callback"));
-            gs_snprintfc(CB_GEN, 128, "%s_cb", cls->name);
-            gs_snprintfc(DELIVERY_STR, 128, "%s", cls->rpc.reliable ? "GS_CORE_NETWORK_DELIVERY_RELIABLE" : 
-                    "GS_CORE_NETWORK_DELIVERY_UNRELIABLE");
-            gs_snprintfc(CB_STR, 128, "%s", cb ? cb->content : CB_GEN);
-            gs_fprintln(fp, "\t\trpc = core_cast(&g_%zu, gs_core_network_rpc_t);", CID);
-            gs_fprintln(fp, "\t\trpc->delivery = %s;", DELIVERY_STR);
-            gs_fprintln(fp, "\t\trpc->callback = %s;", CB_STR);
+            gs_fprintln(fp, "\t\trpc = gs_core_cast(&g_%zu, gs_core_network_rpc_t);", CID);
+            gs_fprintln(fp, "\t\trpc->delivery = GS_CORE_NETWORK_DELIVERY_RELIABLE;");
+        }
+        else if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_unreliable_t"))
+        {
+            gs_fprintln(fp, "\t\trpc = gs_core_cast(&g_%zu, gs_core_network_rpc_t);", CID);
+            gs_fprintln(fp, "\t\trpc->delivery = GS_CORE_NETWORK_DELIVERY_UNRELIABLE;");
         }
         gs_fprintln(fp, "\t\tinfo->instance = gs_core_cast(&g_%zu, gs_core_obj_t);", CID);
         gs_fprintln(fp, "\t\tinfo->cls = gs_meta_class_get(&meta->registry, %s);", cls->name);
@@ -1182,6 +1269,8 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "\t\tinfo->vtable = %s_vtable_t_new();", cls->name);
         gs_fprintln(fp, "\t\t%s_vtable_t_init(info->vtable);", cls->name);
         gs_fprintln(fp, "\t}\n");
+
+        CID++;
     } 
 
     gs_fprintln(fp, "}\n");
@@ -1196,10 +1285,11 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     for (
         gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
         gs_hash_table_iter_valid(meta->classes, it);
-        gs_hash_table_iter_advance(meta->classes, it), CID++
+        gs_hash_table_iter_advance(meta->classes, it)
     ) 
     {
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
+        if (!cls->should_write_meta) continue;
 
         gs_fprintln(fp, "\t{");
         gs_fprintln(fp, "\t\tgs_core_meta_registry_t* meta = gs_core_instance()->meta;");
@@ -1225,6 +1315,8 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
             gs_fprintln(fp, "\t\tents->system_unregister(gs_core_entity_id(%s));", cls->name);
         }
         gs_fprintln(fp, "\t}"); 
+
+        CID++;
     } 
 
     // Components
@@ -1246,10 +1338,11 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         for (
             gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
             gs_hash_table_iter_valid(meta->classes, it);
-            gs_hash_table_iter_advance(meta->classes, it), CID++
+            gs_hash_table_iter_advance(meta->classes, it)
         )
         {
             class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
+            if (!cls->should_write_meta) continue;
             if (gs_string_compare_equal(cls->base, "gs_core_entities_component_t"))
             {
                 gs_fprintln(fp, "\t{");
@@ -1258,9 +1351,10 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
                 gs_fprintln(fp, "\t\t\t.size = sizeof(%s),", cls->name);
                 gs_fprintln(fp, "\t\t\t.alignment = ECS_ALIGNOF(%s)", cls->name);
                 gs_fprintln(fp, "\t\t});");
-                gs_fprintln(fp, "\t\tgs_hash_table_insert(ents->components, gs_hash_str64(gs_to_str(%s)), comp);", cls->name);
+                gs_fprintln(fp, "\t\tgs_hash_table_insert(ents->components, %s_cls_id, comp);", cls->name);
                 gs_fprintln(fp, "\t}");
             }
+            CID++;
         }
 
     gs_fprintln(fp, "\n\t// Systems\n");
@@ -1268,10 +1362,11 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         for (
             gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
             gs_hash_table_iter_valid(meta->classes, it);
-            gs_hash_table_iter_advance(meta->classes, it), CID++
+            gs_hash_table_iter_advance(meta->classes, it)
         )
         {
             class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
+            if (!cls->should_write_meta) continue;
             if (gs_string_compare_equal(cls->base, "gs_core_entities_system_t"))
             {
                 gs_fprintln(fp, "\t/* %s */", cls->name);
@@ -1286,7 +1381,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
                     { 
                         property_t* p = &cls->properties[i];
                         uint32_t strlen = gs_string_length(p->type) - 1;
-                        gs_fprintf(fp, "\t\t\tgs_hash_table_get(ents->components, gs_hash_str64(gs_to_str(%.*s)))", strlen, p->type);
+                        gs_fprintf(fp, "\t\t\tgs_hash_table_get(ents->components, %.*s_cls_id)", strlen, p->type);
                         if (i < gs_dyn_array_size(cls->properties) - 1)
                         {
                             gs_fprintln(fp, ",");
@@ -1300,6 +1395,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
                 gs_fprintln(fp, "\t\t}");
                 gs_fprintln(fp, "\t});");
             }
+            CID++;
         }
 
     gs_fprintln(fp, "}\n");
@@ -1311,10 +1407,11 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     for (
         gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
         gs_hash_table_iter_valid(meta->classes, it);
-        gs_hash_table_iter_advance(meta->classes, it), CID++
+        gs_hash_table_iter_advance(meta->classes, it)
     )
     {
         class_t* cls = gs_hash_table_iter_getp(meta->classes, it); 
+        if (!cls->should_write_meta) continue;
         if (gs_string_compare_equal(cls->base, "gs_core_entities_system_t"))
         { 
             gs_snprintfc(CB, 256, "_%s_cb(gs_core_entity_t* iter)", cls->name);
@@ -1350,6 +1447,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
             gs_fprintln(fp, "}");
 
         }
+        CID++;
     } 
 
     fclose(fp);

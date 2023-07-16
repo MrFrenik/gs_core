@@ -4,7 +4,7 @@ rem Compile Reflection
 call proc\win\refl_cl.bat
 
 rem Compile Core
-call proc\win\cl.bat
+call proc\win\cl.bat dbg
 
 rmdir /Q /S bin\proj_gen
 mkdir bin\proj_gen

@@ -46,16 +46,18 @@
 // Broadcast to all clients
 // Server holds list of all connected clients
 // Ability to poll all messages stored, for both client and server
-// Ability to start/stop server and client hosts 
+// Ability to start/stop server and client hosts
 
 typedef struct
 {
-    ENetAddress address;            // Hosting address
-    ENetHost* host;                 // Either server/client
-    gs_core_network_host_type_t type;  // Type of host
-    uint16_t max_connections;       // Max number of outgoing connections
-    uint16_t max_channels;          // Max number of channels
-    uint32_t id;                    // Id of host
+    ENetAddress address;                                      // Hosting address
+    ENetHost* host;                                           // Either server/client
+    gs_core_network_host_type_t type;                         // Type of host
+    uint16_t max_connections;                                 // Max number of outgoing connections
+    uint16_t max_channels;                                    // Max number of channels
+    uint32_t id;                                              // Id of host
+    gs_core_network_event_message_cb_t message_connect_cb;    // Peer connect callback
+    gs_core_network_event_message_cb_t message_disconnect_cb; // Peer disconnect callback
     union
     {
         struct 
@@ -109,6 +111,9 @@ gs_core_enet_client_destroy(gs_core_enet_t* enet);
 GS_API_DECL void 
 gs_core_enet_client_send_message(gs_core_enet_t* enet, const gs_core_network_message_t* msg);
 
+GS_API_DECL void
+gs_core_enet_message_cb_default(uint32_t peer_id);
+
 //============[ Implementation ] ============//
 
 GS_API_DECL gs_core_network_t* 
@@ -125,6 +130,10 @@ gs_core_network_new()
     // Construct message data buffer
     GS_CORE_ENET()->message_data = gs_byte_buffer_new();
 
+    // Set default callbacks
+    GS_CORE_ENET()->message_connect_cb      = gs_core_enet_message_cb_default;
+    GS_CORE_ENET()->message_disconnect_cb   = gs_core_enet_message_cb_default;
+
     if (enet_initialize() != 0)
     {
         gs_log_error("gs_core_network_t::New::Unable to initialize ENet");
@@ -140,11 +149,60 @@ gs_core_network_instance()
     return g_network;
 } 
 
-GS_API_DECL void gs_core_network_shutdown()
+GS_API_DECL void 
+gs_core_network_shutdown()
 { 
     gs_core_enet_t* enet = GS_CORE_ENET();
     gs_core_network_host_destroy(enet);
     gs_byte_buffer_free(&enet->message_data);
+}
+
+GS_API_DECL void
+gs_core_network_peer_connect_callback_set(gs_core_network_t* net, gs_core_network_event_message_cb_t cb)
+{
+    if (!gs_core_network_is_valid(net)) return; 
+    gs_core_enet_t* enet = GS_CORE_ENET();
+    enet->message_connect_cb = cb;
+}
+
+GS_API_DECL void
+gs_core_network_peer_disconnect_callback_set(gs_core_network_t* net, gs_core_network_event_message_cb_t cb)
+{
+    if (!gs_core_network_is_valid(net)) return; 
+    gs_core_enet_t* enet = GS_CORE_ENET();
+    enet->message_disconnect_cb = cb;
+}
+
+GS_API_DECL void
+gs_core_network_update()
+{
+    gs_core_network_t* net = gs_core_network_instance();
+
+    if (!gs_core_network_is_valid(net)) return;
+
+    gs_core_enet_t* enet = GS_CORE_ENET();
+    gs_core_network_event_t evt = {0};
+    while (gs_core_network_poll(net, &evt))
+    { 
+        switch (evt.type)
+        {
+            case GS_CORE_NETWORK_MESSAGE_CONNECT:
+            {
+                enet->message_connect_cb(evt.peer_id);
+            } break;
+
+            case GS_CORE_NETWORK_MESSAGE_DISCONNECT:
+            { 
+                enet->message_disconnect_cb(evt.peer_id);
+            } break;
+
+            case GS_CORE_NETWORK_MESSAGE_DATA:
+            {
+                gs_println("MESSAGE DATA RECEIVED...");
+                gs_core_network_rpc_receive(net, &evt);
+            } break;
+        }
+    }
 }
 
 GS_API_DECL gs_core_network_host_handle_t
@@ -172,13 +230,13 @@ gs_core_network_server_create(uint32_t port, uint32_t max_connections)
 
     if (enet->host == NULL)
     {
-        gs_log_warning("Core_Network_Server::Error occurred while trying to create server host");
+        gs_log_warning("Error occurred while trying to create server host");
         return NULL;
     }
 
     // Successful server connection
-    gs_log_success("gs_core_network_host_connect::Server started on %x : port %u.", 
-        enet->host, enet->address.port); 
+    gs_log_success("Server started on host: %zu at port: %zu.", 
+        enet->address.host, enet->address.port); 
 
     return enet;
 }
@@ -196,7 +254,7 @@ gs_core_network_client_create(const char* address, uint32_t port)
 
     if (enet->host == NULL)
     {
-        gs_log_warning("Core_Network_Host_Connect::No available peers for initiating ENet connection.");
+        gs_log_warning("No available peers for initiating ENet connection.");
         return NULL;
     } 
 
@@ -208,7 +266,7 @@ gs_core_network_client_create(const char* address, uint32_t port)
 
     if (!enet->client.server)
     {
-        gs_log_warning("Core_Network_Host_Connect::No available peers for initiating ENet connection.");
+        gs_log_warning("No available peers for initiating ENet connection.");
         return NULL;
     }
 
@@ -223,15 +281,15 @@ gs_core_network_client_create(const char* address, uint32_t port)
         enet->id = evt.peer->outgoingPeerID + GS_CORE_NETWORK_CLIENT_ID_START;
 
         // Successful connection
-        gs_log_success("Core_Network_Host_Connect::Connected to %x on port %zu, id: %zu", 
-            enet->host, enet->address.port, enet->id); 
+        gs_log_success("Connected to %zu on port %zu, id: %zu", 
+            enet->address, enet->address.port, enet->id); 
 
         return enet;
     }
 
     // Fail to connect
-    gs_log_warning("Core_Network_Host_Connect::Failed to connect to %x on port %zu.", 
-        enet->host, enet->address.port);
+    gs_log_warning("Failed to connect to host address: %zu on port: %zu.", 
+        enet->address.host, enet->address.port);
     enet_peer_reset(enet->client.server);
     enet->client.server = NULL;
     gs_core_network_host_destroy(enet);
@@ -382,6 +440,12 @@ gs_core_network_broadcast(gs_core_network_t* net,
 } 
 
 GS_API_DECL void
+gs_core_network_rpc_cb_default(gs_core_network_rpc_t* rpc)
+{
+    // Nothing...
+}
+
+GS_API_DECL void
 gs_core_network_rpc_send_internal(gs_core_network_t* net, gs_core_network_rpc_t* rpc) 
 {
     gs_core_enet_t* enet = GS_CORE_ENET(); 
@@ -389,8 +453,10 @@ gs_core_network_rpc_send_internal(gs_core_network_t* net, gs_core_network_rpc_t*
     // Request internal packet from network using message buffer
     gs_core_network_packet_t packet = gs_core_network_packet_request(net);
 
+	uint32_t cls_id = gs_core_obj_cls_id(rpc);
+
     // Write out cls id of rpc
-    gs_byte_buffer_write(packet.buffer, uint32_t, gs_core_obj_cls_id(rpc));
+    gs_byte_buffer_write(packet.buffer, uint32_t, cls_id);
 
     // Net serialize rpc into buffer
     gs_core_obj_net_serialize(packet.buffer, gs_core_cast(rpc, gs_core_obj_t));
@@ -400,7 +466,8 @@ gs_core_network_rpc_send_internal(gs_core_network_t* net, gs_core_network_rpc_t*
 
     // Construct message 
     gs_core_network_message_t _msg = {
-        .delivery = gs_core_cast(&rpc, gs_core_network_rpc_t)->delivery,
+        // .delivery = gs_core_cast(&rpc, gs_core_network_rpc_t)->delivery,
+        .delivery = GS_CORE_NETWORK_DELIVERY_RELIABLE,
         .data = gs_core_network_packet_data(net, &packet),
         .size = gs_core_network_packet_size(net, &packet)
     };
@@ -410,11 +477,24 @@ gs_core_network_rpc_send_internal(gs_core_network_t* net, gs_core_network_rpc_t*
 } 
 
 GS_API_DECL void
+gs_core_network_rpc_local_internal(gs_core_network_t* net, gs_core_network_rpc_t* rpc)
+{
+    // No need to packet any information across the network, just deliver rpc directly
+    // to local 
+
+    // Set peer id for local rpc
+    rpc->id = gs_core_network_id(net);
+
+    // Call vtable function for net rpc 
+	gs_core_cast_vt(rpc, gs_core_network_rpc_t)->callback(rpc);
+}
+
+GS_API_DECL void
 gs_core_network_rpc_send_id_internal(gs_core_network_t* net, 
         const uint32_t id, 
         gs_core_network_rpc_t* rpc)
 {
-    gs_core_enet_t* enet = GS_CORE_ENET(); 
+    gs_core_enet_t* enet = GS_CORE_ENET();
 
     // Request internal packet from network using message buffer
     gs_core_network_packet_t packet = gs_core_network_packet_request(net);
@@ -472,11 +552,8 @@ gs_core_network_rpc_receive_internal(gs_core_network_t* net,
     // Set peer id for received rpc
     rpc->id = evt->peer_id;
 
-    // Assert callback exists for rpc
-    gs_assert(rpc && rpc->callback);
-
-    // Call function pointer for net rpc
-    rpc->callback(rpc);
+    // Call vtable function for net rpc 
+	gs_core_cast_vt(rpc, gs_core_network_rpc_t)->callback(rpc);
 }
 
 //=========[ Core Network Packet ]========//
@@ -833,6 +910,11 @@ gs_core_enet_client_send_message(gs_core_enet_t* enet, const gs_core_network_mes
     enet_host_flush(enet->host);
 } 
 
+GS_API_DECL void
+gs_core_enet_message_cb_default(uint32_t peer_id)
+{
+    // Nothing...
+}
 
 
 

@@ -55,7 +55,6 @@ typedef struct
         gs_core_graphics_scene_renderable_destroy(&gs_core_instance()->gfx->scene, this->hndl);
     ) 
 
-    _field() 
     uint32_t hndl;
 
 } gs_core_component_renderable_t;

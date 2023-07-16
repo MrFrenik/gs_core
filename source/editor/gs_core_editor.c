@@ -241,7 +241,7 @@ _gs_core_editor_view_register_internal(gs_core_editor_t* (* obj_new_f)(), const 
     gs_core_editor_view_t* view = gs_core_cast(obj, gs_core_editor_view_t);
 
     // Assert if required vtable functions not provided 
-    gs_core_vt(gs_core_editor_view_t)* vt = gs_core_cast_vt(view, gs_core_editor_view_t);
+    gs_core_vt_cls(gs_core_editor_view_t)* vt = gs_core_cast_vt(view, gs_core_editor_view_t);
 
     if (!vt || !vt->callback) {
         gs_log_error("View required to override callback vtable function: %s", view->name); 

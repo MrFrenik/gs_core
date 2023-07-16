@@ -18,6 +18,8 @@ typedef struct %APP%_s
 
     gs_core_entity_t ent;
     gs_core_asset_handle_t mat_hndl;
+    gs_core_asset_handle_t tex_hndl;
+    gs_core_asset_handle_t pip_hndl;
 
 } %APP%_t; 
 

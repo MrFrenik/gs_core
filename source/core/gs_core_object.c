@@ -276,6 +276,7 @@ GS_API_DECL gs_result
 gs_core_obj_net_serialize_impl(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj)
 {
     const gs_meta_class_t* cls = gs_core_obj_cls(obj);
+    gs_assert(cls);
 
     //====[ Body ====// 
 
@@ -326,6 +327,52 @@ gs_core_obj_net_serialize_impl(gs_byte_buffer_t* buffer, const gs_core_obj_t* ob
 GS_API_DECL gs_result
 gs_core_obj_net_deserialize_impl(gs_byte_buffer_t* buffer, gs_core_obj_t* obj)
 {
+    const gs_meta_class_t* cls = gs_core_obj_cls(obj);
+    gs_assert(cls);
+
+    //====[ Body ====// 
+
+    // Since these packets are transient, the number of class properties is understood
+
+    // Iterate through all of the properties, write to buffer
+    for (uint32_t i = 0; i < cls->property_count; ++i)
+    {
+        const gs_meta_property_t* prop = &cls->properties[i];
+
+        // Need custom packing for these
+    #define PROP_READ(T)\
+        do {\
+            T* v = gs_meta_getvp(obj, T, prop);\
+            gs_byte_buffer_read(buffer, T, v);\
+        } while (0)
+
+        switch (prop->type.id)
+        {
+            case GS_META_PROPERTY_TYPE_S8:     PROP_READ(int8_t);  break;
+            case GS_META_PROPERTY_TYPE_S16:    PROP_READ(int16_t); break;
+            case GS_META_PROPERTY_TYPE_S32:    PROP_READ(int32_t); break;
+            case GS_META_PROPERTY_TYPE_S64:    PROP_READ(int64_t); break;
+            case GS_META_PROPERTY_TYPE_U8:     PROP_READ(uint8_t);  break;
+            case GS_META_PROPERTY_TYPE_U16:    PROP_READ(uint16_t); break;
+            case GS_META_PROPERTY_TYPE_U32:    PROP_READ(uint32_t); break;
+            case GS_META_PROPERTY_TYPE_U64:    PROP_READ(uint64_t); break;
+            case GS_META_PROPERTY_TYPE_F32:    PROP_READ(float); break;
+            case GS_META_PROPERTY_TYPE_F64:    PROP_READ(double); break;
+            case GS_META_PROPERTY_TYPE_VEC2:   PROP_READ(gs_vec2); break;
+            case GS_META_PROPERTY_TYPE_VEC3:   PROP_READ(gs_vec3); break;
+            case GS_META_PROPERTY_TYPE_VEC4:   PROP_READ(gs_vec4); break;
+            case GS_META_PROPERTY_TYPE_QUAT:   PROP_READ(gs_quat); break;
+            case GS_META_PROPERTY_TYPE_VQS:    PROP_READ(gs_vqs); break;
+            case GS_META_PROPERTY_TYPE_ENUM:   PROP_READ(uint32_t); break;
+            case GS_META_PROPERTY_TYPE_SIZE_T: PROP_READ(size_t); break;
+            case GS_META_PROPERTY_TYPE_COLOR:  PROP_READ(gs_color_t); break;
+            case GS_META_PROPERTY_TYPE_UUID:   PROP_READ(gs_uuid_t); break;
+            case GS_META_PROPERTY_TYPE_OBJ:
+            {
+            } break;
+        } 
+    } 
+
     return GS_RESULT_SUCCESS;
 }
 

@@ -481,7 +481,7 @@ gs_core_assets_add(gs_core_asset_t* asset, gs_core_asset_import_options_t* optio
     gs_core_asset_importer_t* importer = gs_slot_array_getp(am->importers, importer_hndl); 
 
     // Get save directory
-    const char* save_dir = options->save_dir ? options->save_dir : 
+    const char* save_dir = options && options->save_dir ? options->save_dir : 
         importer->save_dir ? importer->save_dir : am->root_path; 
     
     // Get save directory (create if necessary)
@@ -525,7 +525,7 @@ gs_core_assets_add(gs_core_asset_t* asset, gs_core_asset_import_options_t* optio
     asset->record_hndl = rhndl; 
 
     // Serialize asset to disk
-    if (~options->flags & GS_CORE_ASSET_IMPORT_OPT_NO_SERIALIZE)
+    if (options && ~options->flags & GS_CORE_ASSET_IMPORT_OPT_NO_SERIALIZE)
     {
         gs_core_assets_serialize_asset(record.path, asset);
     } 

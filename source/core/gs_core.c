@@ -113,6 +113,9 @@ gs_core_new()
     // Register core ecs meta information
     gs_core_meta_ecs_register();
 
+    // Register default entity so id = 0 will be considered invalid
+    gs_core_entities_allocate();
+
     return core;
 }
 

@@ -60,10 +60,11 @@ set l_options=/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib
 rem Reflection Dirs
 set in_dir="%root%/source" 
 set out_dir="%root%/source/generated" 
+set dep_dir="%gs_core%/source" 
 set id_offset="200"
 
 rem Run Reflection
-%gs_core%\bin\reflection\reflection.exe %in_dir% %out_dir% %proj_name% %id_offset%
+%gs_core%\bin\reflection\reflection.exe %in_dir% %out_dir% %proj_name% %dep_dir% %id_offset%
 
 rem Get Date time for pdb gen 
 set _my_datetime=%date%_%time%

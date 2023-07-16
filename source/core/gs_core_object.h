@@ -53,6 +53,7 @@
 #define gs_core_info_base_of(INFO, T)       (gs_core_info_base_of_internal((INFO), gs_core_cls_cid(T)))
 #define gs_core_info_instance_of(INFO, T)   (gs_core_info_instance_of_internal((INFO), gs_core_cls_cid(T)))
 #define gs_core_info_w_cls_id(ID)           (gs_core_meta_obj_info_w_cls_id((ID)))
+#define gs_core_info_w_cls(T)               (gs_core_meta_obj_info_w_cls_id(gs_core_cls_cid(T)))
 
 // Class id
 #define gs_core_cls_cid(T)       T##_class_id()
@@ -63,7 +64,8 @@
 
 // VTable
 #define gs_core_cast_vt(OBJ, T)                       (gs_core_cast(gs_core_obj_info(OBJ)->vtable, T##_vtable_t))
-#define gs_core_vt(T)                                 T##_vtable_t
+#define gs_core_vt_cls(T)                              T##_vtable_t
+#define gs_core_vt(T)                                 (gs_core_cast(gs_core_info_w_cls(T)->vtable, T##_vtable_t))
 
 // Object
 #define gs_core_obj_id(OBJ)                      (gs_core_cast((OBJ), gs_core_base_t)->id)
@@ -76,14 +78,19 @@
 #define gs_core_obj_deserialize(BUFFER, OBJ)     (gs_core_obj_vt((OBJ))->deserialize((BUFFER), (OBJ)))
 #define gs_core_obj_net_serialize(BUFFER, OBJ)   (gs_core_obj_vt((OBJ))->net_serialize((BUFFER), (OBJ)))
 #define gs_core_obj_net_deserialize(BUFFER, OBJ) (gs_core_obj_vt((OBJ))->net_deserialize((BUFFER), (OBJ)))
+#define gs_core_obj_dtor(OBJ)                    (gs_core_obj_vt(gs_core_cast((OBJ), gs_core_obj_t))->obj_dtor(OBJ))
 
 // Meta
 #define _introspect(...)        gs_empty_instruction()
 #define _callback(T)            gs_empty_instruction()
 #define _field(...)             gs_empty_instruction()
+#define _method(...)            gs_empty_instruction()
+#define _replicated(...)        gs_empty_instruction()
 #define _ignore(...)            gs_empty_instruction()
 #define _serialize(...)         gs_empty_instruction()
 #define _deserialize(...)       gs_empty_instruction()
+#define _decl(...)              gs_empty_instruction()
+#define _default(...)           gs_empty_instruction()
 #define _rpc(...)               gs_empty_instruction()
 #define _net_serialize(...)     gs_empty_instruction()
 #define _net_deserialize(...)   gs_empty_instruction()

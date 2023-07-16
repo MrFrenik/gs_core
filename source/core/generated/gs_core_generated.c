@@ -59,7 +59,9 @@
 #define gs_core_asset_audio_t_cls_id 16
 #define gs_core_component_renderable_t_cls_id 17
 #define gs_core_network_rpc_t_cls_id 18
-#define gs_core_graphics_renderpass_t_cls_id 19
+#define gs_core_network_rpc_unreliable_t_cls_id 19
+#define gs_core_graphics_renderpass_t_cls_id 20
+#define gs_core_network_rpc_reliable_t_cls_id 21
 
 /* gs_core_asset_handle_t */
 
@@ -1373,6 +1375,7 @@ GS_API_DECL void
 gs_core_network_rpc_t_vtable_t_init(gs_core_network_rpc_t_vtable_t* vt)
 {
 	gs_core_obj_t_vtable_t_init((gs_core_obj_t_vtable_t*)vt);
+	vt->callback = gs_core_network_rpc_cb_default;
 	vt->cls_id = gs_core_network_rpc_t_class_id;
 	vt->cls = gs_core_network_rpc_t_class;
 	vt->obj_init= gs_core_network_rpc_t_init;
@@ -1392,6 +1395,79 @@ gs_core_network_rpc_t_vtable_t_new()
 {
 	gs_core_network_rpc_t_vtable_t* vt = gs_malloc_init(gs_core_network_rpc_t_vtable_t);
 	gs_core_network_rpc_t_vtable_t_init(vt);
+	return (gs_core_vtable_t*)vt;
+}
+
+/* gs_core_network_rpc_unreliable_t */
+
+GS_API_DECL uint32_t
+gs_core_network_rpc_unreliable_t_class_id()
+{
+	return gs_core_network_rpc_unreliable_t_cls_id;
+}
+
+GS_API_DECL const gs_meta_class_t*
+gs_core_network_rpc_unreliable_t_class()
+{
+	return gs_core_meta_obj_info_w_cls_id(gs_core_network_rpc_unreliable_t_cls_id)->cls;
+}
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_network_rpc_unreliable_t_info()
+{
+	return gs_core_meta_obj_info_w_cls_id(gs_core_network_rpc_unreliable_t_cls_id);
+}
+
+GS_API_DECL void
+gs_core_network_rpc_unreliable_t_init(gs_core_network_rpc_unreliable_t* obj)
+{
+	gs_core_cast(obj, gs_core_base_t)->id = gs_core_network_rpc_unreliable_t_class_id();
+}
+
+GS_API_DECL gs_core_network_rpc_unreliable_t*
+gs_core_network_rpc_unreliable_t_new()
+{
+	gs_core_network_rpc_unreliable_t* obj = gs_malloc_init(gs_core_network_rpc_unreliable_t);
+	gs_core_network_rpc_unreliable_t_init(obj);
+	return obj;
+}
+
+GS_API_DECL gs_core_network_rpc_unreliable_t
+gs_core_network_rpc_unreliable_t_ctor()
+{
+	gs_core_network_rpc_unreliable_t obj = gs_default_val();
+	gs_core_network_rpc_unreliable_t_init(&obj);
+	return obj;
+}
+
+GS_API_DECL void
+gs_core_network_rpc_unreliable_t_dtor(gs_core_obj_t* obj)
+{
+}
+
+GS_API_DECL void
+gs_core_network_rpc_unreliable_t_vtable_t_init(gs_core_network_rpc_unreliable_t_vtable_t* vt)
+{
+	gs_core_network_rpc_t_vtable_t_init((gs_core_network_rpc_t_vtable_t*)vt);
+	vt->cls_id = gs_core_network_rpc_unreliable_t_class_id;
+	vt->cls = gs_core_network_rpc_unreliable_t_class;
+	vt->obj_init= gs_core_network_rpc_unreliable_t_init;
+	vt->obj_dtor= gs_core_network_rpc_unreliable_t_dtor;
+}
+
+GS_API_DECL gs_core_network_rpc_unreliable_t_vtable_t
+gs_core_network_rpc_unreliable_t_vtable_t_ctor()
+{
+	gs_core_network_rpc_unreliable_t_vtable_t vt = gs_default_val();
+	gs_core_network_rpc_unreliable_t_vtable_t_init(&vt);
+	return vt;
+}
+
+GS_API_DECL gs_core_vtable_t*
+gs_core_network_rpc_unreliable_t_vtable_t_new()
+{
+	gs_core_network_rpc_unreliable_t_vtable_t* vt = gs_malloc_init(gs_core_network_rpc_unreliable_t_vtable_t);
+	gs_core_network_rpc_unreliable_t_vtable_t_init(vt);
 	return (gs_core_vtable_t*)vt;
 }
 
@@ -1469,6 +1545,79 @@ gs_core_graphics_renderpass_t_vtable_t_new()
 	return (gs_core_vtable_t*)vt;
 }
 
+/* gs_core_network_rpc_reliable_t */
+
+GS_API_DECL uint32_t
+gs_core_network_rpc_reliable_t_class_id()
+{
+	return gs_core_network_rpc_reliable_t_cls_id;
+}
+
+GS_API_DECL const gs_meta_class_t*
+gs_core_network_rpc_reliable_t_class()
+{
+	return gs_core_meta_obj_info_w_cls_id(gs_core_network_rpc_reliable_t_cls_id)->cls;
+}
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_network_rpc_reliable_t_info()
+{
+	return gs_core_meta_obj_info_w_cls_id(gs_core_network_rpc_reliable_t_cls_id);
+}
+
+GS_API_DECL void
+gs_core_network_rpc_reliable_t_init(gs_core_network_rpc_reliable_t* obj)
+{
+	gs_core_cast(obj, gs_core_base_t)->id = gs_core_network_rpc_reliable_t_class_id();
+}
+
+GS_API_DECL gs_core_network_rpc_reliable_t*
+gs_core_network_rpc_reliable_t_new()
+{
+	gs_core_network_rpc_reliable_t* obj = gs_malloc_init(gs_core_network_rpc_reliable_t);
+	gs_core_network_rpc_reliable_t_init(obj);
+	return obj;
+}
+
+GS_API_DECL gs_core_network_rpc_reliable_t
+gs_core_network_rpc_reliable_t_ctor()
+{
+	gs_core_network_rpc_reliable_t obj = gs_default_val();
+	gs_core_network_rpc_reliable_t_init(&obj);
+	return obj;
+}
+
+GS_API_DECL void
+gs_core_network_rpc_reliable_t_dtor(gs_core_obj_t* obj)
+{
+}
+
+GS_API_DECL void
+gs_core_network_rpc_reliable_t_vtable_t_init(gs_core_network_rpc_reliable_t_vtable_t* vt)
+{
+	gs_core_network_rpc_t_vtable_t_init((gs_core_network_rpc_t_vtable_t*)vt);
+	vt->cls_id = gs_core_network_rpc_reliable_t_class_id;
+	vt->cls = gs_core_network_rpc_reliable_t_class;
+	vt->obj_init= gs_core_network_rpc_reliable_t_init;
+	vt->obj_dtor= gs_core_network_rpc_reliable_t_dtor;
+}
+
+GS_API_DECL gs_core_network_rpc_reliable_t_vtable_t
+gs_core_network_rpc_reliable_t_vtable_t_ctor()
+{
+	gs_core_network_rpc_reliable_t_vtable_t vt = gs_default_val();
+	gs_core_network_rpc_reliable_t_vtable_t_init(&vt);
+	return vt;
+}
+
+GS_API_DECL gs_core_vtable_t*
+gs_core_network_rpc_reliable_t_vtable_t_new()
+{
+	gs_core_network_rpc_reliable_t_vtable_t* vt = gs_malloc_init(gs_core_network_rpc_reliable_t_vtable_t);
+	gs_core_network_rpc_reliable_t_vtable_t_init(vt);
+	return (gs_core_vtable_t*)vt;
+}
+
 //============[ Registry ]===============//
 
 //Static Objects
@@ -1490,7 +1639,9 @@ static gs_core_entities_system_t g_15 = {0};
 static gs_core_asset_audio_t g_16 = {0};
 static gs_core_component_renderable_t g_17 = {0};
 static gs_core_network_rpc_t g_18 = {0};
-static gs_core_graphics_renderpass_t g_19 = {0};
+static gs_core_network_rpc_unreliable_t g_19 = {0};
+static gs_core_graphics_renderpass_t g_20 = {0};
+static gs_core_network_rpc_reliable_t g_21 = {0};
 
 GS_API_DECL void
 gs_core_meta_register()
@@ -1849,10 +2000,8 @@ gs_core_meta_register()
 	{
 		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
 			.name = gs_to_str(gs_core_component_renderable_t),
-			.properties = (gs_meta_property_t[]) {
-				gs_meta_property(gs_core_component_renderable_t, uint32_t, hndl, GS_META_PROPERTY_TYPE_INFO_U32)
-			},
-			.size = 1 * sizeof(gs_meta_property_t)
+			.properties = (gs_meta_property_t[]){0},
+			.size = 0 * sizeof(gs_meta_property_t)
 		}));
 
 		gs_core_meta_info_t ci = {0};
@@ -1888,6 +2037,27 @@ gs_core_meta_register()
 		gs_core_network_rpc_t_vtable_t_init(info->vtable);
 	}
 
+	/* gs_core_network_rpc_unreliable_t */
+	{
+		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
+			.name = gs_to_str(gs_core_network_rpc_unreliable_t),
+			.properties = (gs_meta_property_t[]){0},
+			.size = 0 * sizeof(gs_meta_property_t)
+		}));
+
+		gs_core_meta_info_t ci = {0};
+		uint32_t hndl = gs_core_network_rpc_unreliable_t_class_id();
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
+		gs_core_cast(&g_19, gs_core_base_t)->id = gs_core_network_rpc_unreliable_t_class_id();
+		info->instance = gs_core_cast(&g_19, gs_core_obj_t);
+		info->cls = gs_meta_class_get(&meta->registry, gs_core_network_rpc_unreliable_t);
+		info->cid = hndl;
+		uint32_t bid = gs_core_cls_cid(gs_core_network_rpc_t);
+		info->base = gs_core_cls_info(gs_core_network_rpc_t);
+		info->vtable = gs_core_network_rpc_unreliable_t_vtable_t_new();
+		gs_core_network_rpc_unreliable_t_vtable_t_init(info->vtable);
+	}
+
 	/* gs_core_graphics_renderpass_t */
 	{
 		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
@@ -1899,13 +2069,34 @@ gs_core_meta_register()
 		gs_core_meta_info_t ci = {0};
 		uint32_t hndl = gs_core_graphics_renderpass_t_class_id();
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
-		gs_core_cast(&g_19, gs_core_base_t)->id = gs_core_graphics_renderpass_t_class_id();
-		info->instance = gs_core_cast(&g_19, gs_core_obj_t);
+		gs_core_cast(&g_20, gs_core_base_t)->id = gs_core_graphics_renderpass_t_class_id();
+		info->instance = gs_core_cast(&g_20, gs_core_obj_t);
 		info->cls = gs_meta_class_get(&meta->registry, gs_core_graphics_renderpass_t);
 		info->cid = hndl;
 		info->base = NULL;
 		info->vtable = gs_core_graphics_renderpass_t_vtable_t_new();
 		gs_core_graphics_renderpass_t_vtable_t_init(info->vtable);
+	}
+
+	/* gs_core_network_rpc_reliable_t */
+	{
+		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
+			.name = gs_to_str(gs_core_network_rpc_reliable_t),
+			.properties = (gs_meta_property_t[]){0},
+			.size = 0 * sizeof(gs_meta_property_t)
+		}));
+
+		gs_core_meta_info_t ci = {0};
+		uint32_t hndl = gs_core_network_rpc_reliable_t_class_id();
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
+		gs_core_cast(&g_21, gs_core_base_t)->id = gs_core_network_rpc_reliable_t_class_id();
+		info->instance = gs_core_cast(&g_21, gs_core_obj_t);
+		info->cls = gs_meta_class_get(&meta->registry, gs_core_network_rpc_reliable_t);
+		info->cid = hndl;
+		uint32_t bid = gs_core_cls_cid(gs_core_network_rpc_t);
+		info->base = gs_core_cls_info(gs_core_network_rpc_t);
+		info->vtable = gs_core_network_rpc_reliable_t_vtable_t_new();
+		gs_core_network_rpc_reliable_t_vtable_t_init(info->vtable);
 	}
 
 }
@@ -2210,7 +2401,39 @@ gs_core_meta_unregister()
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
 		gs_assert(meta);
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_network_rpc_unreliable_t_cls_id);
+		gs_assert(info);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
+		info->cls = NULL;
+		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
+	}
+	{
+		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
+		gs_assert(meta);
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_graphics_renderpass_t_cls_id);
+		gs_assert(info);
+		if (info->cls) {
+			gs_meta_class_unregister(&meta->registry, info->cls->id);
+		}
+		info->cls = NULL;
+		info->base = NULL;
+		if (info->vtable)
+		{
+			gs_free(info->vtable);
+			info->vtable = NULL;
+		}
+	}
+	{
+		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
+		gs_assert(meta);
+		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, gs_core_network_rpc_reliable_t_cls_id);
 		gs_assert(info);
 		if (info->cls) {
 			gs_meta_class_unregister(&meta->registry, info->cls->id);
@@ -2240,7 +2463,7 @@ gs_core_meta_ecs_register()
 			.size = sizeof(gs_core_component_tag_t),
 			.alignment = ECS_ALIGNOF(gs_core_component_tag_t)
 		});
-		gs_hash_table_insert(ents->components, gs_hash_str64(gs_to_str(gs_core_component_tag_t)), comp);
+		gs_hash_table_insert(ents->components, gs_core_component_tag_t_cls_id, comp);
 	}
 	{
 		gs_core_entity_t comp = ents->component_register(&(gs_core_entities_component_desc_t){
@@ -2248,7 +2471,7 @@ gs_core_meta_ecs_register()
 			.size = sizeof(gs_core_component_transform_t),
 			.alignment = ECS_ALIGNOF(gs_core_component_transform_t)
 		});
-		gs_hash_table_insert(ents->components, gs_hash_str64(gs_to_str(gs_core_component_transform_t)), comp);
+		gs_hash_table_insert(ents->components, gs_core_component_transform_t_cls_id, comp);
 	}
 	{
 		gs_core_entity_t comp = ents->component_register(&(gs_core_entities_component_desc_t){
@@ -2256,7 +2479,7 @@ gs_core_meta_ecs_register()
 			.size = sizeof(gs_core_component_renderable_t),
 			.alignment = ECS_ALIGNOF(gs_core_component_renderable_t)
 		});
-		gs_hash_table_insert(ents->components, gs_hash_str64(gs_to_str(gs_core_component_renderable_t)), comp);
+		gs_hash_table_insert(ents->components, gs_core_component_renderable_t_cls_id, comp);
 	}
 
 	// Systems
@@ -2266,8 +2489,8 @@ gs_core_meta_ecs_register()
 		.name = gs_to_str(gs_core_system_renderable_t),
 		.callback = _gs_core_system_renderable_t_cb,
 		.filter.component_list = {
-			gs_hash_table_get(ents->components, gs_hash_str64(gs_to_str(gs_core_component_renderable_t))),
-			gs_hash_table_get(ents->components, gs_hash_str64(gs_to_str(gs_core_component_transform_t)))
+			gs_hash_table_get(ents->components, gs_core_component_renderable_t_cls_id),
+			gs_hash_table_get(ents->components, gs_core_component_transform_t_cls_id)
 		}
 	});
 }

@@ -47,19 +47,29 @@
 enum 
 {
     GS_CORE_NETWORK_FLAG_HAS_AUTHORITY = (1 << 0),
-    GS_CORE_NETWORK_FLAG_IS_LOCAL      = (1 << 1)
+    GS_CORE_NETWORK_FLAG_IS_LOCAL      = (1 << 1),
+    GS_CORE_NETWORK_FLAG_HAS_OWNERSHIP = (1 << 2)
 };
 
+// Message event callback
+typedef void (* gs_core_network_event_message_cb_t)(uint32_t peer_id);
+
 gs_force_inline bool 
-gs_gs_core_network_is_local(uint32_t flags)
+gs_core_network_is_local(uint32_t flags)
 {
     return (flags & GS_CORE_NETWORK_FLAG_IS_LOCAL);
 }
 
 gs_force_inline bool 
-gs_gs_core_network_has_authority(uint32_t flags)
+gs_core_network_has_authority(uint32_t flags)
 {
     return (flags & GS_CORE_NETWORK_FLAG_HAS_AUTHORITY);
+}
+
+gs_force_inline bool 
+gs_core_network_has_ownership(uint32_t flags)
+{
+    return (flags & GS_CORE_NETWORK_FLAG_HAS_OWNERSHIP);
 }
 
 enum
@@ -73,43 +83,27 @@ enum
     do {\
         T _RPC = (T)__VA_ARGS__;\
         gs_core_cls_init(T, &_RPC);\
-        gs_core_cast(&_RPC, gs_core_network_rpc_t)->delivery = GS_CORE_NETWORK_CHANNEL_UNRELIABLE;\
         gs_core_network_rpc_send_internal((NET), &_RPC);\
     } while (0)
 
-#define gs_core_network_rpc_send_reliable(NET, T, ...)\
+#define gs_core_network_rpc_local(NET, T, ...)\
     do {\
         T _RPC = (T)__VA_ARGS__;\
         gs_core_cls_init(T, &_RPC);\
-        gs_core_cast(&_RPC, gs_core_network_rpc_t)->delivery = GS_CORE_NETWORK_CHANNEL_RELIABLE;\
-        gs_core_network_rpc_send_internal((NET), &_RPC);\
+        gs_core_network_rpc_local_internal((NET), &_RPC);\
     } while (0)
 
 #define gs_core_network_rpc_send_id(NET, ID, T, ...)\
     do {\
         T _RPC = (T)__VA_ARGS__;\
         gs_core_cls_init(T, &_RPC);\
-        gs_core_cast(&_RPC, gs_core_network_rpc_t)->delivery = GS_CORE_NETWORK_CHANNEL_UNRELIABLE;\
-        gs_core_network_rpc_send_id_internal((NET), (ID), &_RPC);\
-    } while (0) 
-
-#define gs_core_network_rpc_send_id_reliable(NET, ID, T, ...)\
-    do {\
-        T _RPC = (T)__VA_ARGS__;\
-        gs_core_cls_init(T, &_RPC);\
-        gs_core_cast(&_RPC, gs_core_network_rpc_t)->delivery = GS_CORE_NETWORK_CHANNEL_RELIABLE;\
         gs_core_network_rpc_send_id_internal((NET), (ID), &_RPC);\
     } while (0) 
 
 #define gs_core_network_rpc_receive(NET, EVT)\
     do {\
         gs_core_network_rpc_receive_internal((NET), (EVT));\
-    } while (0)
-
-// Forward Decls
-struct gs_core_network_rpc_s; 
-
-typedef void (* gs_core_network_rpc_cb)(struct gs_core_network_rpc_s* rpc); 
+    } while (0) 
 
 typedef enum
 {
@@ -125,13 +119,33 @@ typedef enum
 } gs_core_network_delivery_type_t;
 
 _introspect()
-typedef struct gs_core_network_rpc_s
+typedef struct gs_core_network_rpc_t
 {
     gs_core_base(gs_core_obj_t);
-    gs_core_network_rpc_cb callback;
+
+    // VTable
+    _vtable(
+        void (* callback)(struct gs_core_network_rpc_t* rpc) = gs_core_network_rpc_cb_default;
+    )
+
     gs_core_network_delivery_type_t delivery;
-    uint32_t id;                           // Sending client peer id
+    uint32_t id;                                // Sending client peer id
 } gs_core_network_rpc_t;
+
+_introspect()
+typedef struct
+{
+    gs_core_base(gs_core_network_rpc_t);
+} gs_core_network_rpc_reliable_t;
+
+_introspect()
+typedef struct
+{
+    gs_core_base(gs_core_network_rpc_t);
+} gs_core_network_rpc_unreliable_t;
+
+GS_API_DECL void
+gs_core_network_rpc_cb_default(gs_core_network_rpc_t* rpc);
 
 // Core packet
 typedef struct
@@ -152,18 +166,18 @@ typedef enum
 
 typedef struct
 {
-    gs_core_network_delivery_type_t delivery;  // Delivery type
-    uint32_t peer_id;                       // Id of peer to send message to
-    void* data;                             // Serialized message data
-    size_t size;                            // Size of data packet
+    gs_core_network_delivery_type_t delivery;   // Delivery type
+    uint32_t peer_id;                           // Id of peer to send message to
+    void* data;                                 // Serialized message data
+    size_t size;                                // Size of data packet
 } gs_core_network_message_t;
 
 typedef struct
 {
-    gs_core_network_event_type_t type; // Type of event
-    uint32_t peer_id;               // Peer id
-    void* data;                     // Data to receive
-    size_t size;                    // Size of data packet
+    gs_core_network_event_type_t type;  // Type of event
+    uint32_t peer_id;                   // Peer id
+    void* data;                         // Data to receive
+    size_t size;                        // Size of data packet
 } gs_core_network_event_t; 
 
 typedef struct
@@ -206,6 +220,12 @@ gs_core_network_is_client(gs_core_network_t* net);
 
 GS_API_DECL int32_t 
 gs_core_network_id(gs_core_network_t* net);
+
+GS_API_DECL void
+gs_core_network_peer_connect_callback_set(gs_core_network_t* net, gs_core_network_event_message_cb_t cb);
+
+GS_API_DECL void
+gs_core_network_peer_disconnect_callback_set(gs_core_network_t* net, gs_core_network_event_message_cb_t cb);
 
 //====[ Core Network Packet ]====//
 
@@ -253,6 +273,9 @@ gs_core_network_rpc_receive_internal(gs_core_network_t* net, gs_core_network_eve
 
 GS_API_DECL void
 gs_core_network_rpc_send_internal(gs_core_network_t* net, gs_core_network_rpc_t* rpc);
+
+GS_API_DECL void
+gs_core_network_rpc_local_internal(gs_core_network_t* net, gs_core_network_rpc_t* rpc);
 
 GS_API_DECL void
 gs_core_network_rpc_send_id_internal(gs_core_network_t* net, const uint32_t id, gs_core_network_rpc_t* rpc);

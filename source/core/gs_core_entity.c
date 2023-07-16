@@ -163,12 +163,12 @@ gs_core_entities_system_unregister_internal(gs_core_entity_t system)
 }
 
 GS_API_DECL gs_core_entity_t 
-gs_core_entities_allocate(const char* name)
+gs_core_entities_allocate()
 {
-    gs_core_entity_data_t* ecs = CORE_ECS(); 
+    gs_core_entity_data_t* ecs = CORE_ECS();
 
     // Allocate a new entity
-    ecs_entity_t e = ecs_new_entity(ecs->world, name);
+    ecs_entity_t e = ecs_new_w_id(ecs->world, 0);
     gs_core_entities_component_add(ecs->world, e, gs_core_component_tag_t, {0});
     return (gs_core_entity_t)e;
 }
@@ -209,6 +209,75 @@ _gs_core_entities_component_dtor_internal(gs_core_entity_world_t* world, gs_core
     if (cp) {
         gs_core_cast_vt(cp, gs_core_obj_t)->obj_dtor(cp);
     }
+}
+
+GS_API_DECL gs_result
+gs_core_entities_entity_net_serialize(gs_byte_buffer_t* buffer, gs_core_entity_t ent)
+{
+    gs_core_entities_t* em = gs_core_entities_instance(); 
+    gs_core_entity_data_t* ecs = CORE_ECS();
+
+    // Store position for writing in number of components for later rewind
+    uint32_t nc_position = buffer->position;
+
+    // Write in number of components for this entity (to be counted and then corrected)
+    uint32_t nc = 0;
+    gs_byte_buffer_write(buffer, uint32_t, nc);
+
+    for (
+        gs_hash_table_iter it = gs_hash_table_iter_new(em->components);
+        gs_hash_table_iter_valid(em->components, it);
+        gs_hash_table_iter_advance(em->components, it) 
+    )
+    { 
+        uint64_t cid = gs_hash_table_iter_getk(em->components, it);
+        gs_core_entity_t comp_id = gs_hash_table_iter_get(em->components, it);
+
+        // If entity has component, increment count, write it, and serialize component data
+        if (gs_core_entities_component_has_id(ecs->world, ent, comp_id))
+        { 
+            nc++;
+            gs_byte_buffer_write(buffer, uint64_t, cid);
+            gs_byte_buffer_write(buffer, uint32_t, comp_id);
+            gs_core_obj_t* comp = gs_core_entities_component_get_id(ecs->world, ent, comp_id);
+            gs_core_obj_net_serialize(buffer, comp);
+        } 
+    } 
+
+    // Adjust component number 
+    *(uint32_t*)(buffer->data + nc_position) = nc;
+
+    return GS_RESULT_SUCCESS;
+}
+
+GS_API_DECL gs_result
+gs_core_entities_entity_net_deserialize(gs_byte_buffer_t* buffer, gs_core_entity_t ent)
+{ 
+    gs_core_entities_t* em = gs_core_entities_instance();
+    gs_core_entity_data_t* ecs = CORE_ECS();
+
+    // Read in number of components
+    gs_byte_buffer_readc(buffer, uint32_t, nc); 
+
+    for (uint32_t i = 0; i < nc; ++i)
+    { 
+        // Read class id and comp id
+        gs_byte_buffer_readc(buffer, uint64_t, cid);
+        gs_byte_buffer_readc(buffer, uint32_t, comp_id);
+
+        // If doesn't have component, need to add
+        if (!gs_core_entities_component_has_id(ecs->world, ent, comp_id))
+        { 
+            // Need a way to handle this case...
+            gs_core_entities_component_add_cid(ecs->world, ent, cid, {0});
+        }
+
+        // Deserialize component data
+        gs_core_obj_t* comp = gs_core_entities_component_get_id(ecs->world, ent, comp_id);
+        gs_core_obj_net_deserialize(buffer, comp);
+    }
+
+    return GS_RESULT_SUCCESS;
 }
 
 

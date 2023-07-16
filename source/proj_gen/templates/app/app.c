@@ -15,6 +15,9 @@ GS_API_DECL void
 
     // Get core instance
     gs_core_t* core = gs_core_instance();
+
+    // Default mesh
+    gs_core_asset_handle_t msh_hndl = gs_core_assets_get_default(gs_core_asset_mesh_t);
     
     // Import texture from resource
     app->tex_hndl = gs_core_assets_import(&(gs_core_asset_import_options_t){
@@ -51,7 +54,7 @@ GS_API_DECL void
     gs_core_entities_component_add(gs_core_entities_world(), app->ent, gs_core_component_renderable_t, {
         .hndl = gs_core_graphics_scene_renderable_create(&core->gfx->scene, &(gs_core_graphics_renderable_t){ 
             .materials[0] = app->mat_hndl,
-            .mesh = msh,
+            .mesh = msh_hndl,
             .model = gs_vqs_to_mat4(&tc->transform)
         }) 
     });
@@ -163,6 +166,8 @@ GS_API_DECL void
     // Free entity
     gs_core_entities_deallocate(gs_core_entities_world(), app->ent); 
 
-    // Free material 
-    gs_core_asset_handle_free(&app->mat_hndl);
+    // Free assets 
+    gs_core_asset_handle_free(&app->mat_hndl); 
+    gs_core_asset_handle_free(&app->tex_hndl);
+    gs_core_asset_handle_free(&app->pip_hndl);
 } 

@@ -92,6 +92,9 @@ _gs_core_app_update()
         app->viewport = gs_v4(0.f, 0.f, fbs.x, fbs.y);
     #endif 
 
+    // Update network
+    gs_core_network_update();
+
     // Update application
     if (app->state == GS_CORE_APP_STATE_PLAYING) { 
         gs_core_cast_vt(app, gs_core_app_t)->update(); 
