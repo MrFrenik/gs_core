@@ -145,7 +145,8 @@ gs_core_entities_system_register_internal(const gs_core_entities_system_desc_t* 
     // Construct descriptor
     ecs_system_desc_t sdesc = {
         .entity = {.name = desc->name, .add = {EcsOnUpdate}},
-        .callback = desc->callback
+        .callback = desc->callback,
+        .interval = desc->interval
     };
     for (uint32_t i = 0; (void*)desc->filter.component_list[i] != NULL; ++i) {
         sdesc.query.filter.terms[i].id = desc->filter.component_list[i];

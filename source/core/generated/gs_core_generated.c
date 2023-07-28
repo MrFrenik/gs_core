@@ -1422,6 +1422,8 @@ GS_API_DECL void
 gs_core_network_rpc_unreliable_t_init(gs_core_network_rpc_unreliable_t* obj)
 {
 	gs_core_cast(obj, gs_core_base_t)->id = gs_core_network_rpc_unreliable_t_class_id();
+	gs_core_network_rpc_t* rpc = gs_core_cast(obj, gs_core_network_rpc_t);
+	rpc->delivery = GS_CORE_NETWORK_DELIVERY_UNRELIABLE;
 }
 
 GS_API_DECL gs_core_network_rpc_unreliable_t*
@@ -1569,6 +1571,8 @@ GS_API_DECL void
 gs_core_network_rpc_reliable_t_init(gs_core_network_rpc_reliable_t* obj)
 {
 	gs_core_cast(obj, gs_core_base_t)->id = gs_core_network_rpc_reliable_t_class_id();
+	gs_core_network_rpc_t* rpc = gs_core_cast(obj, gs_core_network_rpc_t);
+	rpc->delivery = GS_CORE_NETWORK_DELIVERY_RELIABLE;
 }
 
 GS_API_DECL gs_core_network_rpc_reliable_t*
@@ -2049,6 +2053,8 @@ gs_core_meta_register()
 		uint32_t hndl = gs_core_network_rpc_unreliable_t_class_id();
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
 		gs_core_cast(&g_19, gs_core_base_t)->id = gs_core_network_rpc_unreliable_t_class_id();
+		rpc = gs_core_cast(&g_19, gs_core_network_rpc_t);
+		rpc->delivery = GS_CORE_NETWORK_DELIVERY_UNRELIABLE;
 		info->instance = gs_core_cast(&g_19, gs_core_obj_t);
 		info->cls = gs_meta_class_get(&meta->registry, gs_core_network_rpc_unreliable_t);
 		info->cid = hndl;
@@ -2090,6 +2096,8 @@ gs_core_meta_register()
 		uint32_t hndl = gs_core_network_rpc_reliable_t_class_id();
 		gs_core_meta_info_t* info = gs_slot_array_getp(meta->info, hndl);
 		gs_core_cast(&g_21, gs_core_base_t)->id = gs_core_network_rpc_reliable_t_class_id();
+		rpc = gs_core_cast(&g_21, gs_core_network_rpc_t);
+		rpc->delivery = GS_CORE_NETWORK_DELIVERY_RELIABLE;
 		info->instance = gs_core_cast(&g_21, gs_core_obj_t);
 		info->cls = gs_meta_class_get(&meta->registry, gs_core_network_rpc_reliable_t);
 		info->cid = hndl;
@@ -2297,7 +2305,7 @@ gs_core_meta_unregister()
 			gs_free(info->vtable);
 			info->vtable = NULL;
 		}
-		ents->component_unregister(gs_core_entity_id(gs_core_component_tag_t));
+		ents->component_unregister(gs_core_entities_component_id(gs_core_component_tag_t));
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
@@ -2314,7 +2322,7 @@ gs_core_meta_unregister()
 			gs_free(info->vtable);
 			info->vtable = NULL;
 		}
-		ents->system_unregister(gs_core_entity_id(gs_core_system_renderable_t));
+		ents->system_unregister(gs_core_entities_system_id(gs_core_system_renderable_t));
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
@@ -2331,7 +2339,7 @@ gs_core_meta_unregister()
 			gs_free(info->vtable);
 			info->vtable = NULL;
 		}
-		ents->component_unregister(gs_core_entity_id(gs_core_component_transform_t));
+		ents->component_unregister(gs_core_entities_component_id(gs_core_component_transform_t));
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
@@ -2380,7 +2388,7 @@ gs_core_meta_unregister()
 			gs_free(info->vtable);
 			info->vtable = NULL;
 		}
-		ents->component_unregister(gs_core_entity_id(gs_core_component_renderable_t));
+		ents->component_unregister(gs_core_entities_component_id(gs_core_component_renderable_t));
 	}
 	{
 		gs_core_meta_registry_t* meta = gs_core_instance()->meta;
@@ -2485,14 +2493,17 @@ gs_core_meta_ecs_register()
 	// Systems
 
 	/* gs_core_system_renderable_t */
-	gs_core_entity_id(gs_core_system_renderable_t) = ents->system_register(&(gs_core_entities_system_desc_t){
-		.name = gs_to_str(gs_core_system_renderable_t),
-		.callback = _gs_core_system_renderable_t_cb,
-		.filter.component_list = {
-			gs_hash_table_get(ents->components, gs_core_component_renderable_t_cls_id),
-			gs_hash_table_get(ents->components, gs_core_component_transform_t_cls_id)
-		}
-	});
+	{
+		gs_core_entity_t system = ents->system_register(&(gs_core_entities_system_desc_t){
+			.name = gs_to_str(gs_core_system_renderable_t),
+			.callback = _gs_core_system_renderable_t_cb,
+			.filter.component_list = {
+				gs_hash_table_get(ents->components, gs_core_cls_cid(gs_core_component_renderable_t)),
+				gs_hash_table_get(ents->components, gs_core_cls_cid(gs_core_component_transform_t))
+			}
+		});
+		gs_hash_table_insert(ents->systems, gs_core_system_renderable_t_cls_id, system);
+	}
 }
 
 //======[ Systems ]======//

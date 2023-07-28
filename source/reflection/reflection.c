@@ -98,6 +98,31 @@ GS_API_DECL void parse_file(meta_t* meta, const char* path);
 #define TOKEN_COPY(TOKEN, DST)\
     memcpy(DST, (TOKEN).text, (TOKEN).len)
 
+// Class Utils
+
+bool meta_class_derives_from(meta_t* meta, class_t* cls, const char* base)
+{ 
+    uint64_t hash = gs_hash_str64(base);
+
+    if (!gs_hash_table_exists(meta->classes, hash))
+    {
+        gs_log_error("base doesn't exist: %s", base);
+    }
+
+    if (gs_string_compare_equal(cls, base))
+    {
+        return true;
+    }
+
+    class_t* bcls = gs_hash_table_getp(meta->classes, gs_hash_str64(cls->base));
+    while (bcls)
+    {
+        if (gs_string_compare_equal(bcls, base) || gs_string_compare_equal(bcls->base, base)) return true;
+        bcls = gs_hash_table_getp(meta->classes, gs_hash_str64(bcls->base));
+    }
+    return false;
+}
+
 GS_API_DECL void
 parse_class_rpc(meta_t* meta, class_t* cls, gs_lexer_t* lex)
 { 
@@ -260,8 +285,6 @@ parse_class_method_vt(meta_t* meta, class_t* cls, gs_lexer_t* lex, vtable_t* vt)
         {
             method.needs_decl = true;
             method.is_default = true;
-            TOKEN_EXPECT(lex, GS_TOKEN_LPAREN, "Expect token LPAREN for _default tag");
-            TOKEN_EXPECT(lex, GS_TOKEN_RPAREN, "Expect token RPAREN for _default tag");
         }
         else
         { 
@@ -1038,12 +1061,12 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "\tgs_core_cast(obj, gs_core_base_t)->id = %s_class_id();", cls->name);
 
         // If is rpc, then need to init rpc info
-        if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_reliable_t"))
+        if (meta_class_derives_from(meta, cls, "gs_core_network_rpc_reliable_t")) 
         { 
             gs_fprintln(fp, "\tgs_core_network_rpc_t* rpc = gs_core_cast(obj, gs_core_network_rpc_t);");
             gs_fprintln(fp, "\trpc->delivery = GS_CORE_NETWORK_DELIVERY_RELIABLE;");
         }
-        else if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_unreliable_t"))
+        else if (meta_class_derives_from(meta, cls, "gs_core_network_rpc_unreliable_t")) 
         {
             gs_fprintln(fp, "\tgs_core_network_rpc_t* rpc = gs_core_cast(obj, gs_core_network_rpc_t);");
             gs_fprintln(fp, "\trpc->delivery = GS_CORE_NETWORK_DELIVERY_UNRELIABLE;"); 
@@ -1239,12 +1262,12 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "\t\tgs_core_cast(&g_%zu, gs_core_base_t)->id = %s_class_id();", CID, cls->name);
 
         // If is rpc, then need to init rpc info
-        if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_reliable_t"))
+        if (meta_class_derives_from(meta, cls, "gs_core_network_rpc_reliable_t")) 
         { 
             gs_fprintln(fp, "\t\trpc = gs_core_cast(&g_%zu, gs_core_network_rpc_t);", CID);
             gs_fprintln(fp, "\t\trpc->delivery = GS_CORE_NETWORK_DELIVERY_RELIABLE;");
         }
-        else if (gs_string_compare_equal(cls->base, "gs_core_network_rpc_unreliable_t"))
+        else if (meta_class_derives_from(meta, cls, "gs_core_network_rpc_unreliable_t")) 
         {
             gs_fprintln(fp, "\t\trpc = gs_core_cast(&g_%zu, gs_core_network_rpc_t);", CID);
             gs_fprintln(fp, "\t\trpc->delivery = GS_CORE_NETWORK_DELIVERY_UNRELIABLE;");
@@ -1308,11 +1331,11 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "\t\t}"); 
         if (gs_string_compare_equal(cls->base, "gs_core_entities_component_t"))
         {
-            gs_fprintln(fp, "\t\tents->component_unregister(gs_core_entity_id(%s));", cls->name);
+            gs_fprintln(fp, "\t\tents->component_unregister(gs_core_entities_component_id(%s));", cls->name);
         } 
         if (gs_string_compare_equal(cls->base, "gs_core_entities_system_t"))
         {
-            gs_fprintln(fp, "\t\tents->system_unregister(gs_core_entity_id(%s));", cls->name);
+            gs_fprintln(fp, "\t\tents->system_unregister(gs_core_entities_system_id(%s));", cls->name);
         }
         gs_fprintln(fp, "\t}"); 
 
@@ -1370,18 +1393,19 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
             if (gs_string_compare_equal(cls->base, "gs_core_entities_system_t"))
             {
                 gs_fprintln(fp, "\t/* %s */", cls->name);
+                gs_fprintln(fp, "\t{");
 
                 gs_snprintfc(CB, 256, "_%s_cb", cls->name);
-                gs_fprintln(fp, "\tgs_core_entity_id(%s) = ents->system_register(&(gs_core_entities_system_desc_t){", cls->name);
-                gs_fprintln(fp, "\t\t.name = gs_to_str(%s),", cls->name); 
-                gs_fprintln(fp, "\t\t.callback = %s,", CB); 
-                gs_fprintln(fp, "\t\t.filter.component_list = {");
+                gs_fprintln(fp, "\t\tgs_core_entity_t system = ents->system_register(&(gs_core_entities_system_desc_t){", cls->name);
+                gs_fprintln(fp, "\t\t\t.name = gs_to_str(%s),", cls->name); 
+                gs_fprintln(fp, "\t\t\t.callback = %s,", CB); 
+                gs_fprintln(fp, "\t\t\t.filter.component_list = {");
 
                     for (uint32_t i = 0; i < gs_dyn_array_size(cls->properties); ++i)
                     { 
                         property_t* p = &cls->properties[i];
                         uint32_t strlen = gs_string_length(p->type) - 1;
-                        gs_fprintf(fp, "\t\t\tgs_hash_table_get(ents->components, %.*s_cls_id)", strlen, p->type);
+                        gs_fprintf(fp, "\t\t\t\tgs_hash_table_get(ents->components, gs_core_cls_cid(%.*s))", strlen, p->type);
                         if (i < gs_dyn_array_size(cls->properties) - 1)
                         {
                             gs_fprintln(fp, ",");
@@ -1392,8 +1416,10 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
                         }
                     }
 
-                gs_fprintln(fp, "\t\t}");
-                gs_fprintln(fp, "\t});");
+                gs_fprintln(fp, "\t\t\t}");
+                gs_fprintln(fp, "\t\t});");
+		        gs_fprintln(fp, "\t\tgs_hash_table_insert(ents->systems, %s_cls_id, system);", cls->name);
+                gs_fprintln(fp, "\t}");
             }
             CID++;
         }

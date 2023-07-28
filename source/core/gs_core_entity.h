@@ -197,6 +197,12 @@ typedef void (*gs_core_entities_system_func_t)(gs_core_entities_system_t* system
 #define gs_core_entities_query_iter(WORLD, QUERY)  ecs_query_iter((WORLD), (QUERY))
 #define gs_core_entities_query_next(IT)            ecs_query_next((IT)) 
 
+#define gs_core_entities_system_id(T)\
+    gs_hash_table_get(gs_core_entities_instance()->systems, T##_class_id())
+
+#define gs_core_entities_system_set_interval(WORLD, T, INTERVAL)\
+    ecs_set_interval((WORLD), gs_core_entities_system_id(T), (INTERVAL))
+
 #define CORE_ENTITIES_SYSTEM_COMPONENT_MAX    8
 
 typedef struct
@@ -210,6 +216,7 @@ typedef struct
     gs_core_entities_system_func_t callback; 
     gs_core_entities_system_filter_t filter;
     gs_core_entities_system_tick_flags tick;
+    float interval;
 } gs_core_entities_system_desc_t; 
 
 typedef struct gs_core_entities_s

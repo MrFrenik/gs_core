@@ -150,8 +150,9 @@ gs_core_network_instance()
 } 
 
 GS_API_DECL void 
-gs_core_network_shutdown()
+gs_core_network_shutdown(gs_core_network_t* net)
 { 
+    if (!gs_core_network_is_valid(net)) return;
     gs_core_enet_t* enet = GS_CORE_ENET();
     gs_core_network_host_destroy(enet);
     gs_byte_buffer_free(&enet->message_data);
@@ -174,10 +175,8 @@ gs_core_network_peer_disconnect_callback_set(gs_core_network_t* net, gs_core_net
 }
 
 GS_API_DECL void
-gs_core_network_update()
+gs_core_network_update(gs_core_network_t* net)
 {
-    gs_core_network_t* net = gs_core_network_instance();
-
     if (!gs_core_network_is_valid(net)) return;
 
     gs_core_enet_t* enet = GS_CORE_ENET();
@@ -198,7 +197,7 @@ gs_core_network_update()
 
             case GS_CORE_NETWORK_MESSAGE_DATA:
             {
-                gs_println("MESSAGE DATA RECEIVED...");
+                // gs_println("MESSAGE DATA RECEIVED...");
                 gs_core_network_rpc_receive(net, &evt);
             } break;
         }
@@ -466,8 +465,8 @@ gs_core_network_rpc_send_internal(gs_core_network_t* net, gs_core_network_rpc_t*
 
     // Construct message 
     gs_core_network_message_t _msg = {
-        // .delivery = gs_core_cast(&rpc, gs_core_network_rpc_t)->delivery,
-        .delivery = GS_CORE_NETWORK_DELIVERY_RELIABLE,
+        .delivery = gs_core_cast(&rpc, gs_core_network_rpc_t)->delivery,
+        // .delivery = GS_CORE_NETWORK_DELIVERY_RELIABLE,
         .data = gs_core_network_packet_data(net, &packet),
         .size = gs_core_network_packet_size(net, &packet)
     };

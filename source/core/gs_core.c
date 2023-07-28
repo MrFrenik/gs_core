@@ -131,8 +131,8 @@ gs_core_free(gs_core_t* core)
     gs_core_meta_unregister();
 
     // Shutdown all systems
-    gs_core_network_shutdown(); 
-    gs_core_entities_shutdown(); 
+    gs_core_network_shutdown(core->network);
+    gs_core_entities_shutdown();
     gs_core_physics_shutdown();
     gs_core_graphics_shutdown();
     gs_core_assets_shutdown();

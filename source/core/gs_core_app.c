@@ -93,7 +93,7 @@ _gs_core_app_update()
     #endif 
 
     // Update network
-    gs_core_network_update();
+    // gs_core_network_update();
 
     // Update application
     if (app->state == GS_CORE_APP_STATE_PLAYING) { 

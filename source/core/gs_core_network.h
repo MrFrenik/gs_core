@@ -55,19 +55,19 @@ enum
 typedef void (* gs_core_network_event_message_cb_t)(uint32_t peer_id);
 
 gs_force_inline bool 
-gs_core_network_is_local(uint32_t flags)
+gs_core_network_flags_is_local(uint32_t flags)
 {
     return (flags & GS_CORE_NETWORK_FLAG_IS_LOCAL);
 }
 
 gs_force_inline bool 
-gs_core_network_has_authority(uint32_t flags)
+gs_core_network_flags_has_authority(uint32_t flags)
 {
     return (flags & GS_CORE_NETWORK_FLAG_HAS_AUTHORITY);
 }
 
 gs_force_inline bool 
-gs_core_network_has_ownership(uint32_t flags)
+gs_core_network_flags_has_ownership(uint32_t flags)
 {
     return (flags & GS_CORE_NETWORK_FLAG_HAS_OWNERSHIP);
 }
@@ -201,10 +201,10 @@ GS_API_DECL gs_core_network_t*
 gs_core_network_instance(); 
 
 GS_API_DECL void
-gs_core_network_update();
+gs_core_network_update(gs_core_network_t* net);
 
 GS_API_DECL void            
-gs_core_network_shutdown(); 
+gs_core_network_shutdown(gs_core_network_t* net); 
 
 GS_API_DECL gs_core_network_host_handle_t
 gs_core_network_server_create(uint32_t port, uint32_t max_connections);
