@@ -296,6 +296,11 @@ parse_class_method_vt(meta_t* meta, class_t* cls, gs_lexer_t* lex, vtable_t* vt)
         token = lex->current_token;
 
         // gs_println("%s: %s", method.name, method.function);
+
+        if (method.is_default)
+        { 
+            gs_println("name: %s, method: %s", cls->name, method.name);
+        }
     } 
     else
     { 
@@ -634,6 +639,7 @@ int32_t main(int32_t argc, char** argv)
     const char* proj_name = argv[3];
     const char* dep_dir = argv[4];
     uint32_t id_offset = argc > 5 ? atoi(argv[5]) : 0;
+    const char* in_dir2 = argc > 6 ? argv[6] : NULL;
 
     gs_println("in_dir: %s", in_dir);
     gs_println("out_dir: %s", out_dir);
@@ -657,6 +663,11 @@ int32_t main(int32_t argc, char** argv)
     // for source files to parse, ignore third party directory, generated, reflection
     g_should_write_meta_class = true;
     iterate_dir(in_dir, refl_iterate_dir_cb);
+
+    if (in_dir2)
+    {
+        iterate_dir(in_dir2, refl_iterate_dir_cb);
+    }
 
     write_to_file(&g_meta, dir, proj_name, id_offset);
 
@@ -1072,12 +1083,29 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
             gs_fprintln(fp, "\trpc->delivery = GS_CORE_NETWORK_DELIVERY_UNRELIABLE;"); 
         }
 
-        if (gs_hash_table_exists(cls->methods, gs_hash_str64("_ctor")))
+        // Call user post init (if available)
+        /*
+        if (gs_hash_table_exists(cls->vtable.methods, gs_hash_str64("post_init")))
         {
-            method_t* func = gs_hash_table_getp(cls->methods, gs_hash_str64("_ctor"));
-            gs_fprintln(fp, "\t%s* this = (%s*)obj;", cls->name, cls->name);
-            gs_fprintln(fp, "\t%s", func->content);
-        }
+            method_t* func = gs_hash_table_getp(cls->vtable.methods, gs_hash_str64("post_init"));
+            if (!gs_string_compare_equal(func->function, "NULL"))
+            {
+                if (func->needs_decl)
+                {
+                    gs_fprintln(fp, "\t%s_post_init(obj);", cls->name);
+                }
+                else
+                { 
+                    gs_fprintln(fp, "\t%s(obj);", func->function);
+                }
+            }
+        } 
+        */
+        gs_fprintln(fp, "\tif (gs_core_instance() && gs_core_instance()->meta)");
+        gs_fprintln(fp, "\t{");
+        gs_fprintln(fp, "\t\t%s_vtable_t* vt = gs_core_cast_vt(obj, %s);", cls, cls);
+        gs_fprintln(fp, "\t\tif (vt && vt->post_init) vt->post_init(obj);");
+        gs_fprintln(fp, "\t}");
 
         gs_fprintln(fp, "}\n");
 
@@ -1141,8 +1169,8 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         // Init base stuff
         gs_fprintln(fp, "\tvt->cls_id = %s_class_id;", cls->name); 
         gs_fprintln(fp, "\tvt->cls = %s_class;", cls->name); 
-        gs_fprintln(fp, "\tvt->obj_init= %s_init;", cls->name); 
-        gs_fprintln(fp, "\tvt->obj_dtor= %s_dtor;", cls->name); 
+        gs_fprintln(fp, "\tvt->init = %s_init;", cls->name); 
+        gs_fprintln(fp, "\tvt->dtor = %s_dtor;", cls->name); 
 
         gs_fprintln(fp, "}\n");
 

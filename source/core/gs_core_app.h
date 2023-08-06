@@ -58,11 +58,11 @@ typedef struct gs_core_app_s
 
     // Vtable
     _vtable(
-        void (* init)() = NULL;
-        void (* update)() = NULL;
-        void (* shutdown)() = NULL;
-        void (* render)(gs_command_buffer_t* cb) = NULL;
-        void (* editor)(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd) = NULL;
+        void (* app_init)() = NULL;
+        void (* app_update)() = NULL;
+        void (* app_shutdown)() = NULL;
+        void (* app_render)(gs_command_buffer_t* cb) = NULL;
+        void (* app_editor)(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd) = NULL;
     )
 
     // Fields

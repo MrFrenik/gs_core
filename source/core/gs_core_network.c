@@ -150,6 +150,12 @@ gs_core_network_instance()
 } 
 
 GS_API_DECL void 
+gs_core_network_set_instance(gs_core_network_t* network)
+{
+    g_network = network;
+}
+
+GS_API_DECL void 
 gs_core_network_shutdown(gs_core_network_t* net)
 { 
     if (!gs_core_network_is_valid(net)) return;

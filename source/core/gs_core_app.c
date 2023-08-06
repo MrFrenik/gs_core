@@ -76,7 +76,7 @@ _gs_core_app_init()
 	app = gs_core_app_instance();
 
     // Init app
-    gs_core_cast_vt(app, gs_core_app_t)->init();
+    gs_core_cast_vt(app, gs_core_app_t)->app_init();
 }
 
 GS_API_PRIVATE void
@@ -97,7 +97,7 @@ _gs_core_app_update()
 
     // Update application
     if (app->state == GS_CORE_APP_STATE_PLAYING) { 
-        gs_core_cast_vt(app, gs_core_app_t)->update(); 
+        gs_core_cast_vt(app, gs_core_app_t)->app_update(); 
     }
 
     // Update entities
@@ -116,7 +116,7 @@ _gs_core_app_render(gs_command_buffer_t* cb)
 	gs_core_app_t* app = gs_core_app_instance();
 
     // Render application
-    gs_core_cast_vt(app, gs_core_app_t)->render(cb);
+    gs_core_cast_vt(app, gs_core_app_t)->app_render(cb);
 
     // Submit command buffer for GPU
     #ifdef GS_CORE_APP_STANDALONE 
@@ -131,7 +131,7 @@ _gs_core_app_shutdown()
 	gs_core_app_t* app = gs_core_app_instance();
 
     // Shutdown app
-    gs_core_cast_vt(app, gs_core_app_t)->shutdown();
+    gs_core_cast_vt(app, gs_core_app_t)->app_shutdown();
 
     // Shutdown core (make this a pound define that can be easily used)
     #ifdef GS_CORE_APP_STANDALONE 
@@ -159,7 +159,7 @@ _gs_core_app_editor(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd)
     app->viewport = gs_v4(cmd->viewport.x, cmd->viewport.y, cmd->viewport.w, cmd->viewport.h);
     
     // Render scene 
-    gs_core_cast_vt(app, gs_core_app_t)->render(&ctx->gsi.commands); 
+    gs_core_cast_vt(app, gs_core_app_t)->app_render(&ctx->gsi.commands); 
 }
 
 

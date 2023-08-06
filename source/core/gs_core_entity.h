@@ -156,7 +156,7 @@ typedef void (*gs_core_entities_system_func_t)(gs_core_entities_system_t* system
         gs_core_entity_t comp = gs_hash_table_get(gs_core_entities_instance()->components, (CID));\
         ecs_set_id((WORLD), (ENT), comp, info->size, NULL);\
         gs_core_obj_t* _COMP = ecs_get_id((WORLD), (ENT), comp);\
-        ((gs_core_vtable_t*)info->vtable)->obj_init(_COMP);\
+        ((gs_core_vtable_t*)info->vtable)->init(_COMP);\
         gs_core_cast(_COMP, gs_core_entities_component_t)->entity = (ENT);\
     } while (0)
 

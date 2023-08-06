@@ -62,6 +62,9 @@ gs_core_new()
 		// Set up entity static data
 		gs_core_entities_set_instance(g_core->entities); 
 
+		// Set network static data
+		gs_core_network_set_instance(g_core->network);
+
 		// Set up gsi static data
 		gs_immediate_draw_static_data_set(g_core->gsi.data);
 

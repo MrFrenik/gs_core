@@ -78,7 +78,7 @@
 #define gs_core_obj_deserialize(BUFFER, OBJ)     (gs_core_obj_vt((OBJ))->deserialize((BUFFER), (OBJ)))
 #define gs_core_obj_net_serialize(BUFFER, OBJ)   (gs_core_obj_vt((OBJ))->net_serialize((BUFFER), (OBJ)))
 #define gs_core_obj_net_deserialize(BUFFER, OBJ) (gs_core_obj_vt((OBJ))->net_deserialize((BUFFER), (OBJ)))
-#define gs_core_obj_dtor(OBJ)                    (gs_core_obj_vt(gs_core_cast((OBJ), gs_core_obj_t))->obj_dtor(OBJ))
+#define gs_core_obj_dtor(OBJ)                    (gs_core_obj_vt(gs_core_cast((OBJ), gs_core_obj_t))->dtor(OBJ))
 
 // Meta
 #define _introspect(...)        gs_empty_instruction()
@@ -124,8 +124,8 @@ typedef struct gs_core_base_s
 #define gs_core_vtable_t_methods\
     const gs_meta_class_t* (* cls)();\
     uint32_t (* cls_id)();\
-    void (* obj_init)(struct gs_core_obj_s*);\
-    void (* obj_dtor)(struct gs_core_obj_s*);\
+    void (* init)(struct gs_core_obj_s*);\
+    void (* dtor)(struct gs_core_obj_s*);\
     const struct gs_core_meta_info_s* (* info)();
 
 typedef struct gs_core_vtable_s
@@ -150,6 +150,7 @@ typedef struct gs_core_obj_s
 
     // Methods
     _vtable( 
+        void (* post_init)(struct gs_core_obj_s* obj) = NULL;
         gs_result (* serialize)(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj) = gs_core_obj_serialize_impl; 
         gs_result (* deserialize)(gs_byte_buffer_t* buffer, gs_core_obj_t* obj) = gs_core_obj_deserialize_impl; 
         gs_result (* net_serialize)(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj) = gs_core_obj_net_serialize_impl;

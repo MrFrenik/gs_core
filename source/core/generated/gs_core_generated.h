@@ -82,11 +82,11 @@ gs_core_system_renderable_t_cb(gs_core_entities_system_t* system);
 
 #define gs_core_app_t_vtable_t_methods\
 	gs_core_obj_t_vtable_t_methods\
-	void (* init)() ;\
-	void (* update)() ;\
-	void (* shutdown)() ;\
-	void (* render)(gs_command_buffer_t* cb) ;\
-	void (* editor)(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd) ;
+	void (* app_shutdown)() ;\
+	void (* app_init)() ;\
+	void (* app_update)() ;\
+	void (* app_editor)(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd) ;\
+	void (* app_render)(gs_command_buffer_t* cb) ;
 
 #define gs_core_asset_t_vtable_t_methods\
 	gs_core_obj_t_vtable_t_methods\
@@ -109,10 +109,11 @@ gs_core_system_renderable_t_cb(gs_core_entities_system_t* system);
 
 #define gs_core_obj_t_vtable_t_methods\
 	gs_core_vtable_t_methods\
-	gs_result (* serialize)(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj) ;\
-	gs_result (* deserialize)(gs_byte_buffer_t* buffer, gs_core_obj_t* obj) ;\
+	void (* post_init)(struct gs_core_obj_s* obj) ;\
 	gs_result (* net_serialize)(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj) ;\
-	gs_result (* net_deserialize)(gs_byte_buffer_t* buffer, gs_core_obj_t* obj) ;
+	gs_result (* serialize)(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj) ;\
+	gs_result (* net_deserialize)(gs_byte_buffer_t* buffer, gs_core_obj_t* obj) ;\
+	gs_result (* deserialize)(gs_byte_buffer_t* buffer, gs_core_obj_t* obj) ;
 
 #define gs_core_asset_ui_stylesheet_t_vtable_t_methods\
 	gs_core_asset_t_vtable_t_methods

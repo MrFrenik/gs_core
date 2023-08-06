@@ -40,28 +40,31 @@
 // Editor Includes
 #include "editor/gs_core_editor.h"
 
+#define GS_CORE_EDITOR_VIEW_ASSETS_NAME  "Assets##gs_core_editor_view"
+
 _introspect()
 typedef struct
 {
     gs_core_base(gs_core_editor_view_t);
 
-    _ctor( 
-        gs_core_editor_view_set_name(this, "Assets##gs_core_editor");
-    )
-
     _vtable( 
-        _override: callback = gs_core_editor_view_assets_cb;
+        _override: post_init = _default;
+        _override: callback = _default;
     )
 
-} gs_core_editor_view_assets_t;
-
-GS_API_DECL void 
-gs_core_editor_view_assets_cb(struct gs_core_editor_view_s* view);
+} gs_core_editor_view_assets_t; 
 
 #ifdef GS_CORE_EDITOR_IMPL
 
 GS_API_DECL void 
-gs_core_editor_view_assets_cb(struct gs_core_editor_view_s* view)
+gs_core_editor_view_assets_t_post_init(gs_core_obj_t* _obj)
+{ 
+    gs_core_editor_view_assets_t* view = gs_core_cast(_obj, gs_core_editor_view_assets_t);
+    gs_core_editor_view_set_name(view, GS_CORE_EDITOR_VIEW_ASSETS_NAME);
+}
+
+GS_API_DECL void 
+gs_core_editor_view_assets_t_callback(struct gs_core_editor_view_s* view)
 {
     gs_core_editor_t* editor = gs_user_data(gs_core_editor_t); 
     gs_gui_context_t* gui = &editor->gui; 

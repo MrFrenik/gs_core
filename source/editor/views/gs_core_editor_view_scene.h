@@ -41,31 +41,31 @@
 #include "editor/gs_core_editor.h" 
 #include "core/gs_core_app.h"
 
+#define GS_CORE_EDITOR_VIEW_SCENE_NAME  "Scene##gs_core_editor_view"
+
 _introspect()
 typedef struct
 {
     gs_core_base(gs_core_editor_view_t);
 
-    _ctor( 
-        gs_core_editor_view_set_name(this, "Scene##gs_core_editor");
-    )
-
     _vtable( 
-        _override: callback = gs_core_editor_view_scene_cb;
+        _override: post_init = _default;
+        _override: callback = _default;
     )
 
 } gs_core_editor_view_scene_t;
 
-GS_API_DECL void 
-gs_core_editor_view_scene_cb(struct gs_core_editor_view_s* view);
-
-GS_API_DECL const char* 
-gs_core_editor_view_scene_name();
-
 #ifdef GS_CORE_EDITOR_IMPL
 
 GS_API_DECL void 
-gs_core_editor_view_scene_cb(struct gs_core_editor_view_s* view)
+gs_core_editor_view_scene_t_post_init(struct gs_core_obj_t* _obj)
+{
+    gs_core_editor_view_scene_t* view = gs_core_cast(_obj, gs_core_editor_view_scene_t);
+    gs_core_editor_view_set_name(view, GS_CORE_EDITOR_VIEW_SCENE_NAME);
+}
+
+GS_API_DECL void 
+gs_core_editor_view_scene_t_callback(struct gs_core_editor_view_s* view)
 {
     gs_core_editor_t* editor = gs_user_data(gs_core_editor_t); 
     gs_gui_context_t* gui = &editor->gui;

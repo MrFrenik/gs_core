@@ -197,7 +197,8 @@ _gs_core_entities_component_ctor_internal(gs_core_entity_world_t* world, gs_core
     // Get raw component data as object, call init on vtable
     gs_core_obj_t* cp = ecs_get_id(world, *ent, comp);
     if (cp) {
-        gs_core_cast_vt(cp, gs_core_obj_t)->obj_init(cp);
+		gs_core_obj_t_vtable_t* vt = gs_core_cast_vt(cp, gs_core_obj_t);
+		if (vt && vt->init) vt->init(cp);
     }
 }
 
@@ -208,7 +209,8 @@ _gs_core_entities_component_dtor_internal(gs_core_entity_world_t* world, gs_core
     // Get raw component data as object, call dtor on vtable
     gs_core_obj_t* cp = ecs_get_id(world, *ent, comp);
     if (cp) {
-        gs_core_cast_vt(cp, gs_core_obj_t)->obj_dtor(cp);
+		gs_core_obj_t_vtable_t* vt = gs_core_cast_vt(cp, gs_core_obj_t);
+		if (vt && vt->dtor) vt->dtor(cp);
     }
 }
 

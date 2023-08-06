@@ -45,23 +45,24 @@ typedef struct
 {
     gs_core_base(gs_core_editor_view_t);
 
-    _ctor( 
-        gs_core_editor_view_set_name(this, "PIE##gs_core_editor");
-    )
-
     _vtable( 
-        _override: callback = gs_core_editor_view_pie_cb;
+        _override: post_init = _default;
+        _override: callback = _default;
     )
 
 } gs_core_editor_view_pie_t;
 
-GS_API_DECL void 
-gs_core_editor_view_pie_cb(struct gs_core_editor_view_s* view);
-
 #ifdef GS_CORE_EDITOR_IMPL 
 
 GS_API_DECL void 
-gs_core_editor_view_pie_cb(struct gs_core_editor_view_s* view)
+gs_core_editor_view_pie_t_post_init(struct gs_core_obj_t* _obj)
+{ 
+    gs_core_editor_view_pie_t* view = gs_core_cast(_obj, gs_core_editor_view_pie_t);
+    gs_core_editor_view_set_name(view, "PIE##gs_core_editor");
+}
+
+GS_API_DECL void 
+gs_core_editor_view_pie_t_callback(struct gs_core_editor_view_s* view)
 {
     gs_core_editor_t* editor = gs_user_data(gs_core_editor_t); 
     gs_gui_context_t* gui = &editor->gui; 

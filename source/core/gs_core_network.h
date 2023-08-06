@@ -200,6 +200,9 @@ gs_core_network_new();
 GS_API_DECL gs_core_network_t* 
 gs_core_network_instance(); 
 
+GS_API_DECL void 
+gs_core_network_set_instance(gs_core_network_t* network); 
+
 GS_API_DECL void
 gs_core_network_update(gs_core_network_t* net);
 

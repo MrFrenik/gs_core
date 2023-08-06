@@ -40,31 +40,34 @@
 // Editor Includes
 #include "../gs_core_editor.h" 
 
+#define GS_CORE_EDITOR_VIEW_OUTLINER_NAME "Outliner##gs_core_editor_view"
+
 _introspect()
 typedef struct
 {
     gs_core_base(gs_core_editor_view_t);
 
-    _ctor( 
-        gs_core_editor_view_set_name(this, "Outliner##gs_core_editor_view");
-    )
-
     _vtable( 
-        _override: callback = gs_core_editor_view_outliner_cb; 
+        _override: post_init = _default;
+        _override: callback = _default; 
     )
     
     // Query for all tag components in scene
     gs_core_entity_query_t* component_tag_query;
 
-} gs_core_editor_view_outliner_t;
-
-GS_API_DECL void 
-gs_core_editor_view_outliner_cb(struct gs_core_editor_view_s* view);
+} gs_core_editor_view_outliner_t; 
 
 #ifdef GS_CORE_EDITOR_IMPL
 
 GS_API_DECL void 
-gs_core_editor_view_outliner_cb(struct gs_core_editor_view_s* view)
+gs_core_editor_view_outliner_t_post_init(struct gs_core_obj_t* _obj)
+{
+    gs_core_editor_view_outliner_t* view = gs_core_cast(_obj, gs_core_editor_view_outliner_t); 
+    gs_core_editor_view_set_name(view, GS_CORE_EDITOR_VIEW_OUTLINER_NAME);
+}
+
+GS_API_DECL void 
+gs_core_editor_view_outliner_t_callback(struct gs_core_editor_view_s* view)
 {
     gs_core_editor_t* editor = gs_user_data(gs_core_editor_t); 
     gs_gui_context_t* gui = &editor->gui; 
@@ -88,7 +91,8 @@ gs_core_editor_view_outliner_cb(struct gs_core_editor_view_s* view)
         for (uint32_t i = 0; i < it.count; ++i)
         {
             const char* name = gs_core_entities_get_name(eworld, it.entities[i]);
-            gs_gui_label(gui, "%s", name);
+            gs_snprintfc(ID_LABEL, 32, "%d", (uint32_t)it.entities[i]);
+            gs_gui_label(gui, "%s", ID_LABEL);
         }
     }
 } 

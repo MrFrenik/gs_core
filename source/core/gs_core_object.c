@@ -73,8 +73,11 @@ GS_API_DECL const gs_core_meta_info_t*
 gs_core_meta_obj_info(const gs_core_obj_t* obj)
 {
     uint32_t id = gs_core_obj_id(obj);
-    gs_assert(gs_slot_array_handle_valid(META()->info, id));
-    return gs_slot_array_getp(META()->info, id);
+	gs_core_t* core = gs_core_instance();
+	gs_assert(core && core->meta);
+	gs_core_meta_registry_t* meta = core->meta;
+    gs_assert(gs_slot_array_handle_valid(meta->info, id));
+    return gs_slot_array_getp(meta->info, id);
 }
 
 GS_API_DECL const gs_core_meta_info_t*

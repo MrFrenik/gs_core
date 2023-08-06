@@ -40,6 +40,8 @@
 // Editor Includes
 #include "editor/gs_core_editor.h" 
 
+#define GS_CORE_EDITOR_VIEW_PROPERTIES_NAME     "Properties##gs_core_editor_view"
+
 _introspect()
 typedef struct
 {
@@ -50,18 +52,23 @@ typedef struct
     )
 
     _vtable( 
-        _override: callback = gs_core_editor_view_properties_cb;
+        _override: post_init = _default;
+        _override: callback = _default;
     )
 
-} gs_core_editor_view_properties_t;
-
-GS_API_DECL void 
-gs_core_editor_view_properties_cb(struct gs_core_editor_view_s* view);
+} gs_core_editor_view_properties_t; 
 
 #ifdef GS_CORE_EDITOR_IMPL
 
 GS_API_DECL void 
-gs_core_editor_view_properties_cb(struct gs_core_editor_view_s* view)
+gs_core_editor_view_properties_t_post_init(struct gs_core_obj_t* _obj)
+{
+    gs_core_editor_view_properties_t* view = gs_core_cast(_obj, gs_core_editor_view_properties_t);
+    gs_core_editor_view_set_name(view, GS_CORE_EDITOR_VIEW_PROPERTIES_NAME);
+}
+
+GS_API_DECL void 
+gs_core_editor_view_properties_t_callback(struct gs_core_editor_view_s* view)
 {
     gs_core_editor_t* editor = gs_user_data(gs_core_editor_t); 
     gs_core_meta_registry_t* meta = gs_core_meta_registry_instance();

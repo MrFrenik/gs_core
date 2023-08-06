@@ -186,8 +186,13 @@ gs_core_editor_update()
                 view->flags = 0x00;
                 view->flags |= (gui->hover_root == cnt) ? GS_CORE_EDITOR_VIEW_FLAG_HOVERED : 0;
 
-                // Editor callback
-                gs_core_cast_vt(view, gs_core_editor_view_t)->callback(view);
+                // If view not active, then don't callback 
+                if (cnt->flags & GS_GUI_WINDOW_FLAGS_VISIBLE)
+                {
+                    // Editor callback
+                    gs_core_cast_vt(view, gs_core_editor_view_t)->callback(view);
+                }
+
             }
             gs_gui_window_end(gui);
         } 
