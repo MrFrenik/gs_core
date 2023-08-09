@@ -299,7 +299,7 @@ parse_class_method_vt(meta_t* meta, class_t* cls, gs_lexer_t* lex, vtable_t* vt)
 
         if (method.is_default)
         { 
-            gs_println("name: %s, method: %s", cls->name, method.name);
+            // gs_println("name: %s, method: %s", cls->name, method.name);
         }
     } 
     else
