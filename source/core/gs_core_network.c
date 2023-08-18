@@ -471,8 +471,7 @@ gs_core_network_rpc_send_internal(gs_core_network_t* net, gs_core_network_rpc_t*
 
     // Construct message 
     gs_core_network_message_t _msg = {
-        .delivery = gs_core_cast(&rpc, gs_core_network_rpc_t)->delivery,
-        // .delivery = GS_CORE_NETWORK_DELIVERY_RELIABLE,
+        .delivery = gs_core_cast(rpc, gs_core_network_rpc_t)->delivery,
         .data = gs_core_network_packet_data(net, &packet),
         .size = gs_core_network_packet_size(net, &packet)
     };
@@ -515,7 +514,7 @@ gs_core_network_rpc_send_id_internal(gs_core_network_t* net,
 
     // Construct message 
     gs_core_network_message_t _msg = {
-        .delivery = gs_core_cast(&rpc, gs_core_network_rpc_t)->delivery,
+        .delivery = gs_core_cast(rpc, gs_core_network_rpc_t)->delivery,
         .peer_id = id,
         .data = gs_core_network_packet_data(net, &packet),
         .size = gs_core_network_packet_size(net, &packet)
@@ -723,6 +722,7 @@ gs_core_enet_server_send_message(gs_core_enet_t* enet, const gs_core_network_mes
     if (!peer)
     {
         gs_log_warning("Send Message: Peer %zu does not exist.", message->peer_id);
+		return;
     }
 
     uint32_t flags = 0; 
