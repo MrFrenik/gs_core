@@ -143,10 +143,10 @@ _gs_core_app_meta_unregister();
             gs_core_cls_init(_NAME##_t, _app);\
             gs_t* inst = gs_create((gs_app_desc_t){\
                 .user_data = _app,\
-                .window.width = 800,\
-                .window.height = 600,\
+                .window.width = 480,\
+                .window.height = 270,\
                 .window.title = gs_to_str(_NAME),\
-                .window.num_samples = 16,\
+                .window.num_samples = 0,\
                 .init = _gs_core_app_init,\
                 .update = _gs_core_app_update,\
                 .shutdown = _gs_core_app_shutdown\
