@@ -74,6 +74,11 @@ typedef struct gs_core_s
     gs_command_buffer_t cb;
     gs_immediate_draw_t gsi;
     gs_gui_context_t gui;
+    struct
+    {
+        gs_scheduler_t sched;
+        void* mem;
+    } sched;
 
     gs_gui_context_t* (* gs_gui_context_new)(uint32_t hndl);
     void (* gs_gui_renderpass_submit)(gs_gui_context_t* ctx, gs_command_buffer_t* cb, gs_graphics_clear_action_t* action); 

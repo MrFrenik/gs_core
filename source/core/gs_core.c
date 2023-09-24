@@ -88,6 +88,13 @@ gs_core_new()
     core->gs_gui_window_begin_ex = gs_gui_window_begin_ex;
     core->gs_gui_window_end = gs_gui_window_end;
 
+    // Task scheduler
+    uintptr_t needed_memory;
+    gs_scheduler_init(&core->sched.sched, &needed_memory,
+                                GS_SCHED_DEFAULT, 0);
+    core->sched.mem = gs_calloc(needed_memory, 1);
+    gs_scheduler_start(&core->sched.sched, core->sched.mem);
+
     // Construct meta registry
     core->meta = gs_core_meta_registry_new(); 
 
@@ -129,6 +136,8 @@ gs_core_free(gs_core_t* core)
     gs_immediate_draw_free(&core->gsi);
     gs_command_buffer_free(&core->cb);
     gs_gui_free(&core->gui);
+    gs_scheduler_stop(&core->sched, 1);
+    gs_free(core->sched.mem);
 
     // Unregister meta
     gs_core_meta_unregister();
