@@ -269,6 +269,12 @@ SCHED_API void scheduler_stop(struct scheduler*, int doWait);
     Input:
     -   boolean flag specifing to wait for all task to finish before stopping */
 
+SCHED_API sched_int
+sched_atomic_add(volatile sched_int *dst, sched_int value);
+
+SCHED_API sched_uint
+sched_atomic_cmp_swp(volatile sched_uint *dst, sched_uint swap, sched_uint cmp);
+
 #ifdef __cplusplus
 }
 #endif
@@ -426,7 +432,7 @@ sched_zero_size(void *ptr, sched_size size)
     #define SCHED_BASE_ALIGN(x) __attribute__((aligned(x)))
 #endif
 
-SCHED_INTERN sched_uint
+SCHED_API sched_uint
 sched_atomic_cmp_swp(volatile sched_uint *dst, sched_uint swap, sched_uint cmp)
 {
 /* Atomically performs: if (*dst == swapTp){ *dst = swapTo;}
@@ -439,7 +445,7 @@ sched_atomic_cmp_swp(volatile sched_uint *dst, sched_uint swap, sched_uint cmp)
 #endif
 }
 
-SCHED_INTERN sched_int
+SCHED_API sched_int
 sched_atomic_add(volatile sched_int *dst, sched_int value)
 {
 /* Atomically performs: tmp = *dst: *dst += value; return tmp; */

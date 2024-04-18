@@ -237,3 +237,6 @@ gs_core_os_api_new()
 
 #include "flecs/flecs.h"
 
+// DDT
+#define GS_DDT_IMPL
+#include "ddt/ddt.h"
