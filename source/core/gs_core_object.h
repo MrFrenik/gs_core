@@ -58,12 +58,12 @@
 // Class id
 #define gs_core_cls_cid(T)       T##_class_id()
 #define gs_core_cls_info(T)      T##_info()
-#define gs_core_cls_init(T, OBJ) T##_init(OBJ)
+#define gs_core_cls_init(T, OBJ) T##_init((gs_core_obj_t*)(OBJ))
 #define gs_core_cls_new(T)       T##_new()
 #define gs_core_cls_ctor(T)      T##_ctor()
 
 // VTable
-#define gs_core_cast_vt(OBJ, T)                       (gs_core_cast(gs_core_obj_info(OBJ)->vtable, T##_vtable_t))
+#define gs_core_cast_vt(OBJ, T)                       (gs_core_cast(gs_core_obj_info((gs_core_obj_t*)(OBJ))->vtable, T##_vtable_t))
 #define gs_core_vt_cls(T)                              T##_vtable_t
 #define gs_core_vt(T)                                 (gs_core_cast(gs_core_info_w_cls(T)->vtable, T##_vtable_t))
 
@@ -97,6 +97,9 @@
 #define _ctor(...)              gs_empty_instruction()
 #define _dtor(...)              gs_empty_instruction()
 #define _vtable(...)            gs_empty_instruction()
+
+// CVar
+#define gs_core_cvar(T, ...)         extern T
 
 // Forward Decls.
 struct gs_core_meta_info_s;

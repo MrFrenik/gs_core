@@ -79,11 +79,22 @@ typedef struct
 
 typedef struct
 {
+    char name[META_PROPERTY_STR_MAX];
+    char desc[META_PROPERTY_STR_MAX];
+    char type[META_PROPERTY_STR_MAX]; 
+    bool should_write_meta;
+    bool needs_define;
+} cvar_t;
+
+typedef struct
+{
     gs_hash_table(uint64_t, class_t) classes;
     gs_hash_table(uint64_t, const char*) type_map;
+    gs_hash_table(uint64_t, cvar_t) cvars;
 } meta_t;
 
 static meta_t g_meta = {0};
+gs_hash_table(uint64_t, const char*) g_cvar_type_map = NULL;
 
 GS_API_DECL void write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_offset);
 GS_API_DECL void parse_file(meta_t* meta, const char* path);
@@ -342,8 +353,7 @@ parse_class_method_vt(meta_t* meta, class_t* cls, gs_lexer_t* lex, vtable_t* vt)
 
 GS_API_DECL void 
 parse_class_vtable(meta_t* meta, class_t* cls, gs_lexer_t* lex)
-{
-
+{ 
     vtable_t vt = {0};
 
     // Parse left paren
@@ -472,6 +482,44 @@ parse_class(meta_t* meta, gs_lexer_t* lex, bool should_write_meta)
     gs_hash_table_insert(meta->classes, gs_hash_str64(cls.name), cls);
 }
 
+GS_API_DECL void
+parse_cvar(meta_t* meta, gs_lexer_t* lex, bool should_write_meta)
+{ 
+    // Should be at "gs_core_cvar"
+    gs_token_t token = lex->current_token;
+
+    cvar_t cvar = {0};
+    cvar.should_write_meta = should_write_meta;
+
+    // Move to end of right paren
+    gs_lexer_find_next_token_type(lex, GS_TOKEN_LPAREN);
+
+    // Look for type as first argument
+    TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expected type");
+    token = lex->current_token;
+    TOKEN_COPY(token, cvar.type);
+
+    // TODO(): Parse all remaining properties (descriptor, etc)
+    // For now, move to end
+    gs_lexer_find_next_token_type(lex, GS_TOKEN_RPAREN);
+
+    // Name
+    TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expected cvar name");
+    token = lex->current_token;
+    TOKEN_COPY(token, cvar.name);
+
+    // Look for equal or semicolon
+    token = lex->next_token(lex);
+    if (gs_token_compare_type(&token, GS_TOKEN_SEMICOLON))
+    {
+        cvar.needs_define = true;
+    }
+
+    gs_println("CVAR: %s, %s", cvar.name, cvar.type);
+
+    gs_hash_table_insert(meta->cvars, gs_hash_str64(cvar.name), cvar);
+}
+
 // List of files to iterate through for includes
 
 typedef struct {char path[512];} FILE_PATH;
@@ -529,13 +577,15 @@ void refl_iterate_dir_cb(const char* path, struct dirent* entry)
     // Only operate on header files
     gs_transient_buffer(file_ext, 32);
     gs_platform_file_extension(file_ext, sizeof(file_ext), path); 
+    bool path_is_core_obj = gs_string_compare_equal(entry->d_name, "gs_core_object.h");
+
     if (!gs_string_compare_equal(file_ext, "h"))
     {
         return;
     }
 
     // Ignore list
-    if (gs_string_compare_equal(entry->d_name, "gs_core_object.h"))
+    if (path_is_core_obj)
     {
         // return;
     }
@@ -550,6 +600,8 @@ void refl_iterate_dir_cb(const char* path, struct dirent* entry)
     gs_snprintf(fp.path, 512, "%s", path); 
     gs_dyn_array_push(g_files, fp);
 
+    gs_println("PATH: %s", path);
+
     char* contents = gs_platform_read_file_contents(path, "rb", NULL); 
     gs_lexer_t lex = gs_lexer_c_ctor(contents);
 
@@ -563,6 +615,10 @@ void refl_iterate_dir_cb(const char* path, struct dirent* entry)
                 if (gs_token_compare_text(&token, "_introspect"))
                 {
                     parse_class(&g_meta, &lex, g_should_write_meta_class);
+                }
+                else if (!path_is_core_obj && gs_token_compare_text(&token, "gs_core_cvar"))
+                {
+                    parse_cvar(&g_meta, &lex, g_should_write_meta_class);
                 }
             } break; 
         }
@@ -629,9 +685,42 @@ int32_t main(int32_t argc, char** argv)
         {NULL}
     };
 
-    for (uint32_t i = 0; type_map[i].key != NULL; ++i) 
-    {
+    for (uint32_t i = 0; type_map[i].key != NULL; ++i) {
         gs_hash_table_insert(g_meta.type_map, gs_hash_str64(type_map[i].key), type_map[i].info);
+    }
+
+    struct {const char* key; const char* info;} cvar_type_map[] = {
+        {.key = "bool",         .info = "GS_CORE_CVAR_BOOL"},
+        {.key = "b8",           .info = "GS_CORE_CVAR_BOOL"},
+        {.key = "b32",          .info = "GS_CORE_CVAR_BOOL"},
+        {.key = "int8_t",       .info = "GS_CORE_CVAR_INT"},
+        {.key = "s8",           .info = "GS_CORE_CVAR_INT"},
+        {.key = "uint8_t",      .info = "GS_CORE_CVAR_INT"},
+        {.key = "u8",           .info = "GS_CORE_CVAR_INT"},
+        {.key = "int16_t",      .info = "GS_CORE_CVAR_INT"},
+        {.key = "s16",          .info = "GS_CORE_CVAR_INT"},
+        {.key = "uint16_t",     .info = "GS_CORE_CVAR_INT"},
+        {.key = "u16",          .info = "GS_CORE_CVAR_INT"},
+        {.key = "uint32_t",     .info = "GS_CORE_CVAR_INT"},
+        {.key = "u32",          .info = "GS_CORE_CVAR_INT"},
+        {.key = "int32_t",      .info = "GS_CORE_CVAR_INT"},
+        {.key = "s32",          .info = "GS_CORE_CVAR_INT"},
+        {.key = "uint64_t",     .info = "GS_CORE_CVAR_INT"},
+        {.key = "u64",          .info = "GS_CORE_CVAR_INT"},
+        {.key = "int64_t",      .info = "GS_CORE_CVAR_INT"},
+        {.key = "s64",          .info = "GS_CORE_CVAR_INT"},
+        {.key = "float",        .info = "GS_CORE_CVAR_FLOAT"},
+        {.key = "f32",          .info = "GS_CORE_CVAR_FLOAT"},
+        {.key = "double",       .info = "GS_CORE_CVAR_FLOAT"},
+        {.key = "f64",          .info = "GS_CORE_CVAR_FLOAT"}, 
+        {.key = "gs_vec2",      .info = "GS_CORE_CVAR_FLOAT2"}, 
+        {.key = "gs_vec3",      .info = "GS_CORE_CVAR_FLOAT3"}, 
+        {.key = "gs_vec4",      .info = "GS_CORE_CVAR_FLOAT4"}, 
+        {.key = "gs_quat",      .info = "GS_CORE_CVAR_FLOAT4"}
+    };
+
+    for (uint32_t i = 0; cvar_type_map[i].key != NULL; ++i) {
+        gs_hash_table_insert(g_cvar_type_map, gs_hash_str64(cvar_type_map[i].key), cvar_type_map[i].info);
     }
 
     const char* in_dir = argv[1];
@@ -901,7 +990,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "%s_new();\n", cls->name);
 
         gs_fprintln(fp, "GS_API_DECL void");
-        gs_fprintln(fp, "%s_init(%s* obj);\n", cls->name, cls->name);
+        gs_fprintln(fp, "%s_init(gs_core_obj_t* obj);\n", cls->name);
 
         gs_fprintln(fp, "GS_API_DECL %s", cls->name);
         gs_fprintln(fp, "%s_ctor();\n", cls->name);
@@ -1015,6 +1104,26 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     gs_fprintln(fp, "#include \"%s_generated.h\"\n", proj_name); 
     gs_fprintln(fp, "#include \"core/generated/gs_core_generated.h\"\n");
 
+    gs_fprintln(fp, "// CVars");
+
+    // CVars
+    for (
+        gs_hash_table_iter it = gs_hash_table_iter_new(meta->cvars);
+        gs_hash_table_iter_valid(meta->cvars, it);
+        gs_hash_table_iter_advance(meta->cvars, it) 
+    )
+    {
+        cvar_t* cvar = gs_hash_table_iter_getp(meta->cvars, it);
+        if (!cvar->should_write_meta) continue;
+        if (cvar->needs_define) { 
+            gs_fprintln(fp, "%s %s = {0};", cvar->type, cvar->name);
+        }
+        gs_fprintln(fp, "%s* s__%s = &%s;", cvar->type, cvar->name, cvar->name);
+    }
+
+    gs_fprintln(fp, "");
+
+
     gs_fprintln(fp, "// Class Ids");
 
     for (
@@ -1067,7 +1176,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
 
         // Init
         gs_fprintln(fp, "GS_API_DECL void");
-        gs_fprintln(fp, "%s_init(%s* obj)", cls->name, cls->name);
+        gs_fprintln(fp, "%s_init(gs_core_obj_t* obj)", cls->name);
         gs_fprintln(fp, "{"); 
         gs_fprintln(fp, "\tgs_core_cast(obj, gs_core_base_t)->id = %s_class_id();", cls->name);
 
@@ -1104,7 +1213,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "\tif (gs_core_instance() && gs_core_instance()->meta)");
         gs_fprintln(fp, "\t{");
         gs_fprintln(fp, "\t\t%s_vtable_t* vt = gs_core_cast_vt(obj, %s);", cls, cls);
-        gs_fprintln(fp, "\t\tif (vt && vt->post_init) vt->post_init(obj);");
+        gs_fprintln(fp, "\t\tif (vt && vt->post_init) vt->post_init(gs_core_cast(obj, gs_core_obj_t));");
         gs_fprintln(fp, "\t}");
 
         gs_fprintln(fp, "}\n");
@@ -1114,7 +1223,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "%s_new()", cls->name);
         gs_fprintln(fp, "{");
         gs_fprintln(fp, "\t%s* obj = gs_malloc_init(%s);", cls->name, cls->name);
-        gs_fprintln(fp, "\t%s_init(obj);", cls->name); 
+        gs_fprintln(fp, "\t%s_init(gs_core_cast(obj, gs_core_obj_t));", cls->name); 
         gs_fprintln(fp, "\treturn obj;");
         gs_fprintln(fp, "}\n");
 
@@ -1123,7 +1232,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "%s_ctor()", cls->name);
         gs_fprintln(fp, "{");
         gs_fprintln(fp, "\t%s obj = gs_default_val();", cls->name);
-        gs_fprintln(fp, "\t%s_init(&obj);", cls->name); 
+        gs_fprintln(fp, "\t%s_init((gs_core_obj_t*)&obj);", cls->name); 
         gs_fprintln(fp, "\treturn obj;");
         gs_fprintln(fp, "}\n");
 
@@ -1219,6 +1328,42 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     gs_fprintln(fp, "GS_API_DECL void");
     gs_fprintln(fp, "%s_meta_register()", proj_name);
     gs_fprintln(fp, "{");
+
+    // Cvars
+    gs_fprintln(fp, "\t// CVars");
+    for (
+        gs_hash_table_iter it = gs_hash_table_iter_new(meta->cvars);
+        gs_hash_table_iter_valid(meta->cvars, it);
+        gs_hash_table_iter_advance(meta->cvars, it) 
+    )
+    {
+        cvar_t* cvar = gs_hash_table_iter_getp(meta->cvars, it);
+        if (!cvar->should_write_meta) continue;
+
+        const char* type_info = "GS_CORE_CVAR_INT";
+        uint64_t type_hash = gs_hash_str64(cvar->type);
+        if (gs_hash_table_key_exists(g_cvar_type_map, type_hash)) {
+            type_info = gs_hash_table_get(g_cvar_type_map, type_hash);
+
+            // This is really strange...
+            if (gs_string_compare_equal(type_info, "GS_META_PROPERTY_TYPE_INFO_S32")){
+                type_info = "GS_CORE_CVAR_INT";
+            }
+            if (gs_string_compare_equal(type_info, "GS_META_PROPERTY_TYPE_INFO_F32")){
+                type_info = "GS_CORE_CVAR_FLOAT";
+            }
+
+            gs_println("TYPE INFO: %s", type_info);
+        }
+
+        gs_fprintln(fp, "\tgs_core_cvar_register(&(gs_core_cvar_desc_t) {");
+        gs_fprintln(fp,     "\t\t.name = \"%s\",", cvar->name);
+        gs_fprintln(fp,     "\t\t.type = %s,", type_info);
+        gs_fprintln(fp,     "\t\t.val = s__%s,", cvar->name);
+        gs_fprintln(fp,     "\t\t.desc = \"default desc\",");
+        gs_fprintln(fp, "\t});");
+        gs_fprintln(fp, "");
+    }
 
     gs_fprintln(fp, "\tgs_core_meta_registry_t* meta = gs_core_instance()->meta;");
     gs_fprintln(fp, "\tgs_meta_class_t* cls = NULL;"); 
@@ -1332,6 +1477,20 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     gs_fprintln(fp, "%s_meta_unregister()", proj_name); 
     gs_fprintln(fp, "{"); 
     gs_fprintln(fp, "\tgs_core_entities_t* ents = gs_core_instance()->entities;\n");
+
+    // Cvars
+    gs_fprintln(fp, "\t// CVars");
+    for (
+        gs_hash_table_iter it = gs_hash_table_iter_new(meta->cvars);
+        gs_hash_table_iter_valid(meta->cvars, it);
+        gs_hash_table_iter_advance(meta->cvars, it) 
+    )
+    {
+        cvar_t* cvar = gs_hash_table_iter_getp(meta->cvars, it);
+        if (!cvar->should_write_meta) continue;
+        gs_fprintln(fp, "\tgs_core_cvar_unregister(\"%s\");", cvar->name);
+    }
+    gs_fprintln(fp, ""); 
 
     for (
         gs_hash_table_iter it = gs_hash_table_iter_new(meta->classes), CID = 1; 
@@ -1482,7 +1641,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
             {
                 property_t* p = &cls->properties[i];
                 uint32_t strlen = gs_string_length(p->type) - 1;
-                gs_fprintln(fp, "\tsdata.%s = gs_core_entities_term(iter, %.*s, %zu);", 
+                gs_fprintln(fp, "\tsdata.%s = gs_core_entities_term((gs_core_entity_iter_t*)iter, %.*s, %zu);", 
                     p->name, strlen, p->type, i);
             } 
 

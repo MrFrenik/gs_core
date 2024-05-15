@@ -51,6 +51,7 @@
 #include "core/generated/gs_core_generated.h"
 
 #define GS_CORE_REFL_CLASS_MAX     1000
+#define GS_CORE_CVAR_STR_MAX       256
 
 // Want a way to track all allocations and log if they've been freed
 extern void* gs_core_os_malloc(size_t sz); 
@@ -59,6 +60,32 @@ extern void gs_core_os_free(void* ptr);
 extern void* gs_core_os_realloc(void* ptr, size_t sz); 
 extern void* gs_core_os_calloc(size_t num, size_t sz);
 extern char* gs_core_os_strdup(const char* str);
+
+typedef enum 
+{
+    GS_CORE_CVAR_INT = 0x00,
+    GS_CORE_CVAR_BOOL,          // Probably not needed
+    GS_CORE_CVAR_FLOAT,
+    GS_CORE_CVAR_FLOAT2,
+    GS_CORE_CVAR_FLOAT3,
+    GS_CORE_CVAR_FLOAT4
+} gs_core_cvar_type;
+
+typedef struct
+{
+    const char* name; 
+    gs_core_cvar_type type; 
+    void* val;                   // Pointer to value to be set
+    const char* desc;
+} gs_core_cvar_desc_t;
+
+typedef struct
+{
+    char name[GS_CORE_CVAR_STR_MAX];
+    gs_core_cvar_type type;
+    void* val;
+    uint32_t cmd_hndl;
+} gs_core_cvar_t;
 
 typedef struct gs_core_s
 {
@@ -74,8 +101,19 @@ typedef struct gs_core_s
     gs_command_buffer_t cb;
     gs_immediate_draw_t gsi;
     gs_gui_context_t gui;
-    struct
-    {
+
+    // Console (drop-down terminal)
+    struct {
+        gs_ddt_t ddt;
+        gs_slot_array(gs_ddt_command_t) commands;
+    } ddt;
+
+    // Registry of all cvars
+    struct {
+        gs_hash_table(uint64_t, gs_core_cvar_t) registry;
+    } cvars;
+
+    struct {
         gs_scheduler_t sched;
         void* mem;
     } sched;
@@ -86,6 +124,8 @@ typedef struct gs_core_s
     void (* gs_gui_end)(gs_gui_context_t *ctx); 
     int32_t (* gs_gui_window_begin_ex)(gs_gui_context_t* ctx, const char* title, gs_gui_rect_t rect, bool* open, const gs_gui_selector_desc_t* desc, int32_t opt);
     void (* gs_gui_window_end)(gs_gui_context_t* ctx);
+
+    gs_atomic_int_t mem_lock;
 
 } gs_core_t; 
 
@@ -101,7 +141,30 @@ gs_core_instance();
 GS_API_DECL void
 gs_core_instance_set(gs_core_t* core);
 
+GS_API_DECL gs_scheduler_t* 
+gs_core_scheduler_instance();
+
+GS_API_DECL gs_ddt_t*
+gs_core_ddt_instance();
+
+GS_API_DECL uint32_t
+gs_core_ddt_cmd_register(gs_ddt_command_t cmd);
+
+GS_API_DECL void
+gs_core_ddt_cmd_unregister(uint32_t hndl);
+
+GS_API_DECL gs_core_cvar_t* 
+gs_core_cvar_get(const char* name);
+
+GS_API_DECL void
+gs_core_cvar_register(const gs_core_cvar_desc_t* desc);
+
+GS_API_DECL void
+gs_core_cvar_unregister(const char* name);
+
 #ifdef GS_CORE_MEMORY_DBG
+
+#define GS_CORE_MEMORY_DBG_MAX_ALLOCATIONS  35000
 
 typedef struct gs_core_memory_alloc_s
 {
@@ -120,5 +183,27 @@ gs_core_memory_print_to_file(const char* path);
 #endif
 
 #endif // GS_CORE_H
+
+
+/*
+
+    CVar system - ties into console (gs_ddt)
+    Want reflection system to pick up on them to use, quick way to access/mutate
+
+    // Statically declare value to be run, reflection system will pick up on this and register internally with cvar system?
+
+    // Statically declare, like normal, set to default value. System will set the pointer accordingly.
+    gs_core_cvar(float) value = 10; 
+
+    #define gs_core_cvar(T)         extern
+
+    gs_core_cvar(
+        float,
+        .name = ,
+        .desc = ,
+
+    );
+
+*/
 
 

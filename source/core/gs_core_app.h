@@ -124,7 +124,7 @@ _gs_core_app_meta_unregister();
         gs_core_instance_set(core);\
         gs_set_instance(gs);\
         _NAME##_t* _app = gs_core_cls_new(_NAME##_t);\
-        gs_core_app_instance_set(_app);\
+        gs_core_app_instance_set((gs_core_app_t*)_app);\
         gs_core_cast(_app, gs_core_app_t)->core = gs_core_new();\
         return _app;\
     }\
@@ -139,7 +139,8 @@ _gs_core_app_meta_unregister();
     #define GS_CORE_APP_MAIN(_NAME)\
         int32_t main(int32_t argc, char** argv)\
         {\
-            _NAME##_t* _app = gs_core_os_malloc_init(sizeof(_NAME##_t));\
+            /*_NAME##_t* _app = gs_core_os_malloc_init(sizeof(_NAME##_t));\*/\
+            _NAME##_t* _app = calloc(1, sizeof(_NAME##_t));\
             gs_core_cls_init(_NAME##_t, _app);\
             gs_t* inst = gs_create((gs_app_desc_t){\
                 .user_data = _app,\

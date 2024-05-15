@@ -11,6 +11,8 @@
 #endif
 #endif
 
+#pragma optimize("", off)
+
 #include <stdlib.h>
 #include <limits.h>
 #ifndef NDEBUG
@@ -2723,8 +2725,8 @@ void flecs_table_free(
         flecs_hashmap_remove(world->store.table_map, &ids, ecs_table_t*);
     }
 
-    ecs_os_free(table->dirty_state);
-    ecs_os_free(table->storage_map);
+    if (table->dirty_state) ecs_os_free(table->dirty_state);
+    if (table->storage_map) ecs_os_free(table->storage_map);
 
     if (table->c_info) {
         ecs_os_free(table->c_info);
@@ -9170,7 +9172,7 @@ ecs_vector_t* _ecs_vector_from_array(
 void ecs_vector_free(
     ecs_vector_t *vector)
 {
-    ecs_os_free(vector);
+    if (vector) ecs_os_free(vector);
 }
 
 void ecs_vector_clear(
@@ -11987,8 +11989,10 @@ static
 void clear_bucket(
     ecs_bucket_t *bucket)
 {
-    ecs_os_free(bucket->keys);
-    ecs_os_free(bucket->payload);
+	//#GS_CORE_BEGIN_NULL_CHECK
+    if (bucket->keys)    ecs_os_free(bucket->keys);
+    if (bucket->payload) ecs_os_free(bucket->payload);
+	//#GS_CORE_END_NULL_CHECK
     bucket->keys = NULL;
     bucket->payload = NULL;
     bucket->count = 0;
@@ -29197,13 +29201,13 @@ static ECS_COPY(EcsDocDescription, dst, src, {
 })
 
 static ECS_MOVE(EcsDocDescription, dst, src, {
-    ecs_os_free((char*)dst->value);
+    if (dst->value) ecs_os_free((char*)dst->value);
     dst->value = src->value;
     src->value = NULL;
 })
 
 static ECS_DTOR(EcsDocDescription, ptr, { 
-    ecs_os_free((char*)ptr->value);
+    if (ptr->value) ecs_os_free((char*)ptr->value);
 })
 
 void ecs_doc_set_name(
@@ -31771,7 +31775,7 @@ void fini_store(ecs_world_t *world) {
     flecs_table_free(world, &world->store.root);
     flecs_sparse_clear(world->store.entity_index);
     flecs_hashmap_free(world->store.table_map);
-    ecs_os_free(world->store.id_cache.array);
+    if (world->store.id_cache.array) ecs_os_free(world->store.id_cache.array);
 }
 
 /* Implementation for iterable mixin */
@@ -34305,10 +34309,12 @@ ecs_term_t ecs_term_move(
 void ecs_term_fini(
     ecs_term_t *term)
 {
-    ecs_os_free(term->pred.name);
-    ecs_os_free(term->subj.name);
-    ecs_os_free(term->obj.name);
-    ecs_os_free(term->name);
+	//#GS_CORE_BEGIN_TERM_FINI_NULL_CHECK
+    if (term->pred.name) ecs_os_free(term->pred.name);
+    if (term->subj.name) ecs_os_free(term->subj.name);
+    if (term->obj.name) ecs_os_free(term->obj.name);
+    if (term->name) ecs_os_free(term->name);
+	//#GS_CORE_END_TERM_FINI_NULL_CHECK
 
     term->pred.name = NULL;
     term->subj.name = NULL;
@@ -34603,8 +34609,8 @@ void ecs_filter_fini(
         }
     }
 
-    ecs_os_free(filter->name);
-    ecs_os_free(filter->expr);
+    if (filter->name) ecs_os_free(filter->name);
+    if (filter->expr) ecs_os_free(filter->expr);
 
     filter->terms = NULL;
     filter->name = NULL;
@@ -39270,14 +39276,14 @@ void remove_table(
     ecs_query_table_match_t *cur, *next;
 
     for (cur = elem->first; cur != NULL; cur = next) {
-        ecs_os_free(cur->columns);
-        ecs_os_free(cur->ids);
-        ecs_os_free(cur->subjects);
-        ecs_os_free(cur->sizes);
-        ecs_os_free(cur->references);
-        ecs_os_free(cur->sparse_columns);
-        ecs_os_free(cur->bitset_columns);
-        ecs_os_free(cur->monitor);
+        if (cur->columns) ecs_os_free(cur->columns);
+        if (cur->ids) ecs_os_free(cur->ids);
+        if (cur->subjects) ecs_os_free(cur->subjects);
+        if (cur->sizes) ecs_os_free(cur->sizes);
+        if (cur->references) ecs_os_free(cur->references);
+        if (cur->sparse_columns) ecs_os_free(cur->sparse_columns);
+        if (cur->bitset_columns) ecs_os_free(cur->bitset_columns);
+        if (cur->monitor) ecs_os_free(cur->monitor);
 
         if (!elem->hdr.empty) {
             remove_table_node(query, &cur->node);
@@ -41429,8 +41435,8 @@ void flecs_table_clear_edges(
     int32_t i;
     ecs_graph_node_t *node = &table->node;
 
-    ecs_os_free(node->add.lo);
-    ecs_os_free(node->remove.lo);
+    if (node->add.lo) ecs_os_free(node->add.lo);
+    if (node->remove.lo) ecs_os_free(node->remove.lo);
     ecs_map_free(node->add.hi);
     ecs_map_free(node->remove.hi);
     node->add.lo = NULL;
@@ -41442,10 +41448,10 @@ void flecs_table_clear_edges(
     ecs_table_diff_t *diffs = ecs_vector_first(node->diffs, ecs_table_diff_t);
     for (i = 0; i < count; i ++) {
         ecs_table_diff_t *diff = &diffs[i];
-        ecs_os_free(diff->added.array);
-        ecs_os_free(diff->removed.array);
-        ecs_os_free(diff->on_set.array);
-        ecs_os_free(diff->un_set.array);
+        if (diff->added.array) ecs_os_free(diff->added.array);
+        if (diff->removed.array) ecs_os_free(diff->removed.array);
+        if (diff->on_set.array) ecs_os_free(diff->on_set.array);
+        if (diff->un_set.array) ecs_os_free(diff->un_set.array);
     }
 
     ecs_vector_free(node->diffs);
@@ -44774,3 +44780,4 @@ void ecs_use(
     register_by_name(&world->aliases, entity, name, 0, 0);
 }
 
+#pragma optimize("", on)

@@ -41,6 +41,7 @@ struct gs_os_api_s;
 #include <gs/util/gs_gui.h>
 #include <gs/util/gs_gfxt.h>
 #include <gs/util/gs_meta.h>
+#include "ddt/ddt.h"
 
 
 

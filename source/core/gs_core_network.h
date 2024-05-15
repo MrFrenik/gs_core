@@ -83,21 +83,21 @@ enum
     do {\
         T _RPC = (T)__VA_ARGS__;\
         gs_core_cls_init(T, &_RPC);\
-        gs_core_network_rpc_send_internal((NET), &_RPC);\
+        gs_core_network_rpc_send_internal((NET), (gs_core_network_rpc_t*)&_RPC);\
     } while (0)
 
 #define gs_core_network_rpc_local(NET, T, ...)\
     do {\
         T _RPC = (T)__VA_ARGS__;\
         gs_core_cls_init(T, &_RPC);\
-        gs_core_network_rpc_local_internal((NET), &_RPC);\
+        gs_core_network_rpc_local_internal((NET), (gs_core_network_rpc_t*)&_RPC);\
     } while (0)
 
 #define gs_core_network_rpc_send_id(NET, ID, T, ...)\
     do {\
         T _RPC = (T)__VA_ARGS__;\
         gs_core_cls_init(T, &_RPC);\
-        gs_core_network_rpc_send_id_internal((NET), (ID), &_RPC);\
+        gs_core_network_rpc_send_id_internal((NET), (ID), (gs_core_network_rpc_t*)&_RPC);\
     } while (0) 
 
 #define gs_core_network_rpc_receive(NET, EVT)\

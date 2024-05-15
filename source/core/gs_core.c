@@ -39,6 +39,161 @@
 // Global instance
 gs_core_t* g_core;
 
+//==== CVar commands (needs to be generated) ====//
+
+GS_API_DECL void
+gs_core_ddt_help_cmd(int32_t argc, char** argv)
+{ 
+    gs_ddt_t* ddt = gs_core_ddt_instance(); 
+    for (uint32_t i = 0; i < ddt->commands_len; ++i) { 
+        gs_ddt_command_t* cmd = &ddt->commands[i];
+        if (cmd->name) gs_ddt_printf(ddt, "* - %s, ", cmd->name);
+        if (cmd->desc) gs_ddt_printf(ddt, "%40s\n", cmd->desc);
+    }
+}
+
+GS_API_DECL void
+gs_core_ddt_clear_cmd(int32_t argc, char** argv)
+{ 
+    gs_ddt_t* ddt = gs_core_ddt_instance(); 
+    memset(ddt->tb, 0, sizeof(ddt->tb));
+}
+
+GS_API_DECL void
+gs_core_ddt_cvar_print(const gs_core_cvar_t* cvar)
+{
+    if (!cvar || !cvar->val) return;
+    gs_ddt_t* ddt = gs_core_ddt_instance();
+    if (cvar->name) gs_ddt_printf(ddt, "[%s]: ", cvar->name);
+    switch (cvar->type)
+    {
+        case GS_CORE_CVAR_INT:    {int32_t v = *(int32_t*)cvar->val; gs_ddt_printf(ddt, "%d\n", v);} break;
+        case GS_CORE_CVAR_BOOL:   {bool v = *(bool*)cvar->val; gs_ddt_printf(ddt, "%d\n", v);} break;
+        case GS_CORE_CVAR_FLOAT:  {float v = *(float*)cvar->val; gs_ddt_printf(ddt, "%.2f\n", v);} break;
+        case GS_CORE_CVAR_FLOAT2: {gs_vec2* v = (gs_vec2*)cvar->val; gs_ddt_printf(ddt, "%.2f %.2f\n", v->x, v->y);} break;
+        case GS_CORE_CVAR_FLOAT3: {gs_vec3* v = (gs_vec3*)cvar->val; gs_ddt_printf(ddt, "%.2f %.2f %.2f\n", v->x, v->y, v->z);} break;
+        case GS_CORE_CVAR_FLOAT4: {gs_vec4* v = (gs_vec4*)cvar->val; gs_ddt_printf(ddt, "%.2f %.2f %.2f %.2f\n", v->x, v->y, v->z, v->w);} break;
+    };
+}
+
+// Not sure about this...
+GS_API_DECL void
+gs_core_ddt_cvar_cmd(int32_t argc, char** argv)
+{
+    /*
+        CVAR_%s_cmd(...)
+        {
+            // Grabs ddt instance, calls this command to set the cvar?
+        }
+    */
+
+    if (argc < 1) {
+        return;
+    }
+
+    // Name
+    const char* name = argv[0];
+    gs_core_cvar_t* cvar = gs_core_cvar_get(name);
+    if (!cvar) return;
+
+    // Print cvar current value
+    if (argc < 2) {
+        goto cvar_print; 
+    }
+
+    gs_ddt_t* ddt = gs_core_ddt_instance();
+
+    #define CVAR_SET(CVAR, VAL) memcpy((CVAR)->val, &(VAL), sizeof((VAL)))
+
+    // Switch on the type to determine how to parse args passed in?
+    switch (cvar->type)
+    {
+        default: break;
+
+        case GS_CORE_CVAR_INT:
+        case GS_CORE_CVAR_BOOL: {
+            int32_t v = atoi(argv[1]);
+            CVAR_SET(cvar, v);
+        } break;
+        case GS_CORE_CVAR_FLOAT:  {
+            float v = atof(argv[1]);
+            CVAR_SET(cvar, v);
+        } break;
+        case GS_CORE_CVAR_FLOAT2: {
+            if (argc > 2) {
+                gs_vec2 v = (gs_vec2){atof(argv[1]), atof(argv[2])};
+                CVAR_SET(cvar, v);
+            }
+        } break;
+        case GS_CORE_CVAR_FLOAT3: {
+            if (argc > 3) {
+                gs_vec3 v = (gs_vec3){atof(argv[1]), atof(argv[2]), atof(argv[3])};
+                CVAR_SET(cvar, v);
+            }
+        } break;
+        case GS_CORE_CVAR_FLOAT4: {
+            if (argc > 4) {
+                gs_vec4 v = (gs_vec4){atof(argv[1]), atof(argv[2]), atof(argv[3]), atof(argv[4])};
+                CVAR_SET(cvar, v); 
+            }
+        } break;
+    }
+
+    cvar_print: 
+        gs_core_ddt_cvar_print(cvar);
+}
+
+//==== CVars ====//
+
+GS_API_DECL gs_core_cvar_t* 
+gs_core_cvar_get(const char* name)
+{
+    gs_core_t* core = gs_core_instance();
+    uint64_t hash = gs_hash_str64(name);
+    if (gs_hash_table_exists(core->cvars.registry, hash)) {
+        return gs_hash_table_getp(core->cvars.registry, hash);
+    }
+    return NULL;
+}
+
+GS_API_DECL void
+gs_core_cvar_register(const gs_core_cvar_desc_t* desc)
+{ 
+    gs_core_t* core = gs_core_instance();
+    if (!desc || !desc->name || !desc->val) {
+        gs_log_warning("Invalid cvar desc.");
+        return;
+    }
+    uint64_t hash = gs_hash_str64(desc->name);
+    if (!gs_hash_table_exists(core->cvars.registry, hash)) 
+    {
+        gs_core_cvar_t cvar = {.type = desc->type, .val = desc->val};
+        memcpy(cvar.name, desc->name, GS_CORE_CVAR_STR_MAX);
+        gs_ddt_command_t cmd = {0};
+        cmd.func = gs_core_ddt_cvar_cmd;
+        memcpy(cmd.name, cvar.name, GS_DDT_STR_MAX);
+        memcpy(cmd.desc, desc->desc, GS_DDT_STR_MAX);
+        cvar.cmd_hndl = gs_core_ddt_cmd_register(cmd);
+        gs_hash_table_insert(core->cvars.registry, hash, cvar);
+    }
+}
+
+GS_API_DECL void
+gs_core_cvar_unregister(const char* name)
+{
+    gs_core_t* core = gs_core_instance();
+    uint64_t hash = gs_hash_str64(name);
+    if (gs_hash_table_exists(core->cvars.registry, hash)) 
+    {
+        // Unregister from cmds and registry
+        gs_core_cvar_t* cvar = gs_hash_table_getp(core->cvars.registry, hash); 
+        gs_core_ddt_cmd_unregister(cvar->cmd_hndl);
+        gs_hash_table_erase(core->cvars.registry, hash, cvar);
+    } 
+}
+
+//==== General API ====//
+
 GS_API_DECL gs_gui_context_t*
 gs_core_gs_gui_context_new(uint32_t window_hndl) 
 {
@@ -75,10 +230,22 @@ gs_core_new()
     gs_core_t* core = gs_malloc_init(gs_core_t);
     g_core = core;
 
+    core->mem_lock = SCHED_PIPE_INVALID;
+
     // Init all gs structures
     core->cb = gs_command_buffer_new();
     core->gsi = gs_immediate_draw_new();
     core->gui = gs_gui_new(gs_platform_main_window()); 
+    core->ddt.ddt = (gs_ddt_t) { 
+        .tb = "",
+        .cb = "", 
+        .commands = NULL,
+        .commands_len = 0, 
+        .size = 0.4f,
+        .open_speed = 40.f, 
+        .close_speed = 40.f, 
+        .autoscroll = 1
+    };
 
     // Register api for dll boundary
     core->gs_gui_context_new = gs_core_gs_gui_context_new;
@@ -126,6 +293,19 @@ gs_core_new()
     // Register default entity so id = 0 will be considered invalid
     gs_core_entities_allocate();
 
+    // Register core terminal commands
+    gs_core_ddt_cmd_register((gs_ddt_command_t){
+        .func = gs_core_ddt_help_cmd,
+        .name = "help",
+        .desc = "Displays all available registered commands/cvars"
+    });
+
+    gs_core_ddt_cmd_register((gs_ddt_command_t){
+        .func = gs_core_ddt_clear_cmd,
+        .name = "clear",
+        .desc = "Clears all console text"
+    });
+
     return core;
 }
 
@@ -169,6 +349,41 @@ GS_API_DECL void
 gs_core_instance_set(gs_core_t* core)
 {
     g_core = core;
+}
+
+GS_API_DECL gs_scheduler_t* 
+gs_core_scheduler_instance()
+{
+    gs_core_t* core = gs_core_instance();
+    return core ? &core->sched.sched : NULL;
+}
+
+GS_API_DECL gs_ddt_t*
+gs_core_ddt_instance()
+{
+    gs_core_t* core = gs_core_instance();
+    return core ? &core->ddt.ddt : NULL;
+}
+
+GS_API_DECL uint32_t
+gs_core_ddt_cmd_register(gs_ddt_command_t cmd)
+{
+    gs_core_t* core = gs_core_instance();
+    uint32_t hndl = gs_slot_array_insert(core->ddt.commands, cmd);
+    core->ddt.ddt.commands = core->ddt.commands->data;
+    core->ddt.ddt.commands_len = gs_slot_array_size(core->ddt.commands);
+    return hndl;
+}
+
+GS_API_DECL void
+gs_core_ddt_cmd_unregister(uint32_t hndl)
+{
+    gs_core_t* core = gs_core_instance();
+    if (gs_slot_array_handle_valid(core->ddt.commands, hndl)) {
+        gs_slot_array_erase(core->ddt.commands, hndl);
+    }
+    core->ddt.ddt.commands = core->ddt.commands->data;
+    core->ddt.ddt.commands_len = gs_slot_array_size(core->ddt.commands);
 }
 
 

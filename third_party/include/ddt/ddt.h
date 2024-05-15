@@ -1,12 +1,14 @@
 #ifndef GS_DDT_H_
 #define GS_DDT_H_
 
+#define GS_DDT_STR_MAX  256
+
 typedef void(*gs_ddt_func)(int argc, char** argv);
 
 typedef struct gs_ddt_command_s {
         gs_ddt_func func;
-        const char* name;
-        const char* desc;
+        char name[GS_DDT_STR_MAX];
+        char desc[GS_DDT_STR_MAX];
 } gs_ddt_command_t;
 
 typedef struct gs_ddt_s {
@@ -106,7 +108,7 @@ gs_ddt(gs_ddt_t* ddt, gs_gui_context_t* ctx, gs_gui_rect_t screen, const gs_gui_
                         ddt->current_cb_idx = 0;
                         gs_ddt_printf(ddt, "$ %s\n", ddt->cb[0]);
 
-                        memmove((uint8_t*)ddt->cb + sizeof(*ddt->cb), (uint8_t*)ddt->cb, sizeof(ddt->cb) - sizeof(*ddt->cb));
+						memmove((uint8_t*)ddt->cb + sizeof(*ddt->cb), (uint8_t*)ddt->cb, sizeof(ddt->cb) - sizeof(*ddt->cb));
 
                         if (ddt->cb[0][0] && ddt->commands) {
                                 char* tmp = ddt->cb[0];
@@ -137,6 +139,7 @@ gs_ddt(gs_ddt_t* ddt, gs_gui_context_t* ctx, gs_gui_rect_t screen, const gs_gui_
                         ddt_command_found:
                                 ddt->cb[0][0] = '\0';
                         }
+                        ddt->cb[0][0] = '\0';
                 } else if (gs_platform_key_pressed(GS_KEYCODE_BACKSPACE)) {
                         ddt->current_cb_idx = 0;
                         // skip utf-8 continuation bytes

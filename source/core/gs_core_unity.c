@@ -34,7 +34,8 @@
 
 =================================================================================================================*/ 
 
-#include "gs_core_config.c" 
+
+#include "gs_core_config.c"
 #include "gs_core_asset.c" 
 #include "gs_core_graphics.c"
 #include "gs_core_entity.c"
