@@ -46,6 +46,7 @@
 #define GS_META_IMPL 
 #define GS_NO_OS_MEMORY_ALLOC_DEFAULT
 #define GS_DDT_IMPL
+#define STB_DS_IMPLEMENTATION
 
 // Core defines
 #define GS_CORE_MEMORY_DBG 0
@@ -365,5 +366,8 @@ gs_core_os_api_new()
 #define ecs_os_calloc   gs_calloc
 #define ecs_os_alloca   gs_alloca 
 #define ecs_os_strdup   gs_strdup
+
+#define STBDS_REALLOC   gs_realloc
+#define STBDS_FREE      gs_free
 
 #include "flecs/flecs.h"

@@ -515,7 +515,7 @@ parse_cvar(meta_t* meta, gs_lexer_t* lex, bool should_write_meta)
         cvar.needs_define = true;
     }
 
-    gs_println("CVAR: %s, %s", cvar.name, cvar.type);
+    // gs_println("CVAR: %s, %s", cvar.name, cvar.type);
 
     gs_hash_table_insert(meta->cvars, gs_hash_str64(cvar.name), cvar);
 }
@@ -600,7 +600,7 @@ void refl_iterate_dir_cb(const char* path, struct dirent* entry)
     gs_snprintf(fp.path, 512, "%s", path); 
     gs_dyn_array_push(g_files, fp);
 
-    gs_println("PATH: %s", path);
+    // gs_println("PATH: %s", path);
 
     char* contents = gs_platform_read_file_contents(path, "rb", NULL); 
     gs_lexer_t lex = gs_lexer_c_ctor(contents);
@@ -730,9 +730,9 @@ int32_t main(int32_t argc, char** argv)
     uint32_t id_offset = argc > 5 ? atoi(argv[5]) : 0;
     const char* in_dir2 = argc > 6 ? argv[6] : NULL;
 
-    gs_println("in_dir: %s", in_dir);
-    gs_println("out_dir: %s", out_dir);
-    gs_println("proj_name: %s", proj_name);
+    // gs_println("in_dir: %s", in_dir);
+    // gs_println("out_dir: %s", out_dir);
+    // gs_println("proj_name: %s", proj_name);
 
     // Directory where written information will live
     // const char* dir = "../source/generated/"; 
@@ -1353,7 +1353,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
                 type_info = "GS_CORE_CVAR_FLOAT";
             }
 
-            gs_println("TYPE INFO: %s", type_info);
+            // gs_println("TYPE INFO: %s", type_info);
         }
 
         gs_fprintln(fp, "\tgs_core_cvar_register(&(gs_core_cvar_desc_t) {");
