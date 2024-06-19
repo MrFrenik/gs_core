@@ -42,6 +42,9 @@
 
 // CVars
 
+//======[ Lambdas ]=======//
+
+
 // Class Ids
 #define gs_core_asset_handle_t_cls_id 1
 #define gs_core_app_t_cls_id 2

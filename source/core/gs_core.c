@@ -386,4 +386,46 @@ gs_core_ddt_cmd_unregister(uint32_t hndl)
     core->ddt.ddt.commands_len = gs_slot_array_size(core->ddt.commands);
 }
 
+GS_API_DECL void 
+__gs_core_sched_async_thread_runner(void *user_data, gs_scheduler_t *s, gs_sched_task_partition_t p, uint32_t thread_num)
+{
+    gs_core_sched_async_t* async = (gs_core_sched_async_t*)user_data;
+    gs_scheduler_add(async->sched, &async->rtask, async->run, async->user_data, async->tcnt, async->part);
+    while (~async->flags & GS_CORE_ASYNC_DONE) {
+        if (gs_sched_task_done(&async->rtask)) {
+            async->flags = GS_CORE_ASYNC_DONE;
+            gs_scheduler_join(async->sched, &async->rtask);
+            break;
+        }
+    }
+}
+
+GS_API_DECL void
+gs_core_sched_async_dispatch(gs_core_sched_async_t* async)
+{
+    if (!async || gs_core_sched_async_running(async)) return;
+    gs_core_t* core = gs_core_instance();
+    async->sched = gs_core_scheduler_instance();
+    async->flags = GS_CORE_ASYNC_RUNNING;
+    gs_scheduler_add(async->sched, &async->atask, __gs_core_sched_async_thread_runner, async, 1, 1);
+}
+
+GS_API_DECL bool
+gs_core_sched_async_running(gs_core_sched_async_t* async)
+{
+    return (async && (async->flags & GS_CORE_ASYNC_RUNNING));
+}
+
+GS_API_DECL bool
+gs_core_sched_async_finish(gs_core_sched_async_t* async)
+{ 
+    if (!async || gs_core_sched_async_running(async) || !async->flags) return false;
+    if (async->cb) {
+        async->cb(async);
+    }
+    async->flags = 0x00;
+    gs_scheduler_join(gs_core_scheduler_instance(), &async->atask);
+    return true;
+}
+
 

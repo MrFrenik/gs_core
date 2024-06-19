@@ -226,6 +226,7 @@ typedef struct
         struct 
         {
             gs_graphics_texture_desc_t* desc;
+            b32 keep_data;                      // Whether or not to keep texture data around for CPU access
         } texture;
 
         struct

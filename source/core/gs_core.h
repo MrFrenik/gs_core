@@ -85,7 +85,41 @@ typedef struct
     gs_core_cvar_type type;
     void* val;
     uint32_t cmd_hndl;
-} gs_core_cvar_t;
+} gs_core_cvar_t; 
+
+// Async
+struct gs_sched_async_t;
+typedef void (*gs_sched_async_fp_t)(struct gs_sched_async_t*);
+
+enum {
+	GS_CORE_ASYNC_RUNNING = (1ULL << 0),
+	GS_CORE_ASYNC_DONE    = (1ULL << 1),
+	GS_CORE_ASYNC_JOINED  = (1ULL << 2)
+};
+
+typedef struct gs_sched_async_t {
+    gs_scheduler_t* sched;      // Core task scheduler
+    gs_sched_task_t atask;      // Task for scheduler dispatch
+    gs_sched_task_t rtask;      // Task for runner
+    uint32_t tcnt;              // Dispatch thread count
+    uint32_t part;              // Dispatch parts per thread group
+    gs_sched_fp_t run;          // Task to be run by async
+    gs_sched_async_fp_t cb;     // Callback when completed
+    void* user_data;            // Optional user data
+    uint32_t flags;             // Async flags
+} gs_core_sched_async_t;
+
+GS_API_DECL void
+gs_core_sched_async_dispatch(gs_core_sched_async_t* async);
+
+GS_API_DECL bool
+gs_core_sched_async_running(gs_core_sched_async_t* async);
+
+GS_API_DECL bool
+gs_core_sched_async_finish(gs_core_sched_async_t* async);
+
+GS_API_DECL void 
+__gs_core_sched_async_thread_runner(void *user_data, gs_scheduler_t *s, gs_sched_task_partition_t p, uint32_t thread_num);
 
 typedef struct gs_core_s
 {

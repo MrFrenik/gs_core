@@ -732,7 +732,8 @@ gs_core_asset_texture_importer_load_resource_from_file(const char* path, gs_core
 {
     gs_core_asset_texture_t* texture = gs_core_cls_new(gs_core_asset_texture_t); 
     gs_graphics_texture_desc_t* tdesc = options ? options->texture.desc : NULL;
-    texture->resource = gs_gfxt_texture_load_from_file(path, tdesc, false, true);
+    bool keep_data = options ? options->texture.keep_data : false;
+    texture->resource = gs_gfxt_texture_load_from_file(path, tdesc, false, keep_data);
     if (tdesc) {
         texture->desc = *tdesc;
     }

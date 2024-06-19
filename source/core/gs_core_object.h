@@ -98,6 +98,9 @@
 #define _dtor(...)              gs_empty_instruction()
 #define _vtable(...)            gs_empty_instruction()
 
+// Lambda
+#define gs_core_lambda(ret, name, ...) gs_macro_cat(LAMBDA__, name)
+
 // CVar
 #define gs_core_cvar(T, ...)         extern T
 

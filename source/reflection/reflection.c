@@ -40,7 +40,8 @@
 #include <gs/gs.h> 
 
 #define META_PROPERTY_STR_MAX   128
-#define META_FUNCTION_STR_MAX   2048
+#define META_FUNCTION_STR_MAX   8192
+#define META_LAMBDA_STR_MAX     8192
 
 typedef struct
 { 
@@ -57,6 +58,15 @@ typedef struct
     bool32 needs_decl;
     bool32 is_default;
 } method_t;
+
+typedef struct {
+    char name[META_FUNCTION_STR_MAX];
+    char ret[META_FUNCTION_STR_MAX];
+    char args[META_FUNCTION_STR_MAX];
+    char func[META_FUNCTION_STR_MAX];
+    bool should_write_meta;
+    uint32_t id;
+} lambda_t;
 
 typedef struct
 {
@@ -91,6 +101,7 @@ typedef struct
     gs_hash_table(uint64_t, class_t) classes;
     gs_hash_table(uint64_t, const char*) type_map;
     gs_hash_table(uint64_t, cvar_t) cvars;
+    gs_hash_table(uint64_t, lambda_t) lambdas;
 } meta_t;
 
 static meta_t g_meta = {0};
@@ -520,9 +531,68 @@ parse_cvar(meta_t* meta, gs_lexer_t* lex, bool should_write_meta)
     gs_hash_table_insert(meta->cvars, gs_hash_str64(cvar.name), cvar);
 }
 
+GS_API_DECL void
+parse_lambda(meta_t* meta, gs_lexer_t* lex, bool should_write_meta)
+{
+    // Should be at "gs_core_lambda"
+    gs_token_t token = lex->current_token;
+
+    lambda_t lambda = {0};
+
+    // Move to end of right paren
+    gs_lexer_find_next_token_type(lex, GS_TOKEN_LPAREN);
+
+    // Return Type
+    TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expected lambda return type");
+    token = lex->current_token;
+    TOKEN_COPY(token, lambda.ret);
+
+    // gs_lexer_find_next_token_type(lex, GS_TOKEN_IDENTIFIER);
+    TOKEN_EXPECT(lex, GS_TOKEN_COMMA, "Expected lambda comma separator between ret type and name");
+
+    // Name
+    TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expected lambda function name");
+    token = lex->current_token;
+    TOKEN_COPY(token, lambda.name);
+
+    // Args
+    gs_lexer_find_next_token_type(lex, GS_TOKEN_LPAREN);
+    gs_token_t start = lex->current_token;
+    gs_lexer_find_next_token_type(lex, GS_TOKEN_RPAREN);
+    token = lex->current_token;
+
+    uint32_t len = token.text - (start.text) + 1;
+    memcpy(lambda.args, start.text, len);
+
+    // Func
+    gs_lexer_find_next_token_type(lex, GS_TOKEN_LBRACE);
+    start = lex->current_token; 
+    {
+        uint32_t ct = 1;
+        while (ct) {
+            token = lex->next_token(lex);
+            switch (token.type) { 
+                case GS_TOKEN_LBRACE: {ct++;} break;
+                case GS_TOKEN_RBRACE: {ct--;} break;
+            }
+        }
+    }
+    // gs_lexer_find_next_token_type(lex, GS_TOKEN_RBRACE);
+    // token = lex->current_token;
+    len = token.text - (start.text) + 1;
+    memcpy(lambda.func, start.text, len);
+
+    // gs_println("LAMBDA: ret: %s, args: %s, func: %s", lambda.ret, lambda.args, lambda.func);
+    static uint32_t id = 0;
+    lambda.id = id++;
+
+    uint32_t ct = gs_hash_table_size(meta->lambdas);
+    gs_hash_table_insert(meta->lambdas, ct, lambda);
+}
+
 // List of files to iterate through for includes
 
-typedef struct {char path[512];} FILE_PATH;
+typedef struct {char path[512]; bool write_meta;} FILE_PATH;
 gs_dyn_array(FILE_PATH) g_files; 
 bool g_should_write_meta_class = true;
 
@@ -578,15 +648,18 @@ void refl_iterate_dir_cb(const char* path, struct dirent* entry)
     gs_transient_buffer(file_ext, 32);
     gs_platform_file_extension(file_ext, sizeof(file_ext), path); 
     bool path_is_core_obj = gs_string_compare_equal(entry->d_name, "gs_core_object.h");
+    bool b_should_write_meta_class = g_should_write_meta_class;
 
-    if (!gs_string_compare_equal(file_ext, "h"))
-    {
+    if (!gs_string_compare_equal(file_ext, "h") && !gs_string_compare_equal(file_ext, "c")) {
         return;
     }
 
+    if (gs_string_compare_equal(file_ext, "c")) {
+        b_should_write_meta_class = false;
+    }
+
     // Ignore list
-    if (path_is_core_obj)
-    {
+    if (path_is_core_obj) {
         // return;
     }
 
@@ -598,6 +671,7 @@ void refl_iterate_dir_cb(const char* path, struct dirent* entry)
     // Add to files
     FILE_PATH fp = {0};
     gs_snprintf(fp.path, 512, "%s", path); 
+    fp.write_meta = !gs_string_compare_equal(file_ext, "c");
     gs_dyn_array_push(g_files, fp);
 
     // gs_println("PATH: %s", path);
@@ -614,15 +688,21 @@ void refl_iterate_dir_cb(const char* path, struct dirent* entry)
             {
                 if (gs_token_compare_text(&token, "_introspect"))
                 {
-                    parse_class(&g_meta, &lex, g_should_write_meta_class);
+                    parse_class(&g_meta, &lex, b_should_write_meta_class);
                 }
                 else if (!path_is_core_obj && gs_token_compare_text(&token, "gs_core_cvar"))
                 {
-                    parse_cvar(&g_meta, &lex, g_should_write_meta_class);
+                    parse_cvar(&g_meta, &lex, b_should_write_meta_class);
+                }
+                else if (gs_token_compare_text(&token, "gs_core_lambda") && !path_is_core_obj) {
+                    gs_println("LINE: %zu, hash: %zu", lex.line, gs_hash_str64(path));
+
+                    parse_lambda(&g_meta, &lex, b_should_write_meta_class);
                 }
             } break; 
         }
     }
+    // gs_println("LINE: %d", (int32_t)lex.line);
     gs_free(contents);
 } 
 
@@ -730,7 +810,7 @@ int32_t main(int32_t argc, char** argv)
     uint32_t id_offset = argc > 5 ? atoi(argv[5]) : 0;
     const char* in_dir2 = argc > 6 ? argv[6] : NULL;
 
-    // gs_println("in_dir: %s", in_dir);
+    gs_println("in_dir: %s", in_dir);
     // gs_println("out_dir: %s", out_dir);
     // gs_println("proj_name: %s", proj_name);
 
@@ -742,8 +822,7 @@ int32_t main(int32_t argc, char** argv)
     // iterate_dir("../../gs_core/source", refl_iterate_dir_cb); 
 
     // Iterate through dependent directory
-    if (dep_dir)
-    {
+    if (dep_dir) {
         g_should_write_meta_class = false;
         iterate_dir(dep_dir, refl_iterate_dir_cb);
     }
@@ -753,8 +832,7 @@ int32_t main(int32_t argc, char** argv)
     g_should_write_meta_class = true;
     iterate_dir(in_dir, refl_iterate_dir_cb);
 
-    if (in_dir2)
-    {
+    if (in_dir2) {
         iterate_dir(in_dir2, refl_iterate_dir_cb);
     }
 
@@ -838,9 +916,37 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     gs_fprintln(fp, "#include \"core/gs_core_object.h\""); 
     gs_fprintln(fp, "#include \"core/gs_core_gs.h\"");
     gs_fprintln(fp, "#include \"core/gs_core_object.h\"");
-    for (uint32_t i = 0; i < gs_dyn_array_size(g_files); ++i)
-    {
+    for (uint32_t i = 0; i < gs_dyn_array_size(g_files); ++i) {
+        if (!g_files[i].write_meta) continue;
         gs_fprintln(fp, "#include \"%s\"", g_files[i].path);
+    }
+    gs_fprintln(fp, "");
+
+    // TEST
+    if (g_should_write_meta_class) {
+        // gs_fprintln(fp, "//======[ TEST ]=======//\n");
+        // gs_fprintln(fp, "GS_INLINE void __LAMDA_0(float v) {");
+        // char* STR = "\tgs_println(\"LAMDA: %.2f\", v);";
+        // gs_fprintln(fp, "%s", STR);
+        // gs_fprintln(fp, "}");
+        // gs_fprintln(fp, "");
+
+        // Components
+        gs_fprintln(fp, "//======[ Lambdas ]=======//\n");
+
+        if (meta->lambdas) {
+            for (
+                gs_hash_table_iter it = gs_hash_table_iter_new(meta->lambdas); 
+                gs_hash_table_iter_valid(meta->lambdas, it);
+                gs_hash_table_iter_advance(meta->lambdas, it)
+            )
+            {
+                lambda_t* l = gs_hash_table_iter_getp(meta->lambdas, it); 
+                uint32_t k = l->id;
+                gs_fprintln(fp, "GS_API_DECL %s", l->ret);
+                gs_fprintln(fp, "LAMBDA__%s%s;", l->name, l->args);
+            }
+        }
     }
     gs_fprintln(fp, "");
 
@@ -1123,6 +1229,23 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
 
     gs_fprintln(fp, "");
 
+    // Components
+    gs_fprintln(fp, "//======[ Lambdas ]=======//\n");
+
+    if (meta->lambdas) {
+        for (
+            gs_hash_table_iter it = gs_hash_table_iter_new(meta->lambdas); 
+            gs_hash_table_iter_valid(meta->lambdas, it);
+            gs_hash_table_iter_advance(meta->lambdas, it)
+        )
+        {
+            lambda_t* l = gs_hash_table_iter_getp(meta->lambdas, it); 
+            uint32_t k = l->id;
+            gs_fprintln(fp, "GS_API_DECL %s", l->ret);
+            gs_fprintln(fp, "LAMBDA__%s%s{%s}", l->name, l->args, l->func);
+        }
+    }
+    gs_fprintln(fp, "");
 
     gs_fprintln(fp, "// Class Ids");
 

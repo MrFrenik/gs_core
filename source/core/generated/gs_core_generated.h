@@ -55,6 +55,9 @@
 #include "..\..\source\core\/gs_core_physics.h"
 #include "..\..\source\core\/gs_core_util.h"
 
+//======[ Lambdas ]=======//
+
+
 //======[ Components ]=======//
 
 GS_API_DECL void
