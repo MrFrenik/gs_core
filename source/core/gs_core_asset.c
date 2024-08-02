@@ -777,7 +777,7 @@ GS_API_DECL gs_core_asset_t*
 gs_core_asset_mesh_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
 {
     gs_core_asset_mesh_t* msh = gs_core_cls_new(gs_core_asset_mesh_t); 
-    gs_gfxt_mesh_import_options_t* desc = options ? &options->mesh.desc : NULL;
+    gs_gfxt_mesh_import_options_t* desc = options ? options->mesh.desc : NULL;
     msh->resource = gs_gfxt_mesh_load_from_file(path, desc);
     return gs_core_cast(msh, gs_core_asset_t);
 }
