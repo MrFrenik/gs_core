@@ -47,6 +47,7 @@
 #include "gs_core_physics.h"
 #include "gs_core_util.h"
 #include "gs_core_components.h"
+#include "gs_core_vm.h"
 #include "gs_core_app.h"
 #include "core/generated/gs_core_generated.h"
 
@@ -198,7 +199,7 @@ gs_core_cvar_unregister(const char* name);
 
 #ifdef GS_CORE_MEMORY_DBG
 
-#define GS_CORE_MEMORY_DBG_MAX_ALLOCATIONS  35000
+#define GS_CORE_MEMORY_DBG_MAX_ALLOCATIONS  100000
 
 typedef struct gs_core_memory_alloc_s
 {

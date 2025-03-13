@@ -39,6 +39,7 @@
 
 #include "gs_core_gs.h"
 #include "gs_core_object.h"
+#include "gs_core_vm.h"
 
 #define GS_CORE_ASSET_IMPORTER_FILE_EXTENSIONS_MAX   10
 #define GS_CORE_ASSETS_FILE_EXTENSION_MAX_LENGTH     32 
@@ -68,8 +69,10 @@ typedef struct
 } gs_core_asset_handle_t;
 
 enum {
-    GS_CORE_ASSET_FLAG_IS_DEFAULT = (1 << 0)
-}; 
+    GS_CORE_ASSET_FLAG_IS_DEFAULT                   = (1 << 0), 
+    GS_CORE_ASSET_IMPORT_OPT_NO_SERIALIZE	        = (1 << 1),
+    GS_CORE_ASSET_IMPORT_OPT_ABSOLUTE_IMPORT_PATH   = (1 << 2)
+};
 
 _introspect()
 typedef struct
@@ -86,29 +89,14 @@ typedef struct
 
 } gs_core_asset_t;
 
-GS_API_DECL gs_core_asset_t* 
-gs_core_asset_handle_get(const gs_core_asset_handle_t* hndl); 
-
-GS_API_DECL gs_core_asset_handle_t
-gs_core_asset_handle_from_asset(const gs_core_asset_t* asset);
-
-GS_API_DECL uint64_t 
-gs_core_asset_handle_cls_id(const gs_core_asset_handle_t* hndl);
-
-GS_API_DECL gs_meta_class_t* 
-gs_core_asset_handle_cls(const gs_core_asset_handle_t* hndl);
-
-GS_API_DECL struct gs_core_asset_record_s*
-gs_core_asset_handle_record(const gs_core_asset_handle_t* hndl);
-
-GS_API_DECL struct gs_core_asset_record_s*
-gs_core_asset_handle_name(const gs_core_asset_handle_t* hndl);
-
-GS_API_DECL struct gs_core_asset_importer_s*
-gs_core_asset_handle_importer(const gs_core_asset_handle_t* hndl);
-
-GS_API_DECL gs_core_asset_handle_t
-gs_core_asset_handle_from_record(const struct gs_core_asset_record_s* record);
+GS_API_DECL gs_core_asset_t* gs_core_asset_handle_get(const gs_core_asset_handle_t* hndl);
+GS_API_DECL gs_core_asset_handle_t gs_core_asset_handle_from_asset(const gs_core_asset_t* asset); 
+GS_API_DECL uint64_t gs_core_asset_handle_cls_id(const gs_core_asset_handle_t* hndl); 
+GS_API_DECL gs_meta_class_t* gs_core_asset_handle_cls(const gs_core_asset_handle_t* hndl); 
+GS_API_DECL struct gs_core_asset_record_s* gs_core_asset_handle_record(const gs_core_asset_handle_t* hndl); 
+GS_API_DECL struct gs_core_asset_record_s* gs_core_asset_handle_name(const gs_core_asset_handle_t* hndl); 
+GS_API_DECL struct gs_core_asset_importer_s* gs_core_asset_handle_importer(const gs_core_asset_handle_t* hndl); 
+GS_API_DECL gs_core_asset_handle_t gs_core_asset_handle_from_record(const struct gs_core_asset_record_s* record);
 
 //====[ Texture ]====//
 
@@ -128,14 +116,9 @@ typedef struct
 
 } gs_core_asset_texture_t; 
 
-GS_API_DECL struct gs_core_asset_importer_s*
-gs_core_asset_texture_importer();
-
-GS_API_DECL gs_result
-gs_core_asset_texture_serialize(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj);
-
-GS_API_DECL gs_result
-gs_core_asset_texture_deserialize(gs_byte_buffer_t* buffer, gs_core_obj_t* obj);
+GS_API_DECL struct gs_core_asset_importer_s* gs_core_asset_texture_importer(); 
+GS_API_DECL gs_result gs_core_asset_texture_serialize(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj); 
+GS_API_DECL gs_result gs_core_asset_texture_deserialize(gs_byte_buffer_t* buffer, gs_core_obj_t* obj);
 
 //====[ Mesh ]====//
 
@@ -203,6 +186,17 @@ typedef struct
 
 } gs_core_asset_ui_stylesheet_t;
 
+//====[ Script ]====//
+
+_introspect()
+typedef struct
+{ 
+    gs_core_base(gs_core_asset_t);
+
+    gs_core_vm_script_t resource;
+
+} gs_core_asset_script_t;
+
 //====[ Asset Record ]====//
 
 typedef struct gs_core_asset_record_s
@@ -213,11 +207,6 @@ typedef struct gs_core_asset_record_s
     char name[GS_CORE_ASSET_STR_MAX];   // Qualified name for asset 
     uint32_t importer;                  // Slot array handle to raw importer data in asset manager
 } gs_core_asset_record_t;
-
-enum {
-    GS_CORE_ASSET_IMPORT_OPT_NO_SERIALIZE	        = (1 << 0),
-    GS_CORE_ASSET_IMPORT_OPT_ABSOLUTE_IMPORT_PATH   = (1 << 1)
-};
 
 typedef struct
 {
@@ -243,6 +232,11 @@ typedef struct
         {
             gs_gui_context_t* ctx;
         } gui;
+
+        struct 
+        { 
+            b32 keep_src;
+        } script;
     };
 
     const char* import_path;        // Path for importing
@@ -352,6 +346,17 @@ gs_core_asset_ui_stylesheet_importer_register_default();
 
 GS_API_DECL void
 gs_core_asset_ui_stylesheet_importer_free_asset(gs_core_asset_t* asset);
+
+//=====[ Script Importer ]=====//
+
+GS_API_DECL gs_core_asset_t*
+gs_core_asset_script_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options);
+
+GS_API_DECL gs_core_asset_t* 
+gs_core_asset_script_importer_register_default();
+
+GS_API_DECL void
+gs_core_asset_script_importer_free_asset(gs_core_asset_t* asset);
 
 //=====[ Assets ]=====//
 

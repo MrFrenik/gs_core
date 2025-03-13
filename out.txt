@@ -1,0 +1,11 @@
+in_dir: ..\..\source\core\
+WARNING::..\..\source\reflection\reflection.c::parse_class(456)::Unidentified token: gs_empty_instruction: Expect struct
+Compiling Debug...
+gs_core_ai.cpp
+gs_core_physics.cpp
+gs_core_util.cpp
+gs_core_vm.cpp
+gs_core_unity.c
+Microsoft (R) Library Manager Version 14.16.27053.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+

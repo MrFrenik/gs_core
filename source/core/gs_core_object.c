@@ -76,7 +76,8 @@ gs_core_meta_obj_info(const gs_core_obj_t* obj)
 	gs_core_t* core = gs_core_instance();
 	gs_assert(core && core->meta);
 	gs_core_meta_registry_t* meta = core->meta;
-    gs_assert(gs_slot_array_handle_valid(meta->info, id));
+    // gs_assert(gs_slot_array_handle_valid(meta->info, id));
+    if (!gs_slot_array_handle_valid(meta->info, id)) return NULL;
     return gs_slot_array_getp(meta->info, id);
 }
 

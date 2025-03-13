@@ -41,8 +41,10 @@
 #include "gs_core_entity.c"
 #include "gs_core_components.c"
 #include "gs_core_object.c"
-#include "gs_core_network.c" 
+#include "gs_core_network.c"
+#include "gs_core_vm.c"
 #include "gs_core.c"
+
 #include "core/generated/gs_core_generated.c"
 
 

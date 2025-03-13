@@ -79,6 +79,9 @@
 #define gs_core_obj_net_serialize(BUFFER, OBJ)   (gs_core_obj_vt((OBJ))->net_serialize((BUFFER), (OBJ)))
 #define gs_core_obj_net_deserialize(BUFFER, OBJ) (gs_core_obj_vt((OBJ))->net_deserialize((BUFFER), (OBJ)))
 #define gs_core_obj_dtor(OBJ)                    (gs_core_obj_vt(gs_core_cast((OBJ), gs_core_obj_t))->dtor(OBJ))
+#define gs_core_obj_instance_of(OBJ, T)          (gs_core_info_instance_of(gs_core_obj_info(OBJ), T))
+#define gs_core_obj_derived_from(OBJ, T)         (gs_core_info_derived_from(gs_core_obj_info(OBJ), T))
+#define gs_core_obj_base_of(OBJ, T)              (gs_core_info_base_of(gs_core_obj_info(OBJ), T))
 
 // Meta
 #define _introspect(...)        gs_empty_instruction()

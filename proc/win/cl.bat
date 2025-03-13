@@ -44,10 +44,10 @@ set tp_libs=%root%\third_party\libs\win\rel\Bullet3Collision.lib ^
     %root%\third_party\libs\win\rel\BulletCollision.lib ^
     %root%\third_party\libs\win\rel\LinearMath.lib ^
     %root%\third_party\libs\win\rel\enet.lib ^
-    %root%\third_party\libs\win\dbg\Recast.lib ^
-    %root%\third_party\libs\win\dbg\Detour.lib ^
-    %root%\third_party\libs\win\dbg\DetourCrowd.lib ^
-    %root%\third_party\libs\win\dbg\DetourTileCache.lib
+    %root%\third_party\libs\win\rel\Recast.lib ^
+    %root%\third_party\libs\win\rel\Detour.lib ^
+    %root%\third_party\libs\win\rel\DetourCrowd.lib ^
+    %root%\third_party\libs\win\rel\DetourTileCache.lib
 
 rem Link options
 set l_options=/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib 
@@ -57,6 +57,10 @@ set refl_dir=%root%\source\core\
 
 rem Out Dir
 set out_dir=%root%\source\core\generated\
+
+set lua_dir=%root%\third_party\lua\
+set lua_inc=/I %lua_dir%\
+set lua_src=%lua_dir%\lua_unity.c
 
 rem Run Reflection
 %root%\bin\reflection\reflection.exe %refl_dir% %out_dir% %proj_name%
@@ -79,9 +83,9 @@ goto :error
 
     rem Compile objects (rel)
     cl /MT /EHsc /c /w /MP /Fd -D _WINSOCKAPI_ ^
-    %src_all% %inc% ^
+    %src_all% %lua_src% %inc% %lua_inc% ^
     /link /NODEFAULTLIB:libcmtd.lib ^
-    /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib
+    /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib %tp_libs% 
 
     rem Compile static lib (rel)
     lib *obj /out:%proj_name%.lib
@@ -89,16 +93,17 @@ goto :error
     goto :end
 
 :dbg
+
     echo Compiling Debug...
     rem Compile Cpp objects (dbg)
-    cl /MTd /EHsc /c /w /MP -Z7 ^
+    cl /std:c++17 /MTd /EHsc /c /w /MP -Z7 ^
     %inc% %root%\source\core\gs_core_ai.cpp %root%\source\core\gs_core_physics.cpp ^
     %root%\source\core\gs_core_util.cpp /link /NODEFAULTLIB:libcmtd.lib ^
     /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib 
 
     rem Compile objects (dbg)
     cl /MTd /EHsc /c /w /MP /Fd -Z7 -D _WINSOCKAPI_ -D GS_DEBUG ^
-    %src_all% %inc% /DEBUG ^
+    %src_all% %lua_src% %inc% %lua_inc% /DEBUG ^
     /link /NODEFAULTLIB:libcmtd.lib ^
     /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib 
 

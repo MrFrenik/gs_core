@@ -264,6 +264,18 @@ _gs_core_assets_register_importers(gs_core_assets_t* assets)
         .save_dir = "style_sheets",
         .file_name = "style_sheet"
     });
+
+    // Register script importer
+    _gs_core_assets_register_importer(assets, &(gs_core_asset_importer_desc_t){
+        .load_resource_from_file = gs_core_asset_script_importer_load_resource_from_file,
+        .register_default = gs_core_asset_script_importer_register_default,
+        .free_asset = gs_core_asset_script_importer_free_asset,
+        .resource_file_extensions = {"tl", "lua"},
+        .asset_file_extension = "scr",
+        .class_id = gs_core_cls_cid(gs_core_asset_script_t),
+        .save_dir = "scripts",
+        .file_name = "script"
+    });
 }
 
 GS_API_DECL gs_core_assets_t* 
@@ -890,7 +902,30 @@ gs_core_asset_ui_stylesheet_importer_free_asset(gs_core_asset_t* asset)
     gs_gui_style_sheet_destroy(&ss->resource);
 } 
 
+//================[ Script Importer ]===================//
 
+GS_API_DECL gs_core_asset_t*
+gs_core_asset_script_importer_load_resource_from_file(const char* path, gs_core_asset_import_options_t* options)
+{
+    // Will load and compile script from file
+    gs_assert(options);
+    gs_core_asset_script_t* scr = gs_core_cls_new(gs_core_asset_script_t);
+    gs_result res = gs_core_vm_script_load_from_file(&scr->resource, path, options->script.keep_src);
+    return gs_core_cast(scr, gs_core_asset_t);
+}
+
+GS_API_DECL gs_core_asset_t* 
+gs_core_asset_script_importer_register_default()
+{
+    return NULL;
+}
+
+GS_API_DECL void
+gs_core_asset_script_importer_free_asset(gs_core_asset_t* asset)
+{
+    gs_core_asset_script_t* scr = (gs_core_asset_script_t*)asset; 
+    gs_core_vm_script_free(&scr->resource);
+}
 
 
 

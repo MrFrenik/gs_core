@@ -102,7 +102,10 @@ static gs_core_memory_alloc_t g_allocations[GS_CORE_MEMORY_DBG_MAX_ALLOCATIONS] 
 static int32_t g_allocation_max_idx = 0;
 static int32_t g_total_allocated = 0;
 static int32_t g_total_freed = 0;
-static gs_atomic_int_t g_mem_lock = SCHED_PIPE_INVALID;
+static gs_atomic_int_t g_mem_lock = 0;
+
+#define GS_CORE_MEM_AQUIRE_LOCK(LOCK)   while (gs_atomic_cmp_swp(&(LOCK), 1, 0) != 0)
+#define GS_CORE_MEM_RELEASE_LOCK(LOCK)  while (gs_atomic_cmp_swp(&(LOCK), 0, 1) != 1)
 
 static void gs_core_memory_spin_lock(gs_atomic_int_t* lock)
 {
@@ -173,9 +176,11 @@ GS_CORE_API_EXTERN int32_t
 gs_core_memory_insert(void* ptr, size_t sz, const char* file, const char* line)
 {
     // Aquire lock
-    gs_core_memory_spin_lock(&gs_ctx()->lock);
+    // gs_core_memory_spin_lock(&gs_ctx()->lock);
+    // GS_CORE_MEM_AQUIRE_LOCK(gs_ctx()->lock);
+    GS_CORE_MEM_AQUIRE_LOCK(g_mem_lock);
 
-    gs_println("MEMORY LOCK INSERT: %s, %d", file, line);
+    // gs_println("MEMORY LOCK INSERT: %s, %d", file, line);
     // int32_t desired = 1;
     // int32_t expected = g_mem_lock;
     // do {} while (!gs_atomic_cmp_swp(&g_mem_lock, 0, g_mem_lock));
@@ -201,7 +206,9 @@ gs_core_memory_insert(void* ptr, size_t sz, const char* file, const char* line)
     // Release lock
     // g_mem_lock = 0;
     // gs_atomic_add(&g_mem_lock, -1);
-    gs_core_memory_spin_unlock(&gs_ctx()->lock);
+    // gs_core_memory_spin_unlock(&gs_ctx()->lock);
+    // GS_CORE_MEM_RELEASE_LOCK(gs_ctx()->lock);
+    GS_CORE_MEM_RELEASE_LOCK(g_mem_lock);
 
     return 0; 
 }
@@ -210,9 +217,11 @@ GS_CORE_API_EXTERN int32_t
 gs_core_memory_erase(void* ptr, const char* file, int32_t line)
 {
     // Aquire lock
-    gs_core_memory_spin_lock(&gs_ctx()->lock);
+    // gs_core_memory_spin_lock(&gs_ctx()->lock);
+    // GS_CORE_MEM_AQUIRE_LOCK(gs_ctx()->lock);
+    GS_CORE_MEM_AQUIRE_LOCK(g_mem_lock);
 
-    gs_println("MEMORY LOCK ERASE: %s, %d", file, line);
+    // gs_println("MEMORY LOCK ERASE: %s, %d", file, line);
     // int32_t desired = 1;
     // int32_t expected = g_mem_lock;
     // do {} while (!gs_atomic_cmp_swp(&g_mem_lock, 0, g_mem_lock));
@@ -232,7 +241,9 @@ gs_core_memory_erase(void* ptr, const char* file, int32_t line)
     *mem = (gs_core_memory_alloc_t){0};
 
     // Release lock
-    gs_core_memory_spin_unlock(&gs_ctx()->lock);
+    // gs_core_memory_spin_unlock(&gs_ctx()->lock);
+    // GS_CORE_MEM_RELEASE_LOCK(gs_ctx()->lock);
+    GS_CORE_MEM_RELEASE_LOCK(g_mem_lock);
     // g_mem_lock = 0;
     // gs_atomic_add(&g_mem_lock, -1);
 
