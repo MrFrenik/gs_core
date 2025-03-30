@@ -64,9 +64,9 @@
 GS_API_DECL void
 gs_core_meta_ecs_register();
 
-gs_core_entities_component_declare(gs_core_component_tag_t);
 gs_core_entities_component_declare(gs_core_component_transform_t);
 gs_core_entities_component_declare(gs_core_component_renderable_t);
+gs_core_entities_component_declare(gs_core_component_tag_t);
 
 //======[ Systems ]=======//
 
@@ -81,20 +81,19 @@ gs_core_system_renderable_t_cb(gs_core_entities_system_t* system);
 
 //======[ Classes ]=======//
 
-#define gs_core_asset_handle_t_vtable_t_methods\
+#define gs_core_entities_component_t_vtable_t_methods\
 	gs_core_obj_t_vtable_t_methods
 
 #define gs_core_app_t_vtable_t_methods\
 	gs_core_obj_t_vtable_t_methods\
-	void (* app_shutdown)() ;\
-	void (* app_init)() ;\
 	void (* app_update)() ;\
-	void (* app_editor)(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd) ;\
-	void (* app_render)(gs_command_buffer_t* cb) ;
+	void (* app_init)() ;\
+	void (* app_render)(gs_command_buffer_t* cb) ;\
+	void (* app_shutdown)() ;\
+	void (* app_editor)(gs_gui_context_t* ctx, gs_gui_customcommand_t* cmd) ;
 
-#define gs_core_asset_t_vtable_t_methods\
-	gs_core_obj_t_vtable_t_methods\
-	gs_core_asset_importer_t* (* importer)() ;
+#define gs_core_asset_handle_t_vtable_t_methods\
+	gs_core_obj_t_vtable_t_methods
 
 #define gs_core_asset_texture_t_vtable_t_methods\
 	gs_core_asset_t_vtable_t_methods
@@ -102,31 +101,48 @@ gs_core_system_renderable_t_cb(gs_core_entities_system_t* system);
 \
 \
 
-#define gs_core_asset_pipeline_t_vtable_t_methods\
-	gs_core_asset_t_vtable_t_methods
+#define gs_core_asset_t_vtable_t_methods\
+	gs_core_obj_t_vtable_t_methods\
+	gs_core_asset_importer_t* (* importer)() ;
 
 #define gs_core_asset_mesh_t_vtable_t_methods\
+	gs_core_asset_t_vtable_t_methods
+
+#define gs_core_asset_material_t_vtable_t_methods\
 	gs_core_asset_t_vtable_t_methods
 
 #define gs_core_asset_font_t_vtable_t_methods\
 	gs_core_asset_t_vtable_t_methods
 
+#define gs_core_asset_pipeline_t_vtable_t_methods\
+	gs_core_asset_t_vtable_t_methods
+
+#define gs_core_component_transform_t_vtable_t_methods\
+	gs_core_entities_component_t_vtable_t_methods
+
+#define gs_core_network_rpc_t_vtable_t_methods\
+	gs_core_obj_t_vtable_t_methods\
+	void (* callback)(struct gs_core_network_rpc_t* rpc) ;
+
+#define gs_core_network_rpc_reliable_t_vtable_t_methods\
+	gs_core_network_rpc_t_vtable_t_methods
+
+#define gs_core_entities_system_t_vtable_t_methods\
+	gs_core_obj_t_vtable_t_methods\
+	void (* callback)(gs_core_entities_system_t* system) ;
+
 #define gs_core_obj_t_vtable_t_methods\
 	gs_core_vtable_t_methods\
-	void (* post_init)(struct gs_core_obj_s* obj) ;\
-	gs_result (* net_serialize)(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj) ;\
 	gs_result (* serialize)(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj) ;\
-	gs_result (* net_deserialize)(gs_byte_buffer_t* buffer, gs_core_obj_t* obj) ;\
-	gs_result (* deserialize)(gs_byte_buffer_t* buffer, gs_core_obj_t* obj) ;
+	gs_result (* net_serialize)(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj) ;\
+	gs_result (* deserialize)(gs_byte_buffer_t* buffer, gs_core_obj_t* obj) ;\
+	gs_result (* net_deserialize)(gs_byte_buffer_t* buffer, gs_core_obj_t* obj) ;
 
 #define gs_core_asset_ui_stylesheet_t_vtable_t_methods\
 	gs_core_asset_t_vtable_t_methods
 
-#define gs_core_entities_component_t_vtable_t_methods\
-	gs_core_obj_t_vtable_t_methods
-
-#define gs_core_asset_material_t_vtable_t_methods\
-	gs_core_asset_t_vtable_t_methods
+#define gs_core_component_renderable_t_vtable_t_methods\
+	gs_core_entities_component_t_vtable_t_methods
 
 #define gs_core_component_tag_t_vtable_t_methods\
 	gs_core_entities_component_t_vtable_t_methods
@@ -135,69 +151,52 @@ gs_core_system_renderable_t_cb(gs_core_entities_system_t* system);
 	gs_core_entities_system_t_vtable_t_methods
 \
 
-#define gs_core_component_transform_t_vtable_t_methods\
-	gs_core_entities_component_t_vtable_t_methods
-
 #define gs_core_asset_script_t_vtable_t_methods\
 	gs_core_asset_t_vtable_t_methods
 
 #define gs_core_asset_audio_t_vtable_t_methods\
 	gs_core_asset_t_vtable_t_methods
 
-#define gs_core_component_renderable_t_vtable_t_methods\
-	gs_core_entities_component_t_vtable_t_methods
-
-#define gs_core_network_rpc_t_vtable_t_methods\
-	gs_core_obj_t_vtable_t_methods\
-	void (* callback)(struct gs_core_network_rpc_t* rpc) ;
-
 #define gs_core_network_rpc_unreliable_t_vtable_t_methods\
 	gs_core_network_rpc_t_vtable_t_methods
 
-#define gs_core_entities_system_t_vtable_t_methods\
-	gs_core_obj_t_vtable_t_methods\
-	void (* callback)(gs_core_entities_system_t* system) ;
-
 #define gs_core_graphics_renderpass_t_vtable_t_methods\
 	gs_core_obj_t_vtable_t_methods\
-	void (* execute)(gs_command_buffer_t* cb, gs_core_graphics_renderpass_t* pass) ;
+	void (* exec)(gs_command_buffer_t* cb, gs_core_graphics_renderpass_t* pass) ;
 
-#define gs_core_network_rpc_reliable_t_vtable_t_methods\
-	gs_core_network_rpc_t_vtable_t_methods
-
-/* gs_core_asset_handle_t */
+/* gs_core_entities_component_t */
 
 GS_API_DECL uint32_t
-gs_core_asset_handle_t_class_id();
+gs_core_entities_component_t_class_id();
 
 GS_API_DECL const gs_meta_class_t*
-gs_core_asset_handle_t_class();
+gs_core_entities_component_t_class();
 
 GS_API_DECL const gs_core_meta_info_t*
-gs_core_asset_handle_t_info();
+gs_core_entities_component_t_info();
 
-GS_API_DECL gs_core_asset_handle_t*
-gs_core_asset_handle_t_new();
-
-GS_API_DECL void
-gs_core_asset_handle_t_init(gs_core_obj_t* obj);
-
-GS_API_DECL gs_core_asset_handle_t
-gs_core_asset_handle_t_ctor();
+GS_API_DECL gs_core_entities_component_t*
+gs_core_entities_component_t_new();
 
 GS_API_DECL void
-gs_core_asset_handle_t_dtor(gs_core_obj_t* obj);
+gs_core_entities_component_t_init(gs_core_obj_t* obj);
 
-typedef struct gs_core_asset_handle_t_vtable_s
+GS_API_DECL gs_core_entities_component_t
+_gs_core_entities_component_t_ctor();
+
+GS_API_DECL void
+gs_core_entities_component_t_dtor(gs_core_obj_t* obj);
+
+typedef struct gs_core_entities_component_t_vtable_s
 {
-	gs_core_asset_handle_t_vtable_t_methods
-} gs_core_asset_handle_t_vtable_t;
+	gs_core_entities_component_t_vtable_t_methods
+} gs_core_entities_component_t_vtable_t;
 
 GS_API_DECL void
-gs_core_asset_handle_t_vtable_t_init(gs_core_asset_handle_t_vtable_t* vt);
+gs_core_entities_component_t_vtable_t_init(gs_core_entities_component_t_vtable_t* vt);
 
-GS_API_DECL gs_core_asset_handle_t_vtable_t
-gs_core_asset_handle_t_vtable_t_ctor();
+GS_API_DECL gs_core_entities_component_t_vtable_t
+gs_core_entities_component_t_vtable_t_ctor();
 
 
 /* gs_core_app_t */
@@ -218,7 +217,7 @@ GS_API_DECL void
 gs_core_app_t_init(gs_core_obj_t* obj);
 
 GS_API_DECL gs_core_app_t
-gs_core_app_t_ctor();
+_gs_core_app_t_ctor();
 
 GS_API_DECL void
 gs_core_app_t_dtor(gs_core_obj_t* obj);
@@ -235,39 +234,39 @@ GS_API_DECL gs_core_app_t_vtable_t
 gs_core_app_t_vtable_t_ctor();
 
 
-/* gs_core_asset_t */
+/* gs_core_asset_handle_t */
 
 GS_API_DECL uint32_t
-gs_core_asset_t_class_id();
+gs_core_asset_handle_t_class_id();
 
 GS_API_DECL const gs_meta_class_t*
-gs_core_asset_t_class();
+gs_core_asset_handle_t_class();
 
 GS_API_DECL const gs_core_meta_info_t*
-gs_core_asset_t_info();
+gs_core_asset_handle_t_info();
 
-GS_API_DECL gs_core_asset_t*
-gs_core_asset_t_new();
-
-GS_API_DECL void
-gs_core_asset_t_init(gs_core_obj_t* obj);
-
-GS_API_DECL gs_core_asset_t
-gs_core_asset_t_ctor();
+GS_API_DECL gs_core_asset_handle_t*
+gs_core_asset_handle_t_new();
 
 GS_API_DECL void
-gs_core_asset_t_dtor(gs_core_obj_t* obj);
+gs_core_asset_handle_t_init(gs_core_obj_t* obj);
 
-typedef struct gs_core_asset_t_vtable_s
+GS_API_DECL gs_core_asset_handle_t
+_gs_core_asset_handle_t_ctor();
+
+GS_API_DECL void
+gs_core_asset_handle_t_dtor(gs_core_obj_t* obj);
+
+typedef struct gs_core_asset_handle_t_vtable_s
 {
-	gs_core_asset_t_vtable_t_methods
-} gs_core_asset_t_vtable_t;
+	gs_core_asset_handle_t_vtable_t_methods
+} gs_core_asset_handle_t_vtable_t;
 
 GS_API_DECL void
-gs_core_asset_t_vtable_t_init(gs_core_asset_t_vtable_t* vt);
+gs_core_asset_handle_t_vtable_t_init(gs_core_asset_handle_t_vtable_t* vt);
 
-GS_API_DECL gs_core_asset_t_vtable_t
-gs_core_asset_t_vtable_t_ctor();
+GS_API_DECL gs_core_asset_handle_t_vtable_t
+gs_core_asset_handle_t_vtable_t_ctor();
 
 
 /* gs_core_asset_texture_t */
@@ -288,7 +287,7 @@ GS_API_DECL void
 gs_core_asset_texture_t_init(gs_core_obj_t* obj);
 
 GS_API_DECL gs_core_asset_texture_t
-gs_core_asset_texture_t_ctor();
+_gs_core_asset_texture_t_ctor();
 
 GS_API_DECL void
 gs_core_asset_texture_t_dtor(gs_core_obj_t* obj);
@@ -305,39 +304,39 @@ GS_API_DECL gs_core_asset_texture_t_vtable_t
 gs_core_asset_texture_t_vtable_t_ctor();
 
 
-/* gs_core_asset_pipeline_t */
+/* gs_core_asset_t */
 
 GS_API_DECL uint32_t
-gs_core_asset_pipeline_t_class_id();
+gs_core_asset_t_class_id();
 
 GS_API_DECL const gs_meta_class_t*
-gs_core_asset_pipeline_t_class();
+gs_core_asset_t_class();
 
 GS_API_DECL const gs_core_meta_info_t*
-gs_core_asset_pipeline_t_info();
+gs_core_asset_t_info();
 
-GS_API_DECL gs_core_asset_pipeline_t*
-gs_core_asset_pipeline_t_new();
-
-GS_API_DECL void
-gs_core_asset_pipeline_t_init(gs_core_obj_t* obj);
-
-GS_API_DECL gs_core_asset_pipeline_t
-gs_core_asset_pipeline_t_ctor();
+GS_API_DECL gs_core_asset_t*
+gs_core_asset_t_new();
 
 GS_API_DECL void
-gs_core_asset_pipeline_t_dtor(gs_core_obj_t* obj);
+gs_core_asset_t_init(gs_core_obj_t* obj);
 
-typedef struct gs_core_asset_pipeline_t_vtable_s
+GS_API_DECL gs_core_asset_t
+_gs_core_asset_t_ctor();
+
+GS_API_DECL void
+gs_core_asset_t_dtor(gs_core_obj_t* obj);
+
+typedef struct gs_core_asset_t_vtable_s
 {
-	gs_core_asset_pipeline_t_vtable_t_methods
-} gs_core_asset_pipeline_t_vtable_t;
+	gs_core_asset_t_vtable_t_methods
+} gs_core_asset_t_vtable_t;
 
 GS_API_DECL void
-gs_core_asset_pipeline_t_vtable_t_init(gs_core_asset_pipeline_t_vtable_t* vt);
+gs_core_asset_t_vtable_t_init(gs_core_asset_t_vtable_t* vt);
 
-GS_API_DECL gs_core_asset_pipeline_t_vtable_t
-gs_core_asset_pipeline_t_vtable_t_ctor();
+GS_API_DECL gs_core_asset_t_vtable_t
+gs_core_asset_t_vtable_t_ctor();
 
 
 /* gs_core_asset_mesh_t */
@@ -358,7 +357,7 @@ GS_API_DECL void
 gs_core_asset_mesh_t_init(gs_core_obj_t* obj);
 
 GS_API_DECL gs_core_asset_mesh_t
-gs_core_asset_mesh_t_ctor();
+_gs_core_asset_mesh_t_ctor();
 
 GS_API_DECL void
 gs_core_asset_mesh_t_dtor(gs_core_obj_t* obj);
@@ -373,6 +372,41 @@ gs_core_asset_mesh_t_vtable_t_init(gs_core_asset_mesh_t_vtable_t* vt);
 
 GS_API_DECL gs_core_asset_mesh_t_vtable_t
 gs_core_asset_mesh_t_vtable_t_ctor();
+
+
+/* gs_core_asset_material_t */
+
+GS_API_DECL uint32_t
+gs_core_asset_material_t_class_id();
+
+GS_API_DECL const gs_meta_class_t*
+gs_core_asset_material_t_class();
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_asset_material_t_info();
+
+GS_API_DECL gs_core_asset_material_t*
+gs_core_asset_material_t_new();
+
+GS_API_DECL void
+gs_core_asset_material_t_init(gs_core_obj_t* obj);
+
+GS_API_DECL gs_core_asset_material_t
+_gs_core_asset_material_t_ctor();
+
+GS_API_DECL void
+gs_core_asset_material_t_dtor(gs_core_obj_t* obj);
+
+typedef struct gs_core_asset_material_t_vtable_s
+{
+	gs_core_asset_material_t_vtable_t_methods
+} gs_core_asset_material_t_vtable_t;
+
+GS_API_DECL void
+gs_core_asset_material_t_vtable_t_init(gs_core_asset_material_t_vtable_t* vt);
+
+GS_API_DECL gs_core_asset_material_t_vtable_t
+gs_core_asset_material_t_vtable_t_ctor();
 
 
 /* gs_core_asset_font_t */
@@ -393,7 +427,7 @@ GS_API_DECL void
 gs_core_asset_font_t_init(gs_core_obj_t* obj);
 
 GS_API_DECL gs_core_asset_font_t
-gs_core_asset_font_t_ctor();
+_gs_core_asset_font_t_ctor();
 
 GS_API_DECL void
 gs_core_asset_font_t_dtor(gs_core_obj_t* obj);
@@ -408,6 +442,181 @@ gs_core_asset_font_t_vtable_t_init(gs_core_asset_font_t_vtable_t* vt);
 
 GS_API_DECL gs_core_asset_font_t_vtable_t
 gs_core_asset_font_t_vtable_t_ctor();
+
+
+/* gs_core_asset_pipeline_t */
+
+GS_API_DECL uint32_t
+gs_core_asset_pipeline_t_class_id();
+
+GS_API_DECL const gs_meta_class_t*
+gs_core_asset_pipeline_t_class();
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_asset_pipeline_t_info();
+
+GS_API_DECL gs_core_asset_pipeline_t*
+gs_core_asset_pipeline_t_new();
+
+GS_API_DECL void
+gs_core_asset_pipeline_t_init(gs_core_obj_t* obj);
+
+GS_API_DECL gs_core_asset_pipeline_t
+_gs_core_asset_pipeline_t_ctor();
+
+GS_API_DECL void
+gs_core_asset_pipeline_t_dtor(gs_core_obj_t* obj);
+
+typedef struct gs_core_asset_pipeline_t_vtable_s
+{
+	gs_core_asset_pipeline_t_vtable_t_methods
+} gs_core_asset_pipeline_t_vtable_t;
+
+GS_API_DECL void
+gs_core_asset_pipeline_t_vtable_t_init(gs_core_asset_pipeline_t_vtable_t* vt);
+
+GS_API_DECL gs_core_asset_pipeline_t_vtable_t
+gs_core_asset_pipeline_t_vtable_t_ctor();
+
+
+/* gs_core_component_transform_t */
+
+GS_API_DECL uint32_t
+gs_core_component_transform_t_class_id();
+
+GS_API_DECL const gs_meta_class_t*
+gs_core_component_transform_t_class();
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_component_transform_t_info();
+
+GS_API_DECL gs_core_component_transform_t*
+gs_core_component_transform_t_new();
+
+GS_API_DECL void
+gs_core_component_transform_t_init(gs_core_obj_t* obj);
+
+GS_API_DECL gs_core_component_transform_t
+_gs_core_component_transform_t_ctor();
+
+GS_API_DECL void
+gs_core_component_transform_t_dtor(gs_core_obj_t* obj);
+
+typedef struct gs_core_component_transform_t_vtable_s
+{
+	gs_core_component_transform_t_vtable_t_methods
+} gs_core_component_transform_t_vtable_t;
+
+GS_API_DECL void
+gs_core_component_transform_t_vtable_t_init(gs_core_component_transform_t_vtable_t* vt);
+
+GS_API_DECL gs_core_component_transform_t_vtable_t
+gs_core_component_transform_t_vtable_t_ctor();
+
+
+/* gs_core_network_rpc_t */
+
+GS_API_DECL uint32_t
+gs_core_network_rpc_t_class_id();
+
+GS_API_DECL const gs_meta_class_t*
+gs_core_network_rpc_t_class();
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_network_rpc_t_info();
+
+GS_API_DECL gs_core_network_rpc_t*
+gs_core_network_rpc_t_new();
+
+GS_API_DECL void
+gs_core_network_rpc_t_init(gs_core_obj_t* obj);
+
+GS_API_DECL gs_core_network_rpc_t
+_gs_core_network_rpc_t_ctor();
+
+GS_API_DECL void
+gs_core_network_rpc_t_dtor(gs_core_obj_t* obj);
+
+typedef struct gs_core_network_rpc_t_vtable_s
+{
+	gs_core_network_rpc_t_vtable_t_methods
+} gs_core_network_rpc_t_vtable_t;
+
+GS_API_DECL void
+gs_core_network_rpc_t_vtable_t_init(gs_core_network_rpc_t_vtable_t* vt);
+
+GS_API_DECL gs_core_network_rpc_t_vtable_t
+gs_core_network_rpc_t_vtable_t_ctor();
+
+
+/* gs_core_network_rpc_reliable_t */
+
+GS_API_DECL uint32_t
+gs_core_network_rpc_reliable_t_class_id();
+
+GS_API_DECL const gs_meta_class_t*
+gs_core_network_rpc_reliable_t_class();
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_network_rpc_reliable_t_info();
+
+GS_API_DECL gs_core_network_rpc_reliable_t*
+gs_core_network_rpc_reliable_t_new();
+
+GS_API_DECL void
+gs_core_network_rpc_reliable_t_init(gs_core_obj_t* obj);
+
+GS_API_DECL gs_core_network_rpc_reliable_t
+_gs_core_network_rpc_reliable_t_ctor();
+
+GS_API_DECL void
+gs_core_network_rpc_reliable_t_dtor(gs_core_obj_t* obj);
+
+typedef struct gs_core_network_rpc_reliable_t_vtable_s
+{
+	gs_core_network_rpc_reliable_t_vtable_t_methods
+} gs_core_network_rpc_reliable_t_vtable_t;
+
+GS_API_DECL void
+gs_core_network_rpc_reliable_t_vtable_t_init(gs_core_network_rpc_reliable_t_vtable_t* vt);
+
+GS_API_DECL gs_core_network_rpc_reliable_t_vtable_t
+gs_core_network_rpc_reliable_t_vtable_t_ctor();
+
+
+/* gs_core_entities_system_t */
+
+GS_API_DECL uint32_t
+gs_core_entities_system_t_class_id();
+
+GS_API_DECL const gs_meta_class_t*
+gs_core_entities_system_t_class();
+
+GS_API_DECL const gs_core_meta_info_t*
+gs_core_entities_system_t_info();
+
+GS_API_DECL gs_core_entities_system_t*
+gs_core_entities_system_t_new();
+
+GS_API_DECL void
+gs_core_entities_system_t_init(gs_core_obj_t* obj);
+
+GS_API_DECL gs_core_entities_system_t
+_gs_core_entities_system_t_ctor();
+
+GS_API_DECL void
+gs_core_entities_system_t_dtor(gs_core_obj_t* obj);
+
+typedef struct gs_core_entities_system_t_vtable_s
+{
+	gs_core_entities_system_t_vtable_t_methods
+} gs_core_entities_system_t_vtable_t;
+
+GS_API_DECL void
+gs_core_entities_system_t_vtable_t_init(gs_core_entities_system_t_vtable_t* vt);
+
+GS_API_DECL gs_core_entities_system_t_vtable_t
+gs_core_entities_system_t_vtable_t_ctor();
 
 
 /* gs_core_obj_t */
@@ -428,7 +637,7 @@ GS_API_DECL void
 gs_core_obj_t_init(gs_core_obj_t* obj);
 
 GS_API_DECL gs_core_obj_t
-gs_core_obj_t_ctor();
+_gs_core_obj_t_ctor();
 
 GS_API_DECL void
 gs_core_obj_t_dtor(gs_core_obj_t* obj);
@@ -463,7 +672,7 @@ GS_API_DECL void
 gs_core_asset_ui_stylesheet_t_init(gs_core_obj_t* obj);
 
 GS_API_DECL gs_core_asset_ui_stylesheet_t
-gs_core_asset_ui_stylesheet_t_ctor();
+_gs_core_asset_ui_stylesheet_t_ctor();
 
 GS_API_DECL void
 gs_core_asset_ui_stylesheet_t_dtor(gs_core_obj_t* obj);
@@ -480,74 +689,39 @@ GS_API_DECL gs_core_asset_ui_stylesheet_t_vtable_t
 gs_core_asset_ui_stylesheet_t_vtable_t_ctor();
 
 
-/* gs_core_entities_component_t */
+/* gs_core_component_renderable_t */
 
 GS_API_DECL uint32_t
-gs_core_entities_component_t_class_id();
+gs_core_component_renderable_t_class_id();
 
 GS_API_DECL const gs_meta_class_t*
-gs_core_entities_component_t_class();
+gs_core_component_renderable_t_class();
 
 GS_API_DECL const gs_core_meta_info_t*
-gs_core_entities_component_t_info();
+gs_core_component_renderable_t_info();
 
-GS_API_DECL gs_core_entities_component_t*
-gs_core_entities_component_t_new();
-
-GS_API_DECL void
-gs_core_entities_component_t_init(gs_core_obj_t* obj);
-
-GS_API_DECL gs_core_entities_component_t
-gs_core_entities_component_t_ctor();
+GS_API_DECL gs_core_component_renderable_t*
+gs_core_component_renderable_t_new();
 
 GS_API_DECL void
-gs_core_entities_component_t_dtor(gs_core_obj_t* obj);
+gs_core_component_renderable_t_init(gs_core_obj_t* obj);
 
-typedef struct gs_core_entities_component_t_vtable_s
+GS_API_DECL gs_core_component_renderable_t
+_gs_core_component_renderable_t_ctor();
+
+GS_API_DECL void
+gs_core_component_renderable_t_dtor(gs_core_obj_t* obj);
+
+typedef struct gs_core_component_renderable_t_vtable_s
 {
-	gs_core_entities_component_t_vtable_t_methods
-} gs_core_entities_component_t_vtable_t;
+	gs_core_component_renderable_t_vtable_t_methods
+} gs_core_component_renderable_t_vtable_t;
 
 GS_API_DECL void
-gs_core_entities_component_t_vtable_t_init(gs_core_entities_component_t_vtable_t* vt);
+gs_core_component_renderable_t_vtable_t_init(gs_core_component_renderable_t_vtable_t* vt);
 
-GS_API_DECL gs_core_entities_component_t_vtable_t
-gs_core_entities_component_t_vtable_t_ctor();
-
-
-/* gs_core_asset_material_t */
-
-GS_API_DECL uint32_t
-gs_core_asset_material_t_class_id();
-
-GS_API_DECL const gs_meta_class_t*
-gs_core_asset_material_t_class();
-
-GS_API_DECL const gs_core_meta_info_t*
-gs_core_asset_material_t_info();
-
-GS_API_DECL gs_core_asset_material_t*
-gs_core_asset_material_t_new();
-
-GS_API_DECL void
-gs_core_asset_material_t_init(gs_core_obj_t* obj);
-
-GS_API_DECL gs_core_asset_material_t
-gs_core_asset_material_t_ctor();
-
-GS_API_DECL void
-gs_core_asset_material_t_dtor(gs_core_obj_t* obj);
-
-typedef struct gs_core_asset_material_t_vtable_s
-{
-	gs_core_asset_material_t_vtable_t_methods
-} gs_core_asset_material_t_vtable_t;
-
-GS_API_DECL void
-gs_core_asset_material_t_vtable_t_init(gs_core_asset_material_t_vtable_t* vt);
-
-GS_API_DECL gs_core_asset_material_t_vtable_t
-gs_core_asset_material_t_vtable_t_ctor();
+GS_API_DECL gs_core_component_renderable_t_vtable_t
+gs_core_component_renderable_t_vtable_t_ctor();
 
 
 /* gs_core_component_tag_t */
@@ -568,7 +742,7 @@ GS_API_DECL void
 gs_core_component_tag_t_init(gs_core_obj_t* obj);
 
 GS_API_DECL gs_core_component_tag_t
-gs_core_component_tag_t_ctor();
+_gs_core_component_tag_t_ctor();
 
 GS_API_DECL void
 gs_core_component_tag_t_dtor(gs_core_obj_t* obj);
@@ -603,7 +777,7 @@ GS_API_DECL void
 gs_core_system_renderable_t_init(gs_core_obj_t* obj);
 
 GS_API_DECL gs_core_system_renderable_t
-gs_core_system_renderable_t_ctor();
+_gs_core_system_renderable_t_ctor();
 
 GS_API_DECL void
 gs_core_system_renderable_t_dtor(gs_core_obj_t* obj);
@@ -618,41 +792,6 @@ gs_core_system_renderable_t_vtable_t_init(gs_core_system_renderable_t_vtable_t* 
 
 GS_API_DECL gs_core_system_renderable_t_vtable_t
 gs_core_system_renderable_t_vtable_t_ctor();
-
-
-/* gs_core_component_transform_t */
-
-GS_API_DECL uint32_t
-gs_core_component_transform_t_class_id();
-
-GS_API_DECL const gs_meta_class_t*
-gs_core_component_transform_t_class();
-
-GS_API_DECL const gs_core_meta_info_t*
-gs_core_component_transform_t_info();
-
-GS_API_DECL gs_core_component_transform_t*
-gs_core_component_transform_t_new();
-
-GS_API_DECL void
-gs_core_component_transform_t_init(gs_core_obj_t* obj);
-
-GS_API_DECL gs_core_component_transform_t
-gs_core_component_transform_t_ctor();
-
-GS_API_DECL void
-gs_core_component_transform_t_dtor(gs_core_obj_t* obj);
-
-typedef struct gs_core_component_transform_t_vtable_s
-{
-	gs_core_component_transform_t_vtable_t_methods
-} gs_core_component_transform_t_vtable_t;
-
-GS_API_DECL void
-gs_core_component_transform_t_vtable_t_init(gs_core_component_transform_t_vtable_t* vt);
-
-GS_API_DECL gs_core_component_transform_t_vtable_t
-gs_core_component_transform_t_vtable_t_ctor();
 
 
 /* gs_core_asset_script_t */
@@ -673,7 +812,7 @@ GS_API_DECL void
 gs_core_asset_script_t_init(gs_core_obj_t* obj);
 
 GS_API_DECL gs_core_asset_script_t
-gs_core_asset_script_t_ctor();
+_gs_core_asset_script_t_ctor();
 
 GS_API_DECL void
 gs_core_asset_script_t_dtor(gs_core_obj_t* obj);
@@ -708,7 +847,7 @@ GS_API_DECL void
 gs_core_asset_audio_t_init(gs_core_obj_t* obj);
 
 GS_API_DECL gs_core_asset_audio_t
-gs_core_asset_audio_t_ctor();
+_gs_core_asset_audio_t_ctor();
 
 GS_API_DECL void
 gs_core_asset_audio_t_dtor(gs_core_obj_t* obj);
@@ -723,76 +862,6 @@ gs_core_asset_audio_t_vtable_t_init(gs_core_asset_audio_t_vtable_t* vt);
 
 GS_API_DECL gs_core_asset_audio_t_vtable_t
 gs_core_asset_audio_t_vtable_t_ctor();
-
-
-/* gs_core_component_renderable_t */
-
-GS_API_DECL uint32_t
-gs_core_component_renderable_t_class_id();
-
-GS_API_DECL const gs_meta_class_t*
-gs_core_component_renderable_t_class();
-
-GS_API_DECL const gs_core_meta_info_t*
-gs_core_component_renderable_t_info();
-
-GS_API_DECL gs_core_component_renderable_t*
-gs_core_component_renderable_t_new();
-
-GS_API_DECL void
-gs_core_component_renderable_t_init(gs_core_obj_t* obj);
-
-GS_API_DECL gs_core_component_renderable_t
-gs_core_component_renderable_t_ctor();
-
-GS_API_DECL void
-gs_core_component_renderable_t_dtor(gs_core_obj_t* obj);
-
-typedef struct gs_core_component_renderable_t_vtable_s
-{
-	gs_core_component_renderable_t_vtable_t_methods
-} gs_core_component_renderable_t_vtable_t;
-
-GS_API_DECL void
-gs_core_component_renderable_t_vtable_t_init(gs_core_component_renderable_t_vtable_t* vt);
-
-GS_API_DECL gs_core_component_renderable_t_vtable_t
-gs_core_component_renderable_t_vtable_t_ctor();
-
-
-/* gs_core_network_rpc_t */
-
-GS_API_DECL uint32_t
-gs_core_network_rpc_t_class_id();
-
-GS_API_DECL const gs_meta_class_t*
-gs_core_network_rpc_t_class();
-
-GS_API_DECL const gs_core_meta_info_t*
-gs_core_network_rpc_t_info();
-
-GS_API_DECL gs_core_network_rpc_t*
-gs_core_network_rpc_t_new();
-
-GS_API_DECL void
-gs_core_network_rpc_t_init(gs_core_obj_t* obj);
-
-GS_API_DECL gs_core_network_rpc_t
-gs_core_network_rpc_t_ctor();
-
-GS_API_DECL void
-gs_core_network_rpc_t_dtor(gs_core_obj_t* obj);
-
-typedef struct gs_core_network_rpc_t_vtable_s
-{
-	gs_core_network_rpc_t_vtable_t_methods
-} gs_core_network_rpc_t_vtable_t;
-
-GS_API_DECL void
-gs_core_network_rpc_t_vtable_t_init(gs_core_network_rpc_t_vtable_t* vt);
-
-GS_API_DECL gs_core_network_rpc_t_vtable_t
-gs_core_network_rpc_t_vtable_t_ctor();
 
 
 /* gs_core_network_rpc_unreliable_t */
@@ -813,7 +882,7 @@ GS_API_DECL void
 gs_core_network_rpc_unreliable_t_init(gs_core_obj_t* obj);
 
 GS_API_DECL gs_core_network_rpc_unreliable_t
-gs_core_network_rpc_unreliable_t_ctor();
+_gs_core_network_rpc_unreliable_t_ctor();
 
 GS_API_DECL void
 gs_core_network_rpc_unreliable_t_dtor(gs_core_obj_t* obj);
@@ -828,41 +897,6 @@ gs_core_network_rpc_unreliable_t_vtable_t_init(gs_core_network_rpc_unreliable_t_
 
 GS_API_DECL gs_core_network_rpc_unreliable_t_vtable_t
 gs_core_network_rpc_unreliable_t_vtable_t_ctor();
-
-
-/* gs_core_entities_system_t */
-
-GS_API_DECL uint32_t
-gs_core_entities_system_t_class_id();
-
-GS_API_DECL const gs_meta_class_t*
-gs_core_entities_system_t_class();
-
-GS_API_DECL const gs_core_meta_info_t*
-gs_core_entities_system_t_info();
-
-GS_API_DECL gs_core_entities_system_t*
-gs_core_entities_system_t_new();
-
-GS_API_DECL void
-gs_core_entities_system_t_init(gs_core_obj_t* obj);
-
-GS_API_DECL gs_core_entities_system_t
-gs_core_entities_system_t_ctor();
-
-GS_API_DECL void
-gs_core_entities_system_t_dtor(gs_core_obj_t* obj);
-
-typedef struct gs_core_entities_system_t_vtable_s
-{
-	gs_core_entities_system_t_vtable_t_methods
-} gs_core_entities_system_t_vtable_t;
-
-GS_API_DECL void
-gs_core_entities_system_t_vtable_t_init(gs_core_entities_system_t_vtable_t* vt);
-
-GS_API_DECL gs_core_entities_system_t_vtable_t
-gs_core_entities_system_t_vtable_t_ctor();
 
 
 /* gs_core_graphics_renderpass_t */
@@ -883,7 +917,7 @@ GS_API_DECL void
 gs_core_graphics_renderpass_t_init(gs_core_obj_t* obj);
 
 GS_API_DECL gs_core_graphics_renderpass_t
-gs_core_graphics_renderpass_t_ctor();
+_gs_core_graphics_renderpass_t_ctor();
 
 GS_API_DECL void
 gs_core_graphics_renderpass_t_dtor(gs_core_obj_t* obj);
@@ -898,41 +932,6 @@ gs_core_graphics_renderpass_t_vtable_t_init(gs_core_graphics_renderpass_t_vtable
 
 GS_API_DECL gs_core_graphics_renderpass_t_vtable_t
 gs_core_graphics_renderpass_t_vtable_t_ctor();
-
-
-/* gs_core_network_rpc_reliable_t */
-
-GS_API_DECL uint32_t
-gs_core_network_rpc_reliable_t_class_id();
-
-GS_API_DECL const gs_meta_class_t*
-gs_core_network_rpc_reliable_t_class();
-
-GS_API_DECL const gs_core_meta_info_t*
-gs_core_network_rpc_reliable_t_info();
-
-GS_API_DECL gs_core_network_rpc_reliable_t*
-gs_core_network_rpc_reliable_t_new();
-
-GS_API_DECL void
-gs_core_network_rpc_reliable_t_init(gs_core_obj_t* obj);
-
-GS_API_DECL gs_core_network_rpc_reliable_t
-gs_core_network_rpc_reliable_t_ctor();
-
-GS_API_DECL void
-gs_core_network_rpc_reliable_t_dtor(gs_core_obj_t* obj);
-
-typedef struct gs_core_network_rpc_reliable_t_vtable_s
-{
-	gs_core_network_rpc_reliable_t_vtable_t_methods
-} gs_core_network_rpc_reliable_t_vtable_t;
-
-GS_API_DECL void
-gs_core_network_rpc_reliable_t_vtable_t_init(gs_core_network_rpc_reliable_t_vtable_t* vt);
-
-GS_API_DECL gs_core_network_rpc_reliable_t_vtable_t
-gs_core_network_rpc_reliable_t_vtable_t_ctor();
 
 
 //========================//

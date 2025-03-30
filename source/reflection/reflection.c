@@ -1099,7 +1099,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "%s_init(gs_core_obj_t* obj);\n", cls->name);
 
         gs_fprintln(fp, "GS_API_DECL %s", cls->name);
-        gs_fprintln(fp, "%s_ctor();\n", cls->name);
+        gs_fprintln(fp, "_%s_ctor();\n", cls->name);
 
         gs_fprintln(fp, "GS_API_DECL void");
         gs_fprintln(fp, "%s_dtor(gs_core_obj_t* obj);\n", cls->name);
@@ -1336,7 +1336,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "\tif (gs_core_instance() && gs_core_instance()->meta)");
         gs_fprintln(fp, "\t{");
         gs_fprintln(fp, "\t\t%s_vtable_t* vt = gs_core_cast_vt(obj, %s);", cls, cls);
-        gs_fprintln(fp, "\t\tif (vt && vt->post_init) vt->post_init(gs_core_cast(obj, gs_core_obj_t));");
+        gs_fprintln(fp, "\t\tif (vt && vt->ctor) vt->ctor(gs_core_cast(obj, gs_core_obj_t));");
         gs_fprintln(fp, "\t}");
 
         gs_fprintln(fp, "}\n");
@@ -1352,7 +1352,7 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
 
         // Ctor
         gs_fprintln(fp, "GS_API_DECL %s", cls->name);
-        gs_fprintln(fp, "%s_ctor()", cls->name);
+        gs_fprintln(fp, "_%s_ctor()", cls->name);
         gs_fprintln(fp, "{");
         gs_fprintln(fp, "\t%s obj = gs_default_val();", cls->name);
         gs_fprintln(fp, "\t%s_init((gs_core_obj_t*)&obj);", cls->name); 

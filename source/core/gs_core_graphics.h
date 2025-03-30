@@ -116,8 +116,12 @@ typedef struct gs_core_graphics_renderpass_s
 {
     gs_core_base(gs_core_obj_t);
     _vtable(
-        void (* execute)(gs_command_buffer_t* cb, gs_core_graphics_renderpass_t* pass) = NULL;
+        void (* exec)(gs_command_buffer_t* cb, gs_core_graphics_renderpass_t* pass) = NULL;
     )
+
+    // Fields 
+    _field() gs_core_asset_handle_t pip;  // Pipeline
+
 } gs_core_graphics_renderpass_t;
 
 //====[ Submit ]====//

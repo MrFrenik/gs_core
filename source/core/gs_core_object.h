@@ -60,7 +60,7 @@
 #define gs_core_cls_info(T)      T##_info()
 #define gs_core_cls_init(T, OBJ) T##_init((gs_core_obj_t*)(OBJ))
 #define gs_core_cls_new(T)       T##_new()
-#define gs_core_cls_ctor(T)      T##_ctor()
+#define gs_core_cls_ctor(T)      _##T##_ctor()
 
 // VTable
 #define gs_core_cast_vt(OBJ, T)                       (gs_core_cast(gs_core_obj_info((gs_core_obj_t*)(OBJ))->vtable, T##_vtable_t))
@@ -112,38 +112,23 @@ struct gs_core_meta_info_s;
 struct gs_core_obj_s;
 struct gs_core_vtable_s;
 
-/*
-typedef struct
-{ 
-    const gs_meta_class_t* (* class)();
-    gs_result (* serialize)(gs_byte_buffer_t* buffer, const struct gs_core_obj_s* obj);
-    gs_result (* deserialize)(gs_byte_buffer_t* buffer, struct gs_core_obj_s* obj);
-    gs_result (* net_serialize)(gs_byte_buffer_t* buffer, const struct gs_core_obj_s* obj);
-    gs_result (* net_deserialize)(gs_byte_buffer_t* buffer, struct gs_core_obj_s* obj);
-    uint32_t (* class_id)();
-    const struct gs_core_meta_info_s* (* info)();
-} gs_core_vtable_t;
-*/
-
-typedef struct gs_core_base_s
-{
+typedef struct gs_core_base_s {
     uint32_t id;
 } gs_core_base_t; 
 
 #define gs_core_vtable_t_methods\
     const gs_meta_class_t* (* cls)();\
     uint32_t (* cls_id)();\
+    void (* ctor)(struct gs_core_obj_s*);\
     void (* init)(struct gs_core_obj_s*);\
     void (* dtor)(struct gs_core_obj_s*);\
     const struct gs_core_meta_info_s* (* info)();
 
-typedef struct gs_core_vtable_s
-{
+typedef struct gs_core_vtable_s {
     gs_core_vtable_t_methods
 } gs_core_vtable_t;
 
-typedef struct gs_core_meta_info_s
-{ 
+typedef struct gs_core_meta_info_s { 
     const gs_meta_class_t* cls;
     const struct gs_core_meta_info_s* base;
     struct gs_core_obj_s* instance;
@@ -153,25 +138,20 @@ typedef struct gs_core_meta_info_s
 } gs_core_meta_info_t;
 
 _introspect()
-typedef struct gs_core_obj_s
-{ 
+typedef struct gs_core_obj_s { 
     gs_core_base(gs_core_base_t); 
-
     // Methods
     _vtable( 
-        void (* post_init)(struct gs_core_obj_s* obj) = NULL;
         gs_result (* serialize)(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj) = gs_core_obj_serialize_impl; 
         gs_result (* deserialize)(gs_byte_buffer_t* buffer, gs_core_obj_t* obj) = gs_core_obj_deserialize_impl; 
         gs_result (* net_serialize)(gs_byte_buffer_t* buffer, const gs_core_obj_t* obj) = gs_core_obj_net_serialize_impl;
         gs_result (* net_deserialize)(gs_byte_buffer_t* buffer, gs_core_obj_t* obj) = gs_core_obj_net_deserialize_impl;
-    )
-
+    ) 
 } gs_core_obj_t;
 
 //===[ Meta Generated ]===// 
 
-typedef struct gs_core_meta_registry_s
-{
+typedef struct gs_core_meta_registry_s {
     gs_slot_array(gs_core_meta_info_t)     info;
     gs_meta_registry_t                  registry; 
 } gs_core_meta_registry_t;

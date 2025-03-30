@@ -48,7 +48,7 @@ typedef struct
     gs_core_base(gs_core_editor_view_t);
 
     _vtable( 
-        _override: post_init = _default;
+        _override: ctor = _default;
         _override: callback = _default;
     )
 
@@ -57,7 +57,7 @@ typedef struct
 #ifdef GS_CORE_EDITOR_IMPL
 
 GS_API_DECL void 
-gs_core_editor_view_assets_t_post_init(gs_core_obj_t* _obj)
+gs_core_editor_view_assets_t_ctor(gs_core_obj_t* _obj)
 { 
     gs_core_editor_view_assets_t* view = gs_core_cast(_obj, gs_core_editor_view_assets_t);
     gs_core_editor_view_set_name(view, GS_CORE_EDITOR_VIEW_ASSETS_NAME);

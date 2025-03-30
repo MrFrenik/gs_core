@@ -144,10 +144,11 @@ _gs_core_app_meta_unregister();
             gs_core_cls_init(_NAME##_t, _app);\
             gs_t* inst = gs_create((gs_app_desc_t){\
                 .user_data = _app,\
-                .window.width = 960 * 1,\
-                .window.height = 540 * 1,\
+                .window.width = 1920 * 1,\
+                .window.height = 1080 * 1,\
                 .window.title = gs_to_str(_NAME),\
                 .window.num_samples = 0,\
+                .window.flags = GS_WINDOW_FLAGS_FULLSCREEN,\
                 .init = _gs_core_app_init,\
                 .update = _gs_core_app_update,\
                 .shutdown = _gs_core_app_shutdown\
