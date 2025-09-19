@@ -302,6 +302,7 @@ _gs_core_vm_call(gs_core_vm_state_t s, const gs_core_vm_call_desc_t* desc) {
 }
 
 // Loads raw script then transpiles script from file
+
 GS_API_DECL gs_result 
 gs_core_vm_script_load_from_file(gs_core_vm_script_t* script, const char* file_path, bool keep_src)
 {
@@ -321,6 +322,7 @@ gs_core_vm_script_load_from_file(gs_core_vm_script_t* script, const char* file_p
         gs_byte_buffer_free(&script->bcode);
     }
 
+    /*
     // Compile script source into raw lua bytecode
     gs_core_vm_script_compile_res_t res = gs_core_vm_compile(src, sz);
 
@@ -339,6 +341,7 @@ gs_core_vm_script_load_from_file(gs_core_vm_script_t* script, const char* file_p
         gs_log_warning("Unable to compile bytecode: %s", file_path);
         return GS_RESULT_FAILURE;
     }
+    */
 
     return GS_RESULT_SUCCESS;
 }
