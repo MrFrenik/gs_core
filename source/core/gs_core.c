@@ -110,9 +110,12 @@ gs_core_ddt_cvar_cmd(int32_t argc, char** argv)
     {
         default: break;
 
-        case GS_CORE_CVAR_INT:
-        case GS_CORE_CVAR_BOOL: {
+        case GS_CORE_CVAR_INT: {
             int32_t v = atoi(argv[1]);
+            CVAR_SET(cvar, v);
+        } break;
+        case GS_CORE_CVAR_BOOL: {
+            bool v = (bool)atoi(argv[1]);
             CVAR_SET(cvar, v);
         } break;
         case GS_CORE_CVAR_FLOAT:  {

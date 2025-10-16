@@ -37,6 +37,7 @@
 =================================================================================================================*/ 
 
 // GS Includes 
+#define GS_GRAPHICS_IMPL_OPENGL_CORE
 #define GS_NO_HIJACK_MAIN
 #define GS_IMPL
 #define GS_IMMEDIATE_DRAW_IMPL
