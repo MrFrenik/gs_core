@@ -148,6 +148,8 @@ _gs_core_app_meta_unregister();
                 .window.height = 1080.f / 2.f,\
                 .window.title = gs_to_str(_NAME),\
                 .window.num_samples = 0,\
+                .window.frame_rate = 60,\
+                .window.vsync = true,\
                 /*.window.flags = GS_WINDOW_FLAGS_FULLSCREEN,*/\
                 .init = _gs_core_app_init,\
                 .update = _gs_core_app_update,\
