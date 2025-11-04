@@ -683,6 +683,8 @@ sched_pipe_read_back(struct sched_pipe *pipe, struct sched_subset_task *dst)
     sched_uint previous;
     sched_uint actual_read;
     sched_uint read_count;
+    sched_uint write_index;
+    sched_uint retry_count = 0;
 
     SCHED_ASSERT(pipe);
     SCHED_ASSERT(dst);
@@ -690,9 +692,14 @@ sched_pipe_read_back(struct sched_pipe *pipe, struct sched_subset_task *dst)
     /* we get hold of the read index for consistency,
      * and do first pass starting at read count */
     read_count = pipe->read_count;
+    write_index = pipe->write;
+
+    // early exit if pipe is empty
+    if (write_index == read_count) return 0;
+
     to_use = read_count;
     while (1) {
-        sched_uint write_index = pipe->write;
+        // sched_uint write_index = pipe->write;
         sched_uint num_in_pipe = write_index - read_count;
         if (!num_in_pipe)
             return 0;
@@ -709,8 +716,18 @@ sched_pipe_read_back(struct sched_pipe *pipe, struct sched_subset_task *dst)
         if (previous == SCHED_PIPE_CAN_READ)
             break;
 
-        /* update known read count */
+        /* contention detected - add backoff to reduce cache line bouncing */
+        ++retry_count;
+        if (retry_count > 4) {
+            sched_uint backoff = (retry_count - 4) * 4;
+            whiel (backoff--) {
+                sched_pause();
+            }
+        }
+
+        /* update known read count and write index */
         read_count = pipe->read_count;
+        write_index = pipe->write;
         ++to_use;
     }
 

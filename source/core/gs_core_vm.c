@@ -684,8 +684,8 @@ NATIVE_gs_core_vm_script_exec(gs_core_vm_script_engine_t* engine, gs_core_vm_sta
     // Get stack top
     int32_t top = engine->stack_top(s); 
 
-    // Call function, get return vals
-    int32_t retcnt = fn(engine, s);
+    // Call function
+    fn(engine, s);
 
     // Get stack top
     int32_t newtop = engine->stack_top(s);

@@ -64,10 +64,101 @@ gs_core_entities_new()
     gs_core_entities_t* ents = gs_malloc_init(gs_core_entities_t); 
     ents->data = gs_malloc_init(gs_core_entity_data_t); 
 
+    // typedef struct ecs_os_api_t {
+    //     /* API init / deinit */
+    //     ecs_os_api_init_t init_;
+    //     ecs_os_api_fini_t fini_;
+
+    //     /* Memory management */
+    //     ecs_os_api_malloc_t malloc_;
+    //     ecs_os_api_realloc_t realloc_;
+    //     ecs_os_api_calloc_t calloc_;
+    //     ecs_os_api_free_t free_;
+
+    //     /* Strings */
+    //     ecs_os_api_strdup_t strdup_;
+
+    //     /* Threads */
+    //     ecs_os_api_thread_new_t thread_new_;
+    //     ecs_os_api_thread_join_t thread_join_;
+
+    //     /* Atomic incremenet / decrement */
+    //     ecs_os_api_ainc_t ainc_;
+    //     ecs_os_api_ainc_t adec_;
+
+    //     /* Mutex */
+    //     ecs_os_api_mutex_new_t mutex_new_;
+    //     ecs_os_api_mutex_free_t mutex_free_;
+    //     ecs_os_api_mutex_lock_t mutex_lock_;
+    //     ecs_os_api_mutex_lock_t mutex_unlock_;
+
+    //     /* Condition variable */
+    //     ecs_os_api_cond_new_t cond_new_;
+    //     ecs_os_api_cond_free_t cond_free_;
+    //     ecs_os_api_cond_signal_t cond_signal_;
+    //     ecs_os_api_cond_broadcast_t cond_broadcast_;
+    //     ecs_os_api_cond_wait_t cond_wait_;
+
+    //     /* Time */
+    //     ecs_os_api_sleep_t sleep_;
+    //     ecs_os_api_now_t now_;
+    //     ecs_os_api_get_time_t get_time_;
+    //     ecs_os_api_enable_high_timer_resolution_t enable_high_timer_resolution_;
+
+    //     /* Logging */
+    //     ecs_os_api_log_t log_; /* Logging function. The level should be interpreted as: */
+    //                         /* >0: Debug tracing. Only enabled in debug builds. */
+    //                         /*  0: Tracing. Enabled in debug/release builds. */
+    //                         /* -2: Warning. An issue occurred, but operation was successful. */
+    //                         /* -3: Error. An issue occurred, and operation was unsuccessful. */
+    //                         /* -4: Fatal. An issue occurred, and application must quit. */
+
+    //     /* Application termination */
+    //     ecs_os_api_abort_t abort_;
+
+    //     /* Dynamic library loading */
+    //     ecs_os_api_dlopen_t dlopen_;
+    //     ecs_os_api_dlproc_t dlproc_;
+    //     ecs_os_api_dlclose_t dlclose_;
+
+    //     /* Overridable function that translates from a logical module id to a
+    //     * shared library filename */
+    //     ecs_os_api_module_to_path_t module_to_dl_;
+
+    //     /* Overridable function that translates from a logical module id to a
+    //     * path that contains module-specif resources or assets */
+    //     ecs_os_api_module_to_path_t module_to_etc_;
+
+    //     /* Trace level */
+    //     int32_t log_level_;
+
+    //     /* Trace indentation */
+    //     int32_t log_indent_;
+
+    //     /* Last error code */
+    //     int32_t log_last_error_;
+
+    //     /* Enable tracing with color */
+    //     bool log_with_color_;
+    // } ecs_os_api_t;
+
+    //     /* Memory management */
+    //     ecs_os_api_malloc_t malloc_;
+    //     ecs_os_api_realloc_t realloc_;
+    //     ecs_os_api_calloc_t calloc_;
+    //     ecs_os_api_free_t free_;
+
+    //     /* Strings */
+    //     ecs_os_api_strdup_t strdup_;
+
     // Set up os api for flecs 
 	gs_core_entity_data_t* data = (gs_core_entity_data_t*)ents->data;
     ecs_os_set_api_defaults(); 
     data->api = ecs_os_api; 
+    data->api.malloc_ = gs_ctx()->os.malloc;
+    data->api.realloc_ = gs_ctx()->os.realloc;
+    data->api.calloc_ = gs_ctx()->os.calloc;
+    data->api.free_ = gs_ctx()->os.free;
     ecs_os_set_api(&data->api);
 
     ((gs_core_entity_data_t*)(ents->data))->world = ecs_init();
