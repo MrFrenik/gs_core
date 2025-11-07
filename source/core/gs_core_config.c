@@ -50,7 +50,7 @@
 #define STB_DS_IMPLEMENTATION
 
 // Core defines
-#define GS_CORE_MEMORY_DBG 1
+#define GS_CORE_MEMORY_DBG 0
 
 // Memory management defines 
 #ifdef __cplusplus
