@@ -62,8 +62,7 @@ extern void* gs_core_os_realloc(void* ptr, size_t sz);
 extern void* gs_core_os_calloc(size_t num, size_t sz);
 extern char* gs_core_os_strdup(const char* str);
 
-typedef enum 
-{
+typedef enum {
     GS_CORE_CVAR_INT = 0x00,
     GS_CORE_CVAR_BOOL,          // Probably not needed
     GS_CORE_CVAR_FLOAT,
@@ -72,21 +71,20 @@ typedef enum
     GS_CORE_CVAR_FLOAT4
 } gs_core_cvar_type;
 
-typedef struct
-{
+typedef struct {
     const char* name; 
     gs_core_cvar_type type; 
     void* val;                   // Pointer to value to be set
     const char* desc;
 } gs_core_cvar_desc_t;
 
-typedef struct
-{
+typedef struct {
     char name[GS_CORE_CVAR_STR_MAX];
     gs_core_cvar_type type;
     void* val;
     uint32_t cmd_hndl;
 } gs_core_cvar_t; 
+
 
 // Async
 struct gs_sched_async_t;
@@ -122,8 +120,7 @@ gs_core_sched_async_finish(gs_core_sched_async_t* async);
 GS_API_DECL void 
 __gs_core_sched_async_thread_runner(void *user_data, gs_scheduler_t *s, gs_sched_task_partition_t p, uint32_t thread_num);
 
-typedef struct gs_core_s
-{
+typedef struct gs_core_s {
     struct gs_core_assets_s*        assets;
     struct gs_core_physics_s*       physics;
     struct gs_core_entities_s*      entities;
@@ -201,8 +198,7 @@ gs_core_cvar_unregister(const char* name);
 
 #define GS_CORE_MEMORY_DBG_MAX_ALLOCATIONS  100000
 
-typedef struct gs_core_memory_alloc_s
-{
+typedef struct gs_core_memory_alloc_s {
     void* ptr;
     const char* file;
     uint32_t line;

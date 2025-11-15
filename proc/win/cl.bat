@@ -1,6 +1,13 @@
 @echo off
-rmdir /Q /S bin\core
-mkdir bin\core
+REM More robust directory cleanup with retry
+if exist bin\core (
+    rmdir /Q /S bin\core 2>nul
+    if exist bin\core (
+        timeout /t 1 /nobreak >nul 2>&1
+        rmdir /Q /S bin\core 2>nul
+    )
+)
+if not exist bin\core mkdir bin\core
 pushd bin\core
 
 rem Name

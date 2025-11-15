@@ -1873,9 +1873,11 @@ gs_core_meta_register()
 			.name = gs_to_str(gs_core_app_t),
 			.properties = (gs_meta_property_t[]) {
 				gs_meta_property(gs_core_app_t, float, run_time, GS_META_PROPERTY_TYPE_INFO_F32),
-				gs_meta_property(gs_core_app_t, gs_vec4, viewport, GS_META_PROPERTY_TYPE_INFO_VEC4)
+				gs_meta_property(gs_core_app_t, gs_vec4, viewport, GS_META_PROPERTY_TYPE_INFO_VEC4),
+				gs_meta_property(gs_core_app_t, int32_t, argc, GS_META_PROPERTY_TYPE_INFO_S32),
+				gs_meta_property(gs_core_app_t, char**, argv, GS_META_PROPERTY_TYPE_INFO_OBJ)
 			},
-			.size = 2 * sizeof(gs_meta_property_t)
+			.size = 4 * sizeof(gs_meta_property_t)
 		}));
 
 		gs_core_meta_info_t ci = {0};

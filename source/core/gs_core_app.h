@@ -67,7 +67,9 @@ typedef struct gs_core_app_s
 
     // Fields
     _field() float run_time;
-    _field() gs_vec4 viewport; 
+    _field() gs_vec4 viewport;
+    _field() int32_t argc;          // Command-line argument count
+    _field() char** argv;            // Command-line argument values
 
     struct gs_core_s* core;         // Core framework 
     gs_core_app_state state;
@@ -139,11 +141,13 @@ _gs_core_app_meta_unregister();
     #define GS_CORE_APP_MAIN(_NAME)\
         int32_t main(int32_t argc, char** argv)\
         {\
-            /*_NAME##_t* _app = gs_core_os_malloc_init(sizeof(_NAME##_t));\*/\
+            /*_NAME##_t* _app = gs_core_os_malloc_init(sizeof(_NAME##_t));*/\
             _NAME##_t* _app = calloc(1, sizeof(_NAME##_t));\
             gs_core_cls_init(_NAME##_t, _app);\
             gs_t* inst = gs_create((gs_app_desc_t){\
                 .user_data = _app,\
+                .argc = argc,\
+                .argv = argv,\
                 .window.width = 1920.f / 2.f,\
                 .window.height = 1080.f / 2.f,\
                 .window.title = gs_to_str(_NAME),\

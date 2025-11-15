@@ -52,8 +52,7 @@ typedef ecs_query_t         gs_core_entity_query_t;
 
 // Component
 _introspect()
-typedef struct
-{
+typedef struct {
     gs_core_base(gs_core_obj_t);
     gs_core_entity_t entity;            // Owning entity id for this component
 } gs_core_entities_component_t;
@@ -61,14 +60,12 @@ typedef struct
 typedef void (*gs_core_entity_component_func_t)(gs_core_entity_world_t* world, gs_core_entity_t comp, 
         const gs_core_entity_t* ent, void* ptr, size_t size, int32_t cnt, void* ctx); 
 
-typedef struct
-{
+typedef struct {
     gs_core_entity_component_func_t ctor;
     gs_core_entity_component_func_t dtor;
 } gs_core_entities_component_lifecycle_t;
 
-typedef struct
-{
+typedef struct {
     const char* name;
     size_t size;
     size_t alignment;
@@ -113,8 +110,7 @@ _gs_core_entities_component_dtor_internal(gs_core_entity_world_t* world, gs_core
         const gs_core_entity_t* ent, void* ptr, size_t size, int32_t cnt, void* ctx);
 
 // Tickable state
-typedef enum
-{
+typedef enum {
     GS_CORE_ENTITIES_TICK_ON_PLAY    = (1 << 0),
     GS_CORE_ENTITIES_TICK_ON_PAUSE   = (1 << 1),
     GS_CORE_ENTITIES_TICK_ON_STOP    = (1 << 2),
@@ -122,15 +118,12 @@ typedef enum
 } gs_core_entities_system_tick_flags;
 
 _introspect()
-typedef struct
-{
+typedef struct {
     gs_core_base(gs_core_obj_t); 
-
     // Vtable
     _vtable( 
         void (* callback)(gs_core_entities_system_t* system) = NULL;
     )
-
     gs_core_entity_iter_t* iter; 
     gs_core_entities_system_tick_flags tick;
 

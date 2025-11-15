@@ -61,6 +61,12 @@ _gs_core_app_init()
 
 		app = gs_user_data(gs_core_app_t);
 		gs_core_app_instance_set(app);
+        
+        // Store command-line args from gs context
+        gs_t* gs = gs_instance();
+        app->argc = gs->ctx.app.argc;
+        app->argv = gs->ctx.app.argv;
+        
         gs_core_cast(app, gs_core_app_t)->core = gs_core_new(); 
         _gs_core_app_meta_register();
 
