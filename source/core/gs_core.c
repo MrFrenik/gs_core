@@ -171,11 +171,11 @@ gs_core_cvar_register(const gs_core_cvar_desc_t* desc)
     if (!gs_hash_table_exists(core->cvars.registry, hash)) 
     {
         gs_core_cvar_t cvar = {.type = desc->type, .val = desc->val};
-        memcpy(cvar.name, desc->name, GS_CORE_CVAR_STR_MAX);
+        gs_snprintf(cvar.name, GS_CORE_CVAR_STR_MAX, "%s", desc->name);
         gs_ddt_command_t cmd = {0};
         cmd.func = gs_core_ddt_cvar_cmd;
-        memcpy(cmd.name, cvar.name, GS_DDT_STR_MAX);
-        memcpy(cmd.desc, desc->desc, GS_DDT_STR_MAX);
+        gs_snprintf(cmd.name, GS_DDT_STR_MAX, "%s", cvar.name);
+        gs_snprintf(cmd.desc, GS_DDT_STR_MAX, "%s", desc->desc);
         cvar.cmd_hndl = gs_core_ddt_cmd_register(cmd);
         gs_hash_table_insert(core->cvars.registry, hash, cvar);
     }

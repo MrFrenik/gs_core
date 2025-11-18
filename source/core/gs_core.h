@@ -49,6 +49,7 @@
 #include "gs_core_components.h"
 #include "gs_core_vm.h"
 #include "gs_core_app.h"
+#include "gs_core_crash.h"
 #include "core/generated/gs_core_generated.h"
 
 #define GS_CORE_REFL_CLASS_MAX     1000

@@ -27,7 +27,7 @@ set src_all=%src_main%
 
 rem OS Libraries
 set os_libs=opengl32.lib kernel32.lib user32.lib ^
-shell32.lib vcruntime.lib msvcrt.lib gdi32.lib Winmm.lib Advapi32.lib 
+shell32.lib vcruntime.lib msvcrt.lib gdi32.lib Winmm.lib Advapi32.lib dbghelp.lib 
 
 rem Third Party Libs
 set tp_libs_dbg=%root%\third_party\libs\win\dbg\Bullet3Collision_Debug.lib ^
@@ -72,15 +72,25 @@ set lua_src=%lua_dir%\lua_unity.c
 rem Run Reflection
 %root%\bin\reflection\reflection.exe %refl_dir% %out_dir% %proj_name%
 
-if [%1]==[] goto :error
-if [%1]==[dbg] goto :dbg 
-if [%1]==[rel] goto :rel
+rem First argument: configuration (dbg/rel), optional second: sanitize flag
+set cfg=%1
+set sanitize=%2
+
+if [%cfg%]==[] goto :error
+if [%cfg%]==[dbg] goto :dbg 
+if [%cfg%]==[rel] goto :rel
 goto :error
 
 :rel
     echo Compiling Release...
+    if [%sanitize%]==[1] (
+        echo   AddressSanitizer enabled for Release build
+        set extra_c_flags=/fsanitize=address /Zi
+    ) else (
+        set extra_c_flags=
+    )
     rem Compile Cpp objects (rel)
-    cl /MT /EHsc /c /w /MP ^
+    cl /MT /EHsc /c /w /MP %extra_c_flags% ^
     %inc% %root%\source\core\gs_core_ai.cpp %root%\source\core\gs_core_physics.cpp ^
     %root%\source\core\gs_core_util.cpp /link /NODEFAULTLIB:libcmtd.lib ^
     /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib
@@ -89,7 +99,7 @@ goto :error
     set cpp_obj=gs_core_ai.obj gs_core_physics.obj
 
     rem Compile objects (rel)
-    cl /MT /EHsc /c /w /MP /Fd -D _WINSOCKAPI_ ^
+    cl /MT /EHsc /c /w /MP %extra_c_flags% /Fd -D _WINSOCKAPI_ ^
     %src_all% %lua_src% %inc% %lua_inc% ^
     /link /NODEFAULTLIB:libcmtd.lib ^
     /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib %tp_libs% 
@@ -102,14 +112,20 @@ goto :error
 :dbg
 
     echo Compiling Debug...
+    if [%sanitize%]==[1] (
+        echo   AddressSanitizer enabled for Debug build
+        set extra_c_flags=/fsanitize=address -Z7
+    ) else (
+        set extra_c_flags=
+    )
     rem Compile Cpp objects (dbg)
-    cl /std:c++17 /MTd /EHsc /c /w /MP -Z7 ^
+    cl /std:c++17 /MTd /EHsc /c /w /MP %extra_c_flags% ^
     %inc% %root%\source\core\gs_core_ai.cpp %root%\source\core\gs_core_physics.cpp ^
     %root%\source\core\gs_core_util.cpp /link /NODEFAULTLIB:libcmtd.lib ^
     /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib 
 
     rem Compile objects (dbg)
-    cl /MTd /EHsc /c /w /MP /Fd -Z7 -D _WINSOCKAPI_ -D GS_DEBUG ^
+    cl /MTd /EHsc /c /w /MP %extra_c_flags% /Fd -D _WINSOCKAPI_ -D GS_DEBUG ^
     %src_all% %lua_src% %inc% %lua_inc% /DEBUG ^
     /link /NODEFAULTLIB:libcmtd.lib ^
     /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib 

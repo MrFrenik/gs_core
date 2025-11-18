@@ -121,9 +121,9 @@ _gs_core_assets_register_importer(gs_core_assets_t* assets, gs_core_asset_import
     importer.register_default = desc->register_default;
     importer.free_asset = desc->free_asset;
     importer.class_id = desc->class_id;
-    memcpy(importer.file_extension, desc->asset_file_extension, GS_CORE_ASSETS_FILE_EXTENSION_MAX_LENGTH);
-    memcpy(importer.save_dir, desc->save_dir, GS_CORE_ASSET_STR_MAX);
-    memcpy(importer.file_name, desc->file_name, GS_CORE_ASSET_STR_MAX);
+    gs_snprintf(importer.file_extension, GS_CORE_ASSETS_FILE_EXTENSION_MAX_LENGTH, "%s", desc->asset_file_extension);
+    gs_snprintf(importer.save_dir, GS_CORE_ASSET_STR_MAX, "%s", desc->save_dir);
+    gs_snprintf(importer.file_name, GS_CORE_ASSET_STR_MAX, "%s", desc->file_name);
 
     // Insert empty asset handle/record into assets
     gs_core_asset_handle_t inv_hndl = {0};
@@ -156,7 +156,7 @@ _gs_core_assets_register_importer(gs_core_assets_t* assets, gs_core_asset_import
 
         record.uuid = gs_platform_uuid_generate(); 
         record.importer = ihndl;
-        memcpy(record.name, "default", GS_CORE_ASSET_STR_MAX); 
+        gs_snprintf(record.name, GS_CORE_ASSET_STR_MAX, "%s", "default"); 
         hndl.hndl = gs_slot_array_insert(ip->assets, asset);
         hndl.importer = gs_hash_table_get(assets->cid2importer, gs_core_obj_cid(asset));
 
@@ -290,7 +290,7 @@ gs_core_assets_new(const char* root_path)
     gs_core_assets_t* am = gs_malloc_init(gs_core_assets_t); 
 
     // Copy root path for assets
-    memcpy(am->root_path, root_path, GS_CORE_ASSET_STR_MAX);
+    gs_snprintf(am->root_path, GS_CORE_ASSET_STR_MAX, "%s", root_path);
 
     // Register importers 
     _gs_core_assets_register_importers(am);
@@ -405,7 +405,7 @@ gs_core_assets_import(gs_core_asset_import_options_t* options)
     // Get qualified name of asset based on import path
     gs_transient_buffer(QUAL_NAME, GS_CORE_ASSET_STR_MAX);
     _gs_core_asset_qualified_name(import_path, QUAL_NAME, GS_CORE_ASSET_STR_MAX);
-    memcpy(record.name, QUAL_NAME, GS_CORE_ASSET_STR_MAX); 
+    gs_snprintf(record.name, GS_CORE_ASSET_STR_MAX, "%s", QUAL_NAME); 
 
     // Get save directory
     const char* save_dir = options->save_dir ? options->save_dir : 

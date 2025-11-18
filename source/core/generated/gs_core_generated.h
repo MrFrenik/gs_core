@@ -47,6 +47,7 @@
 #include "..\..\source\core\/gs_core_app.h"
 #include "..\..\source\core\/gs_core_asset.h"
 #include "..\..\source\core\/gs_core_components.h"
+#include "..\..\source\core\/gs_core_crash.h"
 #include "..\..\source\core\/gs_core_entity.h"
 #include "..\..\source\core\/gs_core_graphics.h"
 #include "..\..\source\core\/gs_core_gs.h"

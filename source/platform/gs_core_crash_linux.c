@@ -1,12 +1,12 @@
 /*==============================================================================================================
-    * Copyright: 2022 John Jackson 
-    * File: gs_core_unity.c
+    * Copyright: 2025 John Jackson 
+    * File: gs_core_crash_linux.c
 
     All Rights Reserved
 
     BSD 3-Clause License
 
-    Copyright (c) 2022 John Jackson
+    Copyright (c) 2025 John Jackson
 
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
@@ -32,27 +32,35 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-=================================================================================================================*/ 
+=================================================================================================================*/
 
+/*================================================================================
+// Linux Crash Handler Implementation (Stub)
+//
+// TODO (Phase 3): Implement Linux crash handling using signal handlers
+================================================================================*/
 
-#include "gs_core_config.c"
-#include "gs_core_asset.c" 
-#include "gs_core_graphics.c"
-#include "gs_core_entity.c"
-#include "gs_core_components.c"
-#include "gs_core_object.c"
-#include "gs_core_network.c"
-#include "gs_core_vm.c"
-#include "gs_core.c"
-#include "gs_core_crash.c"
+#if defined(GS_PLATFORM_LINUX)
 
-// Platform-specific crash handler implementation
-#if defined(GS_PLATFORM_WIN)
-    #include "platform/gs_core_crash_win32.c"
-#elif defined(GS_PLATFORM_LINUX)
-    #include "platform/gs_core_crash_linux.c"
-#endif
+bool gs_core_crash_handler_init_impl(gs_core_crash_handler_desc_t* desc)
+{
+    // Stub - not implemented yet
+    return false;
+}
 
-#include "core/generated/gs_core_generated.c"
+void gs_core_crash_handler_shutdown_impl(void)
+{
+    // Stub - not implemented yet
+}
 
+bool gs_core_crash_handler_is_initialized_impl(void)
+{
+    return false;
+}
 
+void gs_core_crash_handler_write_dump_impl(void)
+{
+    // Stub - not implemented yet
+}
+
+#endif // GS_PLATFORM_LINUX

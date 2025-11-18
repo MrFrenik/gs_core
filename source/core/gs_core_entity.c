@@ -159,6 +159,7 @@ gs_core_entities_new()
     data->api.realloc_ = gs_ctx()->os.realloc;
     data->api.calloc_ = gs_ctx()->os.calloc;
     data->api.free_ = gs_ctx()->os.free;
+    data->api.strdup_ = gs_core_os_strdup;
     ecs_os_set_api(&data->api);
 
     ((gs_core_entity_data_t*)(ents->data))->world = ecs_init();

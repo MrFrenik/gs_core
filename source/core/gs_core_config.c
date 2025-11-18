@@ -393,6 +393,7 @@ gs_core_os_alloca(size_t sz)
 GS_API_DECL char* 
 gs_core_os_strdup(const char* str)
 {
+    if (!str) return NULL;
     return strdup(str);
 }
 
