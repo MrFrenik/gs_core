@@ -473,17 +473,31 @@ NATIVE_gs_core_vm_stack_push(gs_core_vm_state_t s, gs_core_vm_type_t type, void*
 { 
     if (!s || !data || !type) return;
     NATIVE_gs_core_vm_state_t* N = (NATIVE_gs_core_vm_state_t*)s;
+    if (!N || !N->stack.commands.data) {
+        gs_log_warning("NATIVE_gs_core_vm_stack_push: Invalid state or null buffer at entry");
+        return;
+    }
+    
     // Create element, store type
     NATIVE_gs_core_vm_stack_element_t elem = {
         .type = type, .position = N->stack.commands.position
     }; 
     // Push element to top of stack 
     gs_command_buffer_t* cb = &N->stack;
+    
+    // Double-check buffer is still valid (race condition protection)
+    if (!cb || !cb->commands.data) {
+        gs_log_warning("NATIVE_gs_core_vm_stack_push: Buffer invalid after element creation");
+        return;
+    }
+    
     cb->num_commands++;
     #define WRITE(T)\
         do {\
+            if (!cb || !cb->commands.data) { gs_log_warning("Buffer NULL in WRITE"); return; }\
             elem.size = sizeof(T);\
             gs_byte_buffer_write(&cb->commands, T, *(T*)data);\
+            if (!cb->commands.data) { gs_log_warning("WRITE failed: buffer data became NULL"); return; }\
         } while (0)
     switch (type) {
         default: return; break;
@@ -504,16 +518,34 @@ NATIVE_gs_core_vm_stack_push(gs_core_vm_state_t s, gs_core_vm_type_t type, void*
 
         case GS_CORE_VM_TYPE_FUNC:
         case GS_CORE_VM_TYPE_PTR: {
+            if (!cb || !cb->commands.data) { gs_log_warning("Buffer NULL in PTR write"); return; }
             elem.size = sizeof(void*);
             gs_byte_buffer_write(&cb->commands, void*, data);
+            if (!cb->commands.data) { gs_log_warning("PTR write failed: buffer data became NULL"); return; }
         } break;
 
         case GS_CORE_VM_TYPE_STR: {
+            if (!cb || !cb->commands.data) { gs_log_warning("Buffer NULL in STR write"); return; }
             elem.size = strlen(data) + 1;
             gs_byte_buffer_write_bulk(&cb->commands, data, elem.size - 1);
+            if (!cb->commands.data) { gs_log_warning("STR write failed: buffer data became NULL"); return; }
             gs_byte_buffer_write(&cb->commands, char, '\0');
+            if (!cb->commands.data) { gs_log_warning("STR null terminator write failed: buffer data became NULL"); return; }
         } break;
     }
+    
+    // Final check before pushing element
+    if (!N || !N->elements.data) {
+        gs_log_warning("NATIVE_gs_core_vm_stack_push: Elements array became NULL");
+        return;
+    }
+    
+    // Sanity check on buffer before finalizing
+    if (!cb || !cb->commands.data) {
+        gs_log_warning("NATIVE_gs_core_vm_stack_push: Buffer became NULL before pushing element");
+        return;
+    }
+    
     gs_array_push(N->elements, elem);   // Write element header
 } 
 
@@ -535,10 +567,11 @@ NATIVE_gs_core_vm_stack_top(gs_core_vm_state_t s)
 }
 
 GS_API_PRIVATE void* 
-NATIVE_gs_core_vm_stack_get(gs_core_vm_state_t* s, int32_t idx)
+NATIVE_gs_core_vm_stack_get(gs_core_vm_state_t s, int32_t idx)
 { 
+    if (!s) return NULL;
     NATIVE_gs_core_vm_state_t* N = (NATIVE_gs_core_vm_state_t*)s; 
-    if (idx > N->elements.size) return NULL;
+    if (!N || idx >= N->elements.size) return NULL;
     return (N->stack.commands.data + N->elements.data[idx].position); 
 }
 
@@ -694,15 +727,24 @@ NATIVE_gs_core_vm_script_exec(gs_core_vm_script_engine_t* engine, gs_core_vm_sta
     size_t pos = 0;
     for (int32_t i = 0; i < GS_CORE_VM_EXEC_RET_MAX; ++i) {
         const int32_t idx = top + i;
-        if (idx >= newtop) break;
+        if (idx >= newtop) {
+            if (i == 0 && desc->nresults > 0) {
+                gs_log_warning("NATIVE_gs_core_vm_script_exec: No return values collected (top=%d, newtop=%d)", top, newtop);
+            }
+            break;
+        }
         NATIVE_gs_core_vm_stack_element_t elem = N->elements.data[idx];
-        gs_assert(pos + elem.size < GS_CORE_VM_EXEC_RET_BUFFER_SIZE);
+        if (pos + elem.size >= GS_CORE_VM_EXEC_RET_BUFFER_SIZE) {
+            gs_log_warning("Return value buffer overflow: need %zu bytes, buffer is %d bytes", pos + elem.size, GS_CORE_VM_EXEC_RET_BUFFER_SIZE);
+            break;  // Stop collecting returns if buffer is full
+        }
         // Store return type
         ret.elem[i].type = elem.type;
         ret.elem[i].size = elem.size;
         ret.elem[i].offset = pos;
         // Push return data 
         memcpy(ret.data + pos, engine->stack_get(s, idx), elem.size);
+        pos += elem.size;
     }
 
     // Just clear stack for now

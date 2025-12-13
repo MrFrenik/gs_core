@@ -53,6 +53,9 @@
     #include "platform/gs_core_crash_linux.c"
 #endif
 
+// AI Coordinator subsystem
+#include "ai/gs_core_ai_unity.c"
+
 #include "core/generated/gs_core_generated.c"
 
 

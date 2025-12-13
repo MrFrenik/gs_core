@@ -106,7 +106,7 @@ typedef struct gs_sched_async_t {
     gs_sched_fp_t run;          // Task to be run by async
     gs_sched_async_fp_t cb;     // Callback when completed
     void* user_data;            // Optional user data
-    uint32_t flags;             // Async flags
+    volatile uint32_t flags;    // Async flags (volatile to prevent optimization issues in busy-wait loops)
 } gs_core_sched_async_t;
 
 GS_API_DECL void

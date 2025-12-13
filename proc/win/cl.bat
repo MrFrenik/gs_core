@@ -41,7 +41,10 @@ set tp_libs_dbg=%root%\third_party\libs\win\dbg\Bullet3Collision_Debug.lib ^
     %root%\third_party\libs\win\dbg\Recast-d.lib ^
     %root%\third_party\libs\win\dbg\Detour-d.lib ^
     %root%\third_party\libs\win\dbg\DetourCrowd-d.lib ^
-    %root%\third_party\libs\win\dbg\DetourTileCache-d.lib
+    %root%\third_party\libs\win\dbg\DetourTileCache-d.lib ^
+    %root%\third_party\libs\win\dbg\libcurl-d.lib ^
+    %root%\third_party\libs\win\dbg\cjson-d.lib ^
+    %root%\third_party\libs\win\dbg\pcre2-8-staticd.lib
 
 set tp_libs=%root%\third_party\libs\win\rel\Bullet3Collision.lib ^
     %root%\third_party\libs\win\rel\Bullet3Common.lib ^
@@ -54,7 +57,10 @@ set tp_libs=%root%\third_party\libs\win\rel\Bullet3Collision.lib ^
     %root%\third_party\libs\win\rel\Recast.lib ^
     %root%\third_party\libs\win\rel\Detour.lib ^
     %root%\third_party\libs\win\rel\DetourCrowd.lib ^
-    %root%\third_party\libs\win\rel\DetourTileCache.lib
+    %root%\third_party\libs\win\rel\DetourTileCache.lib ^
+    %root%\third_party\libs\win\rel\libcurl.lib ^
+    %root%\third_party\libs\win\rel\cjson.lib ^
+    %root%\third_party\libs\win\rel\pcre2-8-static.lib
 
 rem Link options
 set l_options=/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib 
@@ -90,7 +96,7 @@ goto :error
         set extra_c_flags=
     )
     rem Compile Cpp objects (rel)
-    cl /MT /EHsc /c /w /MP %extra_c_flags% ^
+    cl /MT /EHsc /c /w /MP %extra_c_flags% -D CURL_STATICLIB ^
     %inc% %root%\source\core\gs_core_ai.cpp %root%\source\core\gs_core_physics.cpp ^
     %root%\source\core\gs_core_util.cpp /link /NODEFAULTLIB:libcmtd.lib ^
     /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib
@@ -99,7 +105,7 @@ goto :error
     set cpp_obj=gs_core_ai.obj gs_core_physics.obj
 
     rem Compile objects (rel)
-    cl /MT /EHsc /c /w /MP %extra_c_flags% /Fd -D _WINSOCKAPI_ ^
+    cl /MT /EHsc /c /w /MP %extra_c_flags% /Fd -D _WINSOCKAPI_ -D CURL_STATICLIB ^
     %src_all% %lua_src% %inc% %lua_inc% ^
     /link /NODEFAULTLIB:libcmtd.lib ^
     /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib %tp_libs% 
@@ -114,18 +120,18 @@ goto :error
     echo Compiling Debug...
     if [%sanitize%]==[1] (
         echo   AddressSanitizer enabled for Debug build
-        set extra_c_flags=/fsanitize=address -Z7
+        set extra_c_flags=/fsanitize=address /Zi
     ) else (
         set extra_c_flags=
     )
     rem Compile Cpp objects (dbg)
-    cl /std:c++17 /MTd /EHsc /c /w /MP %extra_c_flags% ^
+    cl /std:c++17 /MTd /EHsc /c /w /MP %extra_c_flags% -D CURL_STATICLIB ^
     %inc% %root%\source\core\gs_core_ai.cpp %root%\source\core\gs_core_physics.cpp ^
     %root%\source\core\gs_core_util.cpp /link /NODEFAULTLIB:libcmtd.lib ^
     /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib 
 
     rem Compile objects (dbg)
-    cl /MTd /EHsc /c /w /MP %extra_c_flags% /Fd -D _WINSOCKAPI_ -D GS_DEBUG ^
+    cl /MTd /EHsc /c /w /MP %extra_c_flags% /Fd -D _WINSOCKAPI_ -D GS_DEBUG -D CURL_STATICLIB ^
     %src_all% %lua_src% %inc% %lua_inc% /DEBUG ^
     /link /NODEFAULTLIB:libcmtd.lib ^
     /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib 

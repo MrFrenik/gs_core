@@ -30,7 +30,7 @@ rem Link options
 set l_options=/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib 
 
 rem Compile
-cl /w /MTd /MP -Zi -D _WINSOCKAPI_ /DEBUG:FULL /Fe%name%.exe ^
+cl /w /MTd /MP -Zi -D _WINSOCKAPI_ -D GS_PLATFORM_WIN /DEBUG:FULL /Fe%name%.exe ^
 %src_all% %inc% /EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:libcmtd.lib ^
 /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib ^
 %os_libs% 

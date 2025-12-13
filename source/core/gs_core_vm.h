@@ -184,7 +184,7 @@ GS_API_DECL int32_t _gs_core_vm_ret_val(gs_core_vm_state_t s, gs_core_vm_type_t 
 // Foward Decls.
 typedef struct gs_core_vm_script_engine_s; 
 typedef int32_t (* gs_core_vm_script_engine_init_fn_t)(struct gs_core_vm_script_engine_s* engine); 
-typedef void (* gs_core_vm_fn_t)(gs_core_vm_state_t* state);
+typedef void (* gs_core_vm_fn_t)(struct gs_core_vm_script_engine_s* engine, gs_core_vm_state_t state);
 
 typedef struct gs_core_vm_script_engine_s {
     gs_core_vm_state_t (* vm_state_new)();
@@ -202,7 +202,7 @@ typedef struct gs_core_vm_script_engine_s {
 
     // Stack
     bool (* stack_get_global)(gs_core_vm_state_t* s, gs_core_vm_type_t type, const char* name);
-    void* (* stack_get)(gs_core_vm_state_t* s, int32_t idx);
+    void* (* stack_get)(gs_core_vm_state_t s, int32_t idx);
     void (* stack_push)(gs_core_vm_state_t s, gs_core_vm_type_t type, void* data); 
     void (* stack_pop)(gs_core_vm_state_t s, int32_t cnt);
     int32_t (* stack_top)(gs_core_vm_state_t s);
