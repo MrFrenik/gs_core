@@ -38,6 +38,12 @@
 #ifndef gs_core_GENERATED_H
 #define gs_core_GENERATED_H
 
+// Custom Property Types
+// Note: These extend the base GS_META_PROPERTY_TYPE enum starting from 22
+#define GS_CORE_META_PROPERTY_TYPE_GS_CORE_COMPONENT_RENDERABLE_T 22
+#define GS_CORE_META_PROPERTY_TYPE_GS_CORE_COMPONENT_TRANSFORM_T 23
+#define GS_CORE_META_PROPERTY_TYPE_GS_CORE_ASSET_HANDLE_T 24
+
 // Includes
 #include "core/gs_core_object.h"
 #include "core/gs_core_gs.h"

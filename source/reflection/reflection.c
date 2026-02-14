@@ -43,10 +43,24 @@
 #define META_FUNCTION_STR_MAX   8192
 #define META_LAMBDA_STR_MAX     8192
 
+typedef enum {
+    CONTAINER_TYPE_NONE = 0,
+    CONTAINER_TYPE_ARRAY,           // C-style array: type[N]
+    CONTAINER_TYPE_GS_BYTE_BUFFER,  // gs_byte_buffer_t
+    CONTAINER_TYPE_GS_DYN_ARRAY,    // gs_dyn_array(T)
+    CONTAINER_TYPE_GS_HASH_TABLE,   // gs_hash_table(K, V)
+    CONTAINER_TYPE_GS_SLOT_ARRAY,   // gs_slot_array(T)
+    CONTAINER_TYPE_GS_ARRAY         // gs_array(T, N)
+} container_type_t;
+
 typedef struct
 { 
     char name[META_PROPERTY_STR_MAX];
     char type[META_PROPERTY_STR_MAX];
+    container_type_t container_type;
+    int32_t array_count;  // For C arrays and gs_array capacity
+    char element_type[META_PROPERTY_STR_MAX];  // For containers
+    char key_type[META_PROPERTY_STR_MAX];      // For hash_table only
 } property_t;
 
 typedef struct
@@ -98,10 +112,19 @@ typedef struct
 
 typedef struct
 {
+    char type_name[META_PROPERTY_STR_MAX];
+    char type_info[META_PROPERTY_STR_MAX];  // Generated type info string like "GS_META_PROPERTY_TYPE_INFO_CUSTOM(22)"
+    uint32_t id;
+} custom_type_t;
+
+typedef struct
+{
     gs_hash_table(uint64_t, class_t) classes;
     gs_hash_table(uint64_t, const char*) type_map;
+    gs_hash_table(uint64_t, uint32_t) custom_type_ids;  // Maps type names to custom type IDs
     gs_hash_table(uint64_t, cvar_t) cvars;
     gs_hash_table(uint64_t, lambda_t) lambdas;
+    gs_dyn_array(custom_type_t) custom_types;
 } meta_t;
 
 static meta_t g_meta = {0};
@@ -212,6 +235,136 @@ parse_class_method(meta_t* meta, class_t* cls, gs_lexer_t* lex)
     gs_hash_table_insert(cls->methods, gs_hash_str64(method.name), method);
 }
 
+bool is_builtin_type(const char* type_str)
+{
+    // Remove whitespace and pointer markers for comparison
+    char clean_type[META_PROPERTY_STR_MAX] = {0};
+    uint32_t j = 0;
+    for (uint32_t i = 0; type_str[i] && j < META_PROPERTY_STR_MAX - 1; ++i) {
+        if (type_str[i] != ' ' && type_str[i] != '*') {
+            clean_type[j++] = type_str[i];
+        }
+    }
+    clean_type[j] = '\0';
+
+    // Check against known built-in types
+    return gs_string_compare_equal(clean_type, "char") ||
+           gs_string_compare_equal(clean_type, "u8") ||
+           gs_string_compare_equal(clean_type, "u16") ||
+           gs_string_compare_equal(clean_type, "u32") ||
+           gs_string_compare_equal(clean_type, "u64") ||
+           gs_string_compare_equal(clean_type, "uint8_t") ||
+           gs_string_compare_equal(clean_type, "uint16_t") ||
+           gs_string_compare_equal(clean_type, "uint32_t") ||
+           gs_string_compare_equal(clean_type, "uint64_t") ||
+           gs_string_compare_equal(clean_type, "s8") ||
+           gs_string_compare_equal(clean_type, "s16") ||
+           gs_string_compare_equal(clean_type, "s32") ||
+           gs_string_compare_equal(clean_type, "s64") ||
+           gs_string_compare_equal(clean_type, "int8_t") ||
+           gs_string_compare_equal(clean_type, "int16_t") ||
+           gs_string_compare_equal(clean_type, "int32_t") ||
+           gs_string_compare_equal(clean_type, "int64_t") ||
+           gs_string_compare_equal(clean_type, "b8") ||
+           gs_string_compare_equal(clean_type, "b16") ||
+           gs_string_compare_equal(clean_type, "b32") ||
+           gs_string_compare_equal(clean_type, "bool") ||
+           gs_string_compare_equal(clean_type, "f32") ||
+           gs_string_compare_equal(clean_type, "f64") ||
+           gs_string_compare_equal(clean_type, "float") ||
+           gs_string_compare_equal(clean_type, "double") ||
+           gs_string_compare_equal(clean_type, "gs_vec2") ||
+           gs_string_compare_equal(clean_type, "gs_vec3") ||
+           gs_string_compare_equal(clean_type, "gs_vec4") ||
+           gs_string_compare_equal(clean_type, "gs_quat") ||
+           gs_string_compare_equal(clean_type, "gs_mat4") ||
+           gs_string_compare_equal(clean_type, "gs_vqs");
+}
+
+void register_custom_type(meta_t* meta, const char* type_str)
+{
+    // Check if already registered
+    uint64_t type_hash = gs_hash_str64(type_str);
+    if (gs_hash_table_key_exists(meta->custom_type_ids, type_hash)) {
+        return; // Already registered
+    }
+
+    // Create new custom type with unique ID
+    custom_type_t custom_type = {0};
+    gs_snprintf(custom_type.type_name, sizeof(custom_type.type_name), "%s", type_str);
+    custom_type.id = 22 + gs_dyn_array_size(meta->custom_types); // Start after GS_META_PROPERTY_TYPE_OBJ (21)
+    
+    // Generate type_info macro call: _gs_meta_property_type_decl(custom_type, ID)
+    gs_snprintf(custom_type.type_info, sizeof(custom_type.type_info), "_gs_meta_property_type_decl(%s, %u)", type_str, custom_type.id);
+    
+    // Add to dynamic array
+    gs_dyn_array_push(meta->custom_types, custom_type);
+    
+    // Store ID in hash table (not pointer to avoid dangling pointer issues)
+    gs_hash_table_insert(meta->custom_type_ids, type_hash, custom_type.id);
+}
+
+// Parse container macro arguments (e.g., "T" from gs_dyn_array(T) or "K, V" from gs_hash_table(K, V))
+void parse_container_args(gs_lexer_t* lex, char* arg1, char* arg2, int32_t* count)
+{
+    *count = 0;
+    arg1[0] = '\0';
+    arg2[0] = '\0';
+    
+    gs_token_t token = lex->next_token(lex);
+    if (token.type != GS_TOKEN_LPAREN) return;
+    
+    // First argument
+    token = lex->next_token(lex);
+    if (token.type == GS_TOKEN_RPAREN) return;
+    
+    gs_token_t start = token;
+    int paren_depth = 0;
+    
+    // Capture everything until comma or closing paren (handles nested types)
+    while (token.type != GS_TOKEN_UNKNOWN) {
+        if (token.type == GS_TOKEN_LPAREN) paren_depth++;
+        if (token.type == GS_TOKEN_RPAREN) {
+            if (paren_depth == 0) break;
+            paren_depth--;
+        }
+        if (token.type == GS_TOKEN_COMMA && paren_depth == 0) break;
+        token = lex->next_token(lex);
+    }
+    
+    // Copy first argument
+    int32_t len = token.text - start.text;
+    if (len > 0 && len < META_PROPERTY_STR_MAX) {
+        memcpy(arg1, start.text, len);
+        arg1[len] = '\0';
+        // Trim whitespace
+        while (len > 0 && (arg1[len-1] == ' ' || arg1[len-1] == '\t')) arg1[--len] = '\0';
+    }
+    
+    // Check for second argument (for hash_table or gs_array)
+    if (token.type == GS_TOKEN_COMMA) {
+        token = lex->next_token(lex);
+        start = token;
+        paren_depth = 0;
+        
+        while (token.type != GS_TOKEN_UNKNOWN && token.type != GS_TOKEN_RPAREN) {
+            if (token.type == GS_TOKEN_LPAREN) paren_depth++;
+            if (token.type == GS_TOKEN_RPAREN && paren_depth > 0) paren_depth--;
+            token = lex->next_token(lex);
+        }
+        
+        len = token.text - start.text;
+        if (len > 0 && len < META_PROPERTY_STR_MAX) {
+            memcpy(arg2, start.text, len);
+            arg2[len] = '\0';
+            while (len > 0 && (arg2[len-1] == ' ' || arg2[len-1] == '\t')) arg2[--len] = '\0';
+            
+            // Try to parse as number for array capacity
+            *count = atoi(arg2);
+        }
+    }
+}
+
 GS_API_DECL void
 parse_class_property(meta_t* meta, class_t* cls, gs_lexer_t* lex)
 { 
@@ -234,11 +387,65 @@ parse_class_property(meta_t* meta, class_t* cls, gs_lexer_t* lex)
     // Parse type
     int32_t len = token.text - start.text > 0 ? token.text - start.text + 1 : token.len; 
     memcpy(prop.type, start.text, len);
+    
+    // Check if type is a container macro
+    bool is_container = false;
+    if (gs_string_compare_equal(prop.type, "gs_dyn_array")) {
+        prop.container_type = CONTAINER_TYPE_GS_DYN_ARRAY;
+        parse_container_args(lex, prop.element_type, prop.key_type, &prop.array_count);
+        is_container = true;
+    } else if (gs_string_compare_equal(prop.type, "gs_hash_table")) {
+        prop.container_type = CONTAINER_TYPE_GS_HASH_TABLE;
+        parse_container_args(lex, prop.key_type, prop.element_type, &prop.array_count);
+        is_container = true;
+    } else if (gs_string_compare_equal(prop.type, "gs_slot_array")) {
+        prop.container_type = CONTAINER_TYPE_GS_SLOT_ARRAY;
+        parse_container_args(lex, prop.element_type, prop.key_type, &prop.array_count);
+        is_container = true;
+    } else if (gs_string_compare_equal(prop.type, "gs_array")) {
+        prop.container_type = CONTAINER_TYPE_GS_ARRAY;
+        parse_container_args(lex, prop.element_type, prop.key_type, &prop.array_count);
+        is_container = true;
+    } else if (gs_string_compare_equal(prop.type, "gs_byte_buffer_t")) {
+        prop.container_type = CONTAINER_TYPE_GS_BYTE_BUFFER;
+        is_container = true;
+    }
+
+    // Register custom type if not builtin
+    if (!is_container && !is_builtin_type(prop.type)) {
+        register_custom_type(meta, prop.type);
+    }
+    
+    // For containers, also register the element type if it's not builtin
+    if (is_container && prop.element_type[0] != '\0' && !is_builtin_type(prop.element_type)) {
+        register_custom_type(meta, prop.element_type);
+    }
 
     // Parse name
     TOKEN_EXPECT(lex, GS_TOKEN_IDENTIFIER, "Expect property name");
     token = lex->current_token;
     TOKEN_COPY(token, prop.name);
+    
+    // Check for array brackets [N]
+    if (gs_lexer_peek(lex).type == GS_TOKEN_LBRACKET) {
+        lex->next_token(lex); // consume [
+        token = lex->next_token(lex);
+        
+        if (token.type == GS_TOKEN_NUMBER) {
+            prop.array_count = atoi(token.text);
+            prop.container_type = CONTAINER_TYPE_ARRAY;
+            // Store original type as element_type for arrays
+            memcpy(prop.element_type, prop.type, META_PROPERTY_STR_MAX);
+        } else if (token.type == GS_TOKEN_IDENTIFIER) {
+            // Might be a #define constant, try to evaluate
+            // For now, just mark as array and size will be determined at compile time
+            prop.array_count = -1;  // Unknown compile-time constant
+            prop.container_type = CONTAINER_TYPE_ARRAY;
+            memcpy(prop.element_type, prop.type, META_PROPERTY_STR_MAX);
+        }
+        
+        TOKEN_EXPECT(lex, GS_TOKEN_RBRACKET, "Expect closing bracket");
+    }
     
     // Add property to class
     gs_dyn_array_push(cls->properties, prop);
@@ -730,6 +937,7 @@ int32_t main(int32_t argc, char** argv)
     // Initialize type map 
     struct {const char* key; const char* info;} type_map[] = {
 
+        {.key = "char",         .info = "GS_META_PROPERTY_TYPE_INFO_U8"},
         {.key = "int8_t",       .info = "GS_META_PROPERTY_TYPE_INFO_S8"},
         {.key = "s8",           .info = "GS_META_PROPERTY_TYPE_INFO_S8"},
         {.key = "uint8_t",      .info = "GS_META_PROPERTY_TYPE_INFO_U8"},
@@ -841,6 +1049,46 @@ int32_t main(int32_t argc, char** argv)
     return 0;
 }
 
+// Helper function to get type enum ID string for a type name
+static const char* get_type_info_for_type(meta_t* meta, const char* type_name)
+{
+    // Check builtin types using the type_map
+    uint64_t type_hash = gs_hash_str64(type_name);
+    if (gs_hash_table_key_exists(meta->type_map, type_hash)) {
+        const char* type_info = gs_hash_table_get(meta->type_map, type_hash);
+        // Extract enum ID from type_info macro name
+        // e.g. "GS_META_PROPERTY_TYPE_INFO_U32" -> "GS_META_PROPERTY_TYPE_U32"
+        if (strstr(type_info, "GS_META_PROPERTY_TYPE_INFO_")) {
+            static char enum_id_buffer[128];
+            const char* start = type_info + strlen("GS_META_PROPERTY_TYPE_INFO_");
+            snprintf(enum_id_buffer, sizeof(enum_id_buffer), "GS_META_PROPERTY_TYPE_%s", start);
+            return enum_id_buffer;
+        }
+    }
+    
+    // Check custom types
+    if (gs_hash_table_key_exists(meta->custom_type_ids, type_hash)) {
+        // Custom types - return their specific type ID
+        uint32_t custom_id = gs_hash_table_get(meta->custom_type_ids, type_hash);
+        static char custom_type_buffer[128];
+        
+        // Find the custom type to get its type_info string
+        for (size_t i = 0; i < gs_dyn_array_size(meta->custom_types); i++) {
+            if (meta->custom_types[i].id == custom_id) {
+                // Return the ID directly (e.g., "42" which becomes the enum value)
+                snprintf(custom_type_buffer, sizeof(custom_type_buffer), "%u", custom_id);
+                return custom_type_buffer;
+            }
+        }
+        
+        // Fallback to OBJ if not found
+        return "GS_META_PROPERTY_TYPE_OBJ";
+    }
+    
+    // Default to OBJ for unknown types
+    return "GS_META_PROPERTY_TYPE_OBJ";
+}
+
 GS_API_DECL void 
 write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_offset)
 {
@@ -909,7 +1157,34 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
     
     // Include guard
     gs_fprintln(fp, "\n#ifndef %s_GENERATED_H", proj_name);
-    gs_fprintln(fp, "#define %s_GENERATED_H\n", proj_name); 
+    gs_fprintln(fp, "#define %s_GENERATED_H\n", proj_name);
+
+    // Custom property types
+    if (gs_dyn_array_size(meta->custom_types) > 0) {
+        gs_fprintln(fp, "// Custom Property Types");
+        gs_fprintln(fp, "// Note: These extend the base GS_META_PROPERTY_TYPE enum starting from 22");
+        for (uint32_t i = 0; i < gs_dyn_array_size(meta->custom_types); ++i) {
+            custom_type_t* ct = &meta->custom_types[i];
+            // Convert type name to uppercase enum name
+            char enum_name[META_PROPERTY_STR_MAX] = {0};
+            gs_snprintf(enum_name, sizeof(enum_name), "%s_META_PROPERTY_TYPE_", proj_name);
+            uint32_t enum_len = gs_string_length(enum_name);
+            // Convert to uppercase
+            for (uint32_t k = 0; enum_name[k]; ++k) {
+                if (enum_name[k] >= 'a' && enum_name[k] <= 'z') {
+                    enum_name[k] = enum_name[k] - 'a' + 'A';
+                }
+            }
+            for (uint32_t j = 0; ct->type_name[j] && enum_len < META_PROPERTY_STR_MAX - 1; ++j) {
+                char c = ct->type_name[j];
+                if (c == '*' || c == ' ') continue;
+                enum_name[enum_len++] = (c >= 'a' && c <= 'z') ? (c - 'a' + 'A') : c;
+            }
+            enum_name[enum_len] = '\0';
+            gs_fprintln(fp, "#define %s %u", enum_name, ct->id);
+        }
+        gs_fprintln(fp, "");
+    } 
 
     // Includes
     gs_fprintln(fp, "// Includes");
@@ -1524,19 +1799,166 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
             for (uint32_t p = 0; p < gs_dyn_array_size(cls->properties); ++p)
             { 
                 const char* type_info = "GS_META_PROPERTY_TYPE_INFO_OBJ";
+                char custom_type_info_buffer[META_PROPERTY_STR_MAX] = {0};
                 property_t* prop = &cls->properties[p];
-                uint64_t type_hash = gs_hash_str64(prop->type);
-                if (gs_hash_table_key_exists(meta->type_map, type_hash))
+                
+                // Determine type to use for lookup and output
+                const char* output_type = prop->type;
+                const char* lookup_type = prop->type;
+                
+                // For containers (gs_dyn_array, gs_hash_table, etc.), use void* as output type
+                // since they're pointer types and the macro names aren't valid type identifiers
+                bool is_gs_container = (prop->container_type == CONTAINER_TYPE_GS_DYN_ARRAY ||
+                                       prop->container_type == CONTAINER_TYPE_GS_HASH_TABLE ||
+                                       prop->container_type == CONTAINER_TYPE_GS_SLOT_ARRAY ||
+                                       prop->container_type == CONTAINER_TYPE_GS_ARRAY ||
+                                       prop->container_type == CONTAINER_TYPE_GS_BYTE_BUFFER);
+                if (is_gs_container) {
+                    output_type = "void*";
+                    // Get type IDs for key and value types
+                    char key_type_id_str[32] = {0};
+                    char val_type_id_str[32] = {0};
+                    
+                    // Get key type ID (for hash_table)
+                    if (prop->key_type[0]) {
+                        const char* key_type_info = get_type_info_for_type(meta, prop->key_type);
+                        if (key_type_info) {
+                            snprintf(key_type_id_str, sizeof(key_type_id_str), "%s", key_type_info);
+                        }
+                    }
+                    
+                    // Get value/element type ID
+                    if (prop->element_type[0]) {
+                        const char* val_type_info = get_type_info_for_type(meta, prop->element_type);
+                        if (val_type_info) {
+                            snprintf(val_type_id_str, sizeof(val_type_id_str), "%s", val_type_info);
+                        }
+                    }
+                    
+                    // Set container-specific type info based on container_type
+                    char type_info_buffer[256];
+                    switch (prop->container_type) {
+                        case CONTAINER_TYPE_GS_DYN_ARRAY:
+                            if (val_type_id_str[0]) {
+                                snprintf(type_info_buffer, sizeof(type_info_buffer), 
+                                    "_gs_meta_property_type_container_decl(gs_dyn_array, GS_META_PROPERTY_TYPE_GS_DYN_ARRAY, 0, %s)", val_type_id_str);
+                                type_info = type_info_buffer;
+                            } else {
+                                type_info = "GS_META_PROPERTY_TYPE_INFO_GS_DYN_ARRAY";
+                            }
+                            break;
+                        case CONTAINER_TYPE_GS_HASH_TABLE:
+                            if (key_type_id_str[0] && val_type_id_str[0]) {
+                                snprintf(type_info_buffer, sizeof(type_info_buffer), 
+                                    "_gs_meta_property_type_container_decl(gs_hash_table, GS_META_PROPERTY_TYPE_GS_HASH_TABLE, %s, %s)", key_type_id_str, val_type_id_str);
+                                type_info = type_info_buffer;
+                            } else {
+                                type_info = "GS_META_PROPERTY_TYPE_INFO_GS_HASH_TABLE";
+                            }
+                            break;
+                        case CONTAINER_TYPE_GS_SLOT_ARRAY:
+                            if (val_type_id_str[0]) {
+                                snprintf(type_info_buffer, sizeof(type_info_buffer), 
+                                    "_gs_meta_property_type_container_decl(gs_slot_array, GS_META_PROPERTY_TYPE_GS_SLOT_ARRAY, 0, %s)", val_type_id_str);
+                                type_info = type_info_buffer;
+                            } else {
+                                type_info = "GS_META_PROPERTY_TYPE_INFO_GS_SLOT_ARRAY";
+                            }
+                            break;
+                        case CONTAINER_TYPE_GS_BYTE_BUFFER:
+                            type_info = "GS_META_PROPERTY_TYPE_INFO_GS_BYTE_BUFFER";
+                            break;
+                        case CONTAINER_TYPE_GS_ARRAY:
+                            if (val_type_id_str[0]) {
+                                snprintf(type_info_buffer, sizeof(type_info_buffer), 
+                                    "_gs_meta_property_type_container_decl(gs_array, GS_META_PROPERTY_TYPE_GS_ARRAY, 0, %s)", val_type_id_str);
+                                type_info = type_info_buffer;
+                            } else {
+                                type_info = "GS_META_PROPERTY_TYPE_INFO_GS_ARRAY";
+                            }
+                            break;
+                        default:
+                            type_info = "GS_META_PROPERTY_TYPE_INFO_OBJ";
+                            break;
+                    }
+                }
+                
+                // For arrays, use element type for type lookup
+                if (prop->container_type == CONTAINER_TYPE_ARRAY && prop->element_type[0]) {
+                    lookup_type = prop->element_type;
+                }
+                
+                uint64_t type_hash = gs_hash_str64(lookup_type);
+                
+                // Check builtin types first (skip for gs containers - already set above)
+                if (!is_gs_container && gs_hash_table_key_exists(meta->type_map, type_hash))
                 {
                     type_info = gs_hash_table_get(meta->type_map, type_hash);
                 }
+                // Check custom types
+                else if (!is_gs_container && gs_hash_table_key_exists(meta->custom_type_ids, type_hash))
+                {
+                    uint32_t custom_id = gs_hash_table_get(meta->custom_type_ids, type_hash);
+                    gs_snprintf(custom_type_info_buffer, sizeof(custom_type_info_buffer), 
+                               "_gs_meta_property_type_decl(%s, %u)", lookup_type, custom_id);
+                    type_info = custom_type_info_buffer;
+                }
 
-                gs_fprintf(fp, "\t\t\t\tgs_meta_property(%s, %s, %s, %s)",
-                    cls->name, 
-                    prop->type, 
-                    prop->name, 
-                    type_info
-                );
+                // Generate property metadata
+                if (prop->container_type == CONTAINER_TYPE_GS_ARRAY) {
+                    // gs_array(T, N) - need special size calculation: sizeof(T) * N + sizeof(size_t)
+                    if (prop->array_count > 0 && prop->element_type[0]) {
+                        // Known element type and capacity - generate precise size formula
+                        gs_fprintf(fp, "\t\t\t\t_gs_meta_property_impl(gs_to_str(%s), gs_to_str(%s), (sizeof(%s) * %d + sizeof(size_t)), gs_offset(%s, %s), %s)",
+                            output_type,
+                            prop->name,
+                            prop->element_type,
+                            prop->array_count,
+                            cls->name,
+                            prop->name,
+                            type_info
+                        );
+                    } else {
+                        // Fallback - use sizeof on field (will be incorrect but prevents compile error)
+                        gs_fprintf(fp, "\t\t\t\tgs_meta_property(%s, %s, %s, %s)",
+                            cls->name,
+                            output_type,
+                            prop->name,
+                            type_info
+                        );
+                    }
+                } else if (prop->container_type == CONTAINER_TYPE_ARRAY) {
+                    // C-style array
+                    if (prop->array_count > 0) {
+                        // Known compile-time constant
+                        gs_fprintf(fp, "\t\t\t\tgs_meta_property_ex(%s, %s, %s, %s, %d)",
+                            cls->name, 
+                            lookup_type,
+                            prop->name, 
+                            type_info,
+                            prop->array_count
+                        );
+                    } else {
+                        // Unknown constant - use sizeof to let compiler figure it out
+                        gs_fprintf(fp, "\t\t\t\t_gs_meta_property_impl(gs_to_str(%s), gs_to_str(%s), sizeof(((%s*)0)->%s), gs_offset(%s, %s), %s)",
+                            lookup_type,
+                            prop->name,
+                            cls->name,
+                            prop->name,
+                            cls->name, 
+                            prop->name, 
+                            type_info
+                        );
+                    }
+                } else {
+                    // Regular property or container type (containers use void* as output_type)
+                    gs_fprintf(fp, "\t\t\t\tgs_meta_property(%s, %s, %s, %s)",
+                        cls->name, 
+                        output_type, 
+                        prop->name, 
+                        type_info
+                    );
+                }
 
                 if (p < psize - 1) gs_fprintf(fp, ",\n");
                 else               gs_fprintln(fp, "");

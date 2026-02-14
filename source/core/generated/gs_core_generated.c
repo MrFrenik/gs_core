@@ -2214,8 +2214,8 @@ gs_core_meta_register()
 		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
 			.name = gs_to_str(gs_core_system_renderable_t),
 			.properties = (gs_meta_property_t[]) {
-				gs_meta_property(gs_core_system_renderable_t, gs_core_component_renderable_t*, renderable, GS_META_PROPERTY_TYPE_INFO_OBJ),
-				gs_meta_property(gs_core_system_renderable_t, gs_core_component_transform_t*, transform, GS_META_PROPERTY_TYPE_INFO_OBJ)
+				gs_meta_property(gs_core_system_renderable_t, gs_core_component_renderable_t*, renderable, _gs_meta_property_type_decl(gs_core_component_renderable_t*, 22)),
+				gs_meta_property(gs_core_system_renderable_t, gs_core_component_transform_t*, transform, _gs_meta_property_type_decl(gs_core_component_transform_t*, 23))
 			},
 			.size = 2 * sizeof(gs_meta_property_t)
 		}));
@@ -2303,7 +2303,7 @@ gs_core_meta_register()
 		cid = gs_meta_class_register(&meta->registry, (&(gs_meta_class_decl_t){
 			.name = gs_to_str(gs_core_graphics_renderpass_t),
 			.properties = (gs_meta_property_t[]) {
-				gs_meta_property(gs_core_graphics_renderpass_t, gs_core_asset_handle_t, pip, GS_META_PROPERTY_TYPE_INFO_OBJ)
+				gs_meta_property(gs_core_graphics_renderpass_t, gs_core_asset_handle_t, pip, _gs_meta_property_type_decl(gs_core_asset_handle_t, 24))
 			},
 			.size = 1 * sizeof(gs_meta_property_t)
 		}));
