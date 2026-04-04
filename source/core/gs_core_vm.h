@@ -92,13 +92,22 @@ typedef enum
         size_t sz;\
     } 
 
-// Script resource? Not sure about this...
+// Script resource — backend agnostic.
+// The handle is owned by the backend (wasm_module_t, HMODULE, etc.).
+// gs_core never dereferences it.
 typedef struct {
-    const char* file_path;          // Path to raw source
-    gs_core_vm_data(char*) src;     // Raw source code
-    gs_byte_buffer_t bcode;         // Compiled bytecode
-    uint32_t flags;                 // Flag to say whether or not its been interprted?
+    const char* file_path;          // Path to source (.c, .wasm, .aot, .lua)
+    void*       handle;             // Backend-owned opaque module handle
+    uint32_t    flags;
 } gs_core_vm_script_t;
+
+// Legacy: kept for Lua compile pipeline until full migration
+typedef struct {
+    const char* file_path;
+    gs_core_vm_data(char*) src;
+    gs_byte_buffer_t bcode;
+    uint32_t flags;
+} gs_core_vm_script_legacy_t;
 
 typedef struct {
     gs_byte_buffer_t bcode;        // Compiled bytecode
@@ -171,17 +180,38 @@ GS_API_DECL int32_t _gs_core_vm_ret_val(gs_core_vm_state_t s, gs_core_vm_type_t 
 #define gs_core_vm_call(S, DESC)                    (_gs_core_vm_call(S, DESC) == GS_CORE_VM_OK) 
 #define gs_core_vm_ret_val(S, TYPE, IDX, OUT)       (_gs_core_vm_ret_val(S, TYPE, IDX, OUT) == GS_CORE_VM_OK)
 
-#define gs_core_vm_to_string(S, IDX)     lua_tostring((lua_State*)(S), (IDX))
-#define gs_core_vm_to_integer(S, IDX)    lua_tointeger((lua_State*)(S), (IDX))
-#define gs_core_vm_to_number(S, IDX)     lua_tonumber((lua_State*)(S), (IDX))
-#define gs_core_vm_to_boolean(S, IDX)    lua_toboolean((lua_State*)(S), (IDX))
-#define gs_core_vm_to_function(S, IDX)   lua_topointer((lua_State*)(S), (IDX))
+// NOTE: Lua-specific conversion macros removed (2026-03-19).
+// These were: gs_core_vm_to_string, gs_core_vm_to_integer, gs_core_vm_to_number,
+//             gs_core_vm_to_boolean, gs_core_vm_to_function
+// The Lua compilation pipeline in rl.c is deprecated and stubbed out.
+
+/*==================================================================
+// Parallel Dispatch
+==================================================================*/
+
+// Compute-style parallel dispatch descriptor.
+// gs_core knows nothing about entities, components, or game data.
+// It only knows: "call func_name, N times, in parallel."
+//
+// The script function receives (group_id, group_count) and is
+// responsible for mapping those to whatever domain it operates in.
+//
+//   GPU analogy:
+//       group_count  == gl_NumWorkGroups
+//       group_id     == gl_WorkGroupID
+//       func_name    == compute shader entry point
+//
+typedef struct {
+    const char* func_name;      // Script export to invoke per group
+    uint32_t    group_count;    // Number of parallel groups
+    void*       user_data;      // Passed through opaquely — gs_core never reads this
+} gs_core_vm_dispatch_desc_t;
 
 /*==================================================================
 // Scripting Engine
 ==================================================================*/
 
-// Foward Decls.
+// Forward Decls.
 typedef struct gs_core_vm_script_engine_s; 
 typedef int32_t (* gs_core_vm_script_engine_init_fn_t)(struct gs_core_vm_script_engine_s* engine); 
 typedef void (* gs_core_vm_fn_t)(struct gs_core_vm_script_engine_s* engine, gs_core_vm_state_t state);
@@ -216,6 +246,17 @@ typedef struct gs_core_vm_script_engine_s {
     int32_t (* call)(gs_core_vm_state_t s, const gs_core_vm_call_desc_t* desc); 
     int32_t (* ret_val)(gs_core_vm_state_t s, gs_core_vm_type_t type, int32_t idx, void* out);
 
+    // Parallel dispatch — compute-style.
+    // gs_core partitions [0, group_count) across a thread pool.
+    // Each worker calls func_name(group_id, group_count).
+    // The game layer maps (group_id, group_count) to domain-specific work
+    // inside its own functions — gs_core never sees that mapping.
+    void (* dispatch)(struct gs_core_vm_script_engine_s* engine, const gs_core_vm_dispatch_desc_t* desc);
+
+    // Thread pool lifecycle — spin up/tear down persistent workers
+    void (* thread_pool_init)(struct gs_core_vm_script_engine_s* engine, uint32_t thread_count);
+    void (* thread_pool_shutdown)(struct gs_core_vm_script_engine_s* engine);
+
     void* user_data;    // User specific engine data
 
 } gs_core_vm_script_engine_t;
@@ -227,7 +268,10 @@ typedef struct gs_core_vm_script_engine_s {
 GS_API_DECL gs_core_vm_script_engine_t
 gs_core_vm_native_script_engine_new(gs_core_vm_script_engine_init_fn_t init);
 
-GS_API_DECL 
+// WASM backend — scripts as .wasm (interpreter) or .aot (release)
+// Sandboxed, cross-platform, near-native performance via AOT compilation
+GS_API_DECL gs_core_vm_script_engine_t
+gs_core_vm_wasm_script_engine_new(gs_core_vm_script_engine_init_fn_t init);
 
 #ifdef __cplusplus
 }

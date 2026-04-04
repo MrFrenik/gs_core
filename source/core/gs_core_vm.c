@@ -307,42 +307,8 @@ GS_API_DECL gs_result
 gs_core_vm_script_load_from_file(gs_core_vm_script_t* script, const char* file_path, bool keep_src)
 {
     if (!script) return GS_RESULT_FAILURE;
-    size_t sz = 0;
-    char* src = gs_platform_read_file_contents(file_path, "rb", (size_t*)&sz);
-    if (!src) {
-        gs_log_warning("Unable to open file: %s", file_path);
-        return GS_RESULT_FAILURE;
-    }
-
-    // Compile script
-    gs_core_vm_state_t S = gs_core_vm_state_new();
-
-    // Release any previous byte code buffer
-    if (script->bcode.data) {
-        gs_byte_buffer_free(&script->bcode);
-    }
-
-    /*
-    // Compile script source into raw lua bytecode
-    gs_core_vm_script_compile_res_t res = gs_core_vm_compile(src, sz);
-
-    // Copy over src from res
-    memcpy(&script->src, &res.src, sizeof(script->src));
-    memcpy(&script->bcode, &res.bcode, sizeof(script->bcode));
-
-    // Free src if necessary
-    if (!keep_src) { 
-        gs_free(script->src.data);
-        script->src.sz = 0;
-    }
-
-    // If byte-code invalid, return warning (need to parse an error from lua)
-    if (!script->bcode.data) { 
-        gs_log_warning("Unable to compile bytecode: %s", file_path);
-        return GS_RESULT_FAILURE;
-    }
-    */
-
+    script->file_path = file_path;
+    script->handle = NULL;  // Backend fills this in via vtable
     return GS_RESULT_SUCCESS;
 }
 
@@ -350,8 +316,11 @@ GS_API_DECL void
 gs_core_vm_script_free(gs_core_vm_script_t* script)
 {
     if (!script) return;
-    if (script->src.data) gs_free(script->src.data);
-    if (script->bcode.data) gs_byte_buffer_free(&script->bcode);
+    // Backend-specific cleanup is handled via the engine vtable's script_free.
+    // This free function just zeros the struct.
+    script->handle = NULL;
+    script->file_path = NULL;
+    script->flags = 0;
 }
 
 GS_API_DECL void* 
@@ -760,6 +729,30 @@ NATIVE_gs_core_vm_script_exec(gs_core_vm_script_engine_t* engine, gs_core_vm_sta
 // Scripting Engine
 ==================================================================*/
 
+// Native dispatch stub — single-threaded passthrough for development.
+// Calls func_name(group_id, group_count) sequentially for each group.
+GS_API_PRIVATE void
+NATIVE_gs_core_vm_dispatch(gs_core_vm_script_engine_t* engine, const gs_core_vm_dispatch_desc_t* desc)
+{
+    // TODO: When the native backend supports parallel dispatch, this should
+    // partition across threads. For now it's a sequential loop.
+    (void)engine;
+    (void)desc;
+}
+
+GS_API_PRIVATE void
+NATIVE_gs_core_vm_thread_pool_init(gs_core_vm_script_engine_t* engine, uint32_t thread_count)
+{
+    (void)engine;
+    (void)thread_count;
+}
+
+GS_API_PRIVATE void
+NATIVE_gs_core_vm_thread_pool_shutdown(gs_core_vm_script_engine_t* engine)
+{
+    (void)engine;
+}
+
 GS_API_DECL gs_core_vm_script_engine_t
 gs_core_vm_native_script_engine_new(gs_core_vm_script_engine_init_fn_t init)
 { 
@@ -794,12 +787,28 @@ gs_core_vm_native_script_engine_new(gs_core_vm_script_engine_init_fn_t init)
     engine.call = NATIVE_gs_core_vm_call;
     engine.ret_val = NATIVE_gs_core_vm_ret_val;
 
+    // Dispatch + thread pool
+    engine.dispatch = NATIVE_gs_core_vm_dispatch;
+    engine.thread_pool_init = NATIVE_gs_core_vm_thread_pool_init;
+    engine.thread_pool_shutdown = NATIVE_gs_core_vm_thread_pool_shutdown;
+
     // Set up store
     engine.user_data = gs_calloc(1, sizeof(NATIVE_gs_core_vm_store_t));
 
     // Initialize from user-end (module registration and the like?)
     if (init) init(&engine);
 
+    return engine;
+}
+
+// WASM backend — stub for now. Full implementation in gs_core_vm_wasm.c
+GS_API_DECL gs_core_vm_script_engine_t
+gs_core_vm_wasm_script_engine_new(gs_core_vm_script_engine_init_fn_t init)
+{
+    gs_core_vm_script_engine_t engine = {0};
+    // TODO: Wire WASM backend vtable (gs_core_vm_wasm.c)
+    gs_log_warning("WASM script engine not yet implemented. Use native backend.");
+    if (init) init(&engine);
     return engine;
 }
 
