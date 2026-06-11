@@ -11,7 +11,7 @@ if not exist bin\core mkdir bin\core
 pushd bin\core
 
 rem Name
-set proj_name=gs_core
+set __proj_name=gs_core
 
 rem Root
 set root=..\..
@@ -76,7 +76,7 @@ set lua_inc=/I %lua_dir%\
 set lua_src=%lua_dir%\lua_unity.c
 
 rem Run Reflection
-%root%\bin\reflection\reflection.exe %refl_dir% %out_dir% %proj_name%
+%root%\bin\reflection\reflection.exe %refl_dir% %out_dir% %__proj_name%
 
 rem First argument: configuration (dbg/rel), optional second: sanitize flag
 set cfg=%1
@@ -111,7 +111,7 @@ goto :error
     /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib %tp_libs% 
 
     rem Compile static lib (rel)
-    lib *obj /out:%proj_name%.lib
+    lib *obj /out:%__proj_name%.lib
 
     goto :end
 
@@ -137,7 +137,7 @@ goto :error
     /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib 
 
     rem Compile static lib (dbg)
-    lib *obj /out:%proj_name%_d.lib 
+    lib *obj /out:%__proj_name%_d.lib 
 
     goto :end
 

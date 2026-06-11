@@ -1,48 +1,108 @@
 @echo off
 
-rem Compile Reflection
+setlocal EnableExtensions DisableDelayedExpansion
+
+:: ================================================================
+:: proj_gen.bat - Project Generator Wrapper (FINAL FIXED VERSION)
+:: ================================================================
+
+set "PROJ_NAME=%~1"
+if not defined PROJ_NAME (
+    echo [ERROR] Missing project name argument.
+    exit /b 1
+)
+
+set "USER_DIR=%~2"
+set "BUILD_ARCH=%~3"
+if not defined BUILD_ARCH set "BUILD_ARCH=x64"
+
+:: Save our true working directory BEFORE any pushd changes it
+for %%A in (.) do set "_WORKSPACE_ROOT=%%~fA"
+
+:: Validate architecture
+set "_valid_arch="
+if /i "%BUILD_ARCH%"=="x64" set "_valid_arch=Y"
+if /i "%BUILD_ARCH%"=="x86" set "_valid_arch=Y"
+if /i "%BUILD_ARCH%"=="arm64" set "_valid_arch=Y"
+if not defined _valid_arch (
+    echo [ERROR] Invalid arch '%BUILD_ARCH%'. Must be x64, x86, or arm64.
+    exit /b 1
+)
+
+:: --- Output directory ---
+set "PROJECT_DIR="
+if defined USER_DIR (
+    if not exist "%USER_DIR%" (
+        mkdir "%USER_DIR%" >nul 2>&1
+        if not exist "%USER_DIR%" (
+            echo [ERROR] Cannot create directory: %USER_DIR%
+            exit /b 1
+        )
+        echo [OK] Created directory: %USER_DIR%
+    )
+    for %%A in ("%USER_DIR%") do set "PROJECT_DIR=%%~fA"
+) else (
+    for %%A in (".") do set "PROJECT_DIR=%%~fA"
+)
+
+:: --- Find vcvarsall.bat ---
+set "_vcvarspath="
+if exist "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" (
+    set "_vcvarspath=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat"
+)
+if not defined _vcvarspath if exist "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvarsall.bat" (
+    set "_vcvarspath=C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvarsall.bat"
+)
+if not defined _vcvarspath if exist "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" (
+    set "_vcvarspath=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
+)
+if not defined _vcvarspath if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" (
+    set "_vcvarspath=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat"
+)
+if not defined _vcvarspath if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvarsall.bat" (
+    set "_vcvarspath=C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvarsall.bat"
+)
+if not defined _vcvarspath if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" (
+    set "_vcvarspath=C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
+)
+
+if not defined _vcvarspath (
+    echo [ERROR] Could not locate vcvarsall.bat.
+    exit /b 1
+)
+
+echo [OK] Found vcvarsall.bat: %_vcvarspath%
+
+:: --- Init MSVC environment ---
+call "%_vcvarspath%" %BUILD_ARCH% >nul 2>&1
+if errorlevel 1 exit /b 1
+
+echo [OK] MSVC environment ready [%BUILD_ARCH%].
+
+:: --- Compile dependencies (sequential) ---
+
+echo [proj_gen] Compiling reflection...
+pushd "%_WORKSPACE_ROOT%" >nul 2>&1
 call proc\win\refl_cl.bat
+if errorlevel 1 goto :compilation_failed
 
-rem Compile Core
+echo [proj_gen] Compiling gs_core (dbg)...
 call proc\win\cl.bat dbg
+if errorlevel 1 goto :compilation_failed
 
-rmdir /Q /S bin\proj_gen
-mkdir bin\proj_gen
-pushd bin\proj_gen
+echo [proj_gen] Compiling proj_gen.exe...
+call proc\win\pgen_cl.bat
+if errorlevel 1 goto :compilation_failed
 
-rem ProjName
-set proj_name=%1
+:: --- Run project generator ---
 
-rem Name 
-set name=proj_gen
+echo [proj_gen] Generating project '%PROJ_NAME%' in '%PROJECT_DIR%'
+bin\proj_gen\proj_gen.exe -gcs "%CD%" --dir "%PROJECT_DIR%" "%PROJ_NAME%"
+if errorlevel 1 exit /b 1
 
-rem Include directories 
-set inc=/I ..\..\third_party\include\
+echo [OK] Project generation complete.
+exit /b 0
 
-rem Source files
-set src_main=..\..\source\proj_gen\proj_gen.c
-
-rem All source together
-set src_all=%src_main%
-
-rem OS Libraries
-set os_libs=opengl32.lib kernel32.lib user32.lib ^
-shell32.lib vcruntime.lib msvcrt.lib gdi32.lib Winmm.lib Advapi32.lib 
-
-rem Link options
-set l_options=/EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:msvcrt.lib 
-
-rem Compile Project Gen
-cl /w /MTd /MP -Zi -D _WINSOCKAPI_ /DEBUG:FULL /Fe%name%.exe ^
-%src_all% %inc% /EHsc /link /SUBSYSTEM:CONSOLE /NODEFAULTLIB:libcmtd.lib ^ /NODEFAULTLIB:msvcrtd.lib /NODEFAULTLIB:libcmtd.lib ^
-%os_libs%
-
-rem Run Proj Gen
-%name%.exe %proj_name% 
-
-popd 
-
-
-
-
-
+:compilation_failed
+echo [ERROR] Compilation failed. See output above.
+exit /b 1

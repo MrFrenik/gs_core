@@ -3,14 +3,15 @@ rmdir /Q /S bin\editor
 mkdir bin\editor
 pushd bin\editor
 
-rem GS_Core
-set gs_core=..\..\..\gs_core
+rem === gs_core and project root via token injection ===
+set "gs_core=%GS_CORE_DIR%"
+set "root=%ROOT_DIR%"
 
 rem Name
 set proj_name=%APP%_editor
 
 rem Root Dir
-set root=..\..
+rem (resolved dynamically above)
 
 rem Include directories 
 set inc=/I %gs_core%\third_party\include\ /I %root%\source\editor\ /I %gs_core%\source\

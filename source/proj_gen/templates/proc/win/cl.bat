@@ -3,14 +3,15 @@ rmdir /Q /S bin\%APP%
 mkdir bin\%APP%
 pushd bin\%APP%
 
-rem GS_Core
-set gs_core=..\..\..\gs_core
+rem === gs_core and project root via token injection ===
+set "gs_core=%GS_CORE_DIR%"
+set "root=%ROOT_DIR%"
 
 rem Name
 set proj_name=%APP%
 
 rem Root Dir
-set root=..\..\
+rem (resolved dynamically above)
 
 rem Include directories 
 set inc=/I %gs_core%\third_party\include\ /I %root%\source\ /I %gs_core%\source\

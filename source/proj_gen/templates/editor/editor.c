@@ -53,31 +53,75 @@ main(int32_t argc, char** argv)
 GS_API_DECL const char* 
 gs_app_dll_path()
 { 
-    #if GS_DEBUG
-            const char* path = gs_platform_dir_exists(gs_to_str(bin/%APP%)) ? 
-                gs_to_str(bin/%APP%/%APP%_d) : 
-                gs_to_str(../%APP%/%APP%_d);
-    #else
-            const char* path = gs_platform_dir_exists(gs_to_str(bin/%APP%)) ? 
-                gs_to_str(bin/%APP%/%APP%) : 
-                gs_to_str(../%APP%/%APP%);
-    #endif
-            
-    return path;
+    static char buf[512] = {0};
+
+#ifdef _WIN32
+    char raw[MAX_PATH];
+    DWORD n = GetModuleFileNameA(NULL, raw, sizeof(raw));
+    if (n == 0 || n >= sizeof(raw)) { buf[0] = '\0'; return buf; }
+
+    char resolved[MAX_PATH];
+    if (GetFullPathNameA(raw, sizeof(resolved), resolved, NULL) == 0) { buf[0] = '\0'; return buf; }
+
+    size_t len = strlen(resolved);
+    while (len > 0 && resolved[len - 1] != '\\') --len;
+    if (len == 0) { buf[0] = '\0'; return buf; }
+    resolved[len] = '\0';
+
+#if GS_DEBUG
+    snprintf(buf, sizeof(buf), "%sbin/%s/%s_d.dll", resolved, "%APP%", "%APP%");
+#else
+    snprintf(buf, sizeof(buf), "%sbin/%s/%s.dll", resolved, "%APP%", "%APP%");
+#endif
+
+    /* If the primary path does not exist, fall back to just the exe dir */
+    if (!gs_platform_dir_exists(gs_to_str(buf)))
+    {
+#if GS_DEBUG
+        snprintf(buf, sizeof(buf), "%s/%s_d.dll", resolved, "%APP%");
+#else
+        snprintf(buf, sizeof(buf), "%s/%s.dll", resolved, "%APP%");
+#endif
+    }
+#endif
+
+    return buf;
 }
 
 GS_API_DECL const char*
 gs_core_editor_dll_path()
 {
-    #if GS_DEBUG
-        const char* path = gs_platform_dir_exists(gs_to_str(bin/editor)) ? 
-            gs_to_str(bin/editor/%APP%_d) : 
-            gs_to_str(%APP%_d);
-    #else
-        const char* path = gs_platform_dir_exists(gs_to_str(bin/editor)) ? 
-            gs_to_str(bin/editor/%APP%) : 
-            gs_to_str(%APP%);
-    #endif
-            
-    return path;
+    static char buf[512] = {0};
+
+#ifdef _WIN32
+    char raw[MAX_PATH];
+    DWORD n = GetModuleFileNameA(NULL, raw, sizeof(raw));
+    if (n == 0 || n >= sizeof(raw)) { buf[0] = '\0'; return buf; }
+
+    char resolved[MAX_PATH];
+    if (GetFullPathNameA(raw, sizeof(resolved), resolved, NULL) == 0) { buf[0] = '\0'; return buf; }
+
+    size_t len = strlen(resolved);
+    while (len > 0 && resolved[len - 1] != '\\') --len;
+    if (len == 0) { buf[0] = '\0'; return buf; }
+    resolved[len] = '\0';
+
+#if GS_DEBUG
+    snprintf(buf, sizeof(buf), "%s/bin/editor/%s_d.dll", resolved, "%APP%");
+#else
+    snprintf(buf, sizeof(buf), "%s/bin/editor/%s.dll", resolved, "%APP%");
+#endif
+
+    /* If the primary path does not exist, fall back to just the exe dir */
+    if (!gs_platform_dir_exists(gs_to_str(buf)))
+    {
+#if GS_DEBUG
+        snprintf(buf, sizeof(buf), "%s/%s_d.dll", resolved, "%APP%");
+#else
+        snprintf(buf, sizeof(buf), "%s/%s.dll", resolved, "%APP%");
+#endif
+    }
+#endif
+
+    return buf;
 } 
