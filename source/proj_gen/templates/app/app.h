@@ -10,10 +10,10 @@ typedef struct %APP%_s
     gs_core_base(gs_core_app_t); 
 
     _vtable(
-        _override: init     = %APP%_init;
-        _override: update   = %APP%_update;
-        _override: shutdown = %APP%_shutdown;
-        _override: render   = %APP%_render;
+        _override: app_init     = %APP%_init;
+        _override: app_update   = %APP%_update;
+        _override: app_shutdown = %APP%_shutdown;
+        _override: app_render   = %APP%_render;
     ) 
 
     gs_core_entity_t ent;

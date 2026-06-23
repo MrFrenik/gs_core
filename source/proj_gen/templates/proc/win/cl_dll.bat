@@ -3,9 +3,9 @@ rmdir /Q /S bin\%APP%
 mkdir bin\%APP%
 pushd bin\%APP%
 
-rem === gs_core and project root via token injection ===
-set "gs_core=%GS_CORE_DIR%"
+rem === gs_core and project root (self-contained, relative paths) ===
 set "root=%ROOT_DIR%"
+set "gs_core=%GS_CORE_DIR%"
 
 rem Name
 set proj_name=%APP%

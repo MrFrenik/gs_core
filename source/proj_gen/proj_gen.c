@@ -392,18 +392,36 @@ int32_t main(int32_t argc, char** argv)
     gs_platform_mkdir(ASSET_TEXTURE_DIR, 0x00);
     gs_platform_mkdir(ASSET_PIPELINE_DIR, 0x00);
 
+    /* Write a reference to the gs_core path used during generation */
+    {
+        char third_party_dir[PATH_BUF_SIZE];
+        snprintf(third_party_dir, sizeof(third_party_dir), "%sthird_party\\", ROOT_DIR);
+        gs_platform_mkdir(third_party_dir, 0x00);
+
+        char gs_core_path_file[PATH_BUF_SIZE];
+        snprintf(gs_core_path_file, sizeof(gs_core_path_file), "%sthird_party\\gs_core_path.txt", ROOT_DIR);
+        
+        FILE* fp = fopen(gs_core_path_file, "w");
+        if (fp) {
+            fprintf(fp, "%s", gs_core_root);
+            fclose(fp);
+        }
+        gs_println("Referencing gs_core at %s", gs_core_root);
+    }
+
     /* Load up templates */
     struct {const char* read_path; const char* subdir; bool substitute;} templates[] =
     {
-        {"templates/proc/win/cl.bat",              "proc/win",     false},
-        {"templates/proc/win/cl_dll.bat",          "proc/win",     false},
-        {"templates/proc/win/editor_cl.bat",       "proc/win",     false},
+        {"templates/proc/win/build.bat",           "",           true},
+        {"templates/proc/win/cl.bat",              "proc\\win",   true},
+        {"templates/proc/win/cl_dll.bat",          "proc\\win",   true},
+        {"templates/proc/win/editor_cl.bat",       "proc\\win",   true},
         {"templates/app/app.h",                    "source",       true },
         {"templates/app/app.c",                    "source",       true },
         {"templates/app/unity.c",                  "source",       true },
-        {"templates/editor/editor.c",              "source/editor",true },
-        {"templates/editor/editor.h",              "source/editor",true },
-        {"templates/editor/unity.c",               "source/editor",true },
+        {"templates/editor/editor.c",              "source\\editor",true },
+        {"templates/editor/editor.h",              "source\\editor",true },
+        {"templates/editor/unity.c",               "source\\editor",true },
         {NULL}
     };
 
@@ -477,7 +495,11 @@ int32_t main(int32_t argc, char** argv)
         }
         
         /* Build full write path: ROOT_DIR/subdir/out_fname */
-        snprintf(wp, sizeof(wp), "%s%s\\%s", ROOT_DIR, templates[i].subdir, out_fname);
+        if (templates[i].subdir[0] == '\0') {
+            snprintf(wp, sizeof(wp), "%s%s", ROOT_DIR, out_fname);
+        } else {
+            snprintf(wp, sizeof(wp), "%s%s\\%s", ROOT_DIR, templates[i].subdir, out_fname);
+        }
         snprintf(rp, sizeof(rp), "%s\\%s", proj_gen_src_dir, templates[i].read_path);
         write_template_to_disk(rp, wp);
     }
@@ -514,15 +536,67 @@ cleanup:
  * Template processing – replaces %APP%, %APP_SOURCE_PATH%, etc. tokens.
  * ===========================================================================*/
 
-#define REPLACE_TXT(REPLACE, IS_STR) \
-    do { \
-        token = lex.next_token(&lex); \
-        token = lex.next_token(&lex); \
-        if (IS_STR) \
-            gs_fprintf(fp, "\"%s\"", REPLACE); \
-        else \
-            gs_fprintf(fp, "%s", REPLACE); \
-    } while (0)\
+static void substitute_string_to_file(FILE* fp, const char* text, uint32_t len)
+{
+    for (uint32_t i = 0; i < len; ++i)
+    {
+        if (text[i] == '%')
+        {
+            // Look for closing %
+            const char* start = &text[i + 1];
+            const char* end = strchr(start, '%');
+            if (end && (uint32_t)(end - start) < 64)
+            {
+                char token[64] = {0};
+                size_t token_len = end - start;
+                memcpy(token, start, token_len);
+                
+                bool substituted = false;
+                if (strcmp(token, "APP") == 0) {
+                    fprintf(fp, "%s", proj_name);
+                    substituted = true;
+                } else if (strcmp(token, "APP_SOURCE_PATH") == 0) {
+                    fprintf(fp, "%s.c", proj_name);
+                    substituted = true;
+                } else if (strcmp(token, "APP_HEADER_PATH") == 0) {
+                    fprintf(fp, "%s.h", proj_name);
+                    substituted = true;
+                } else if (strcmp(token, "GENERATED_SOURCE_PATH") == 0) {
+                    fprintf(fp, "generated/%s_generated.c", proj_name);
+                    substituted = true;
+                } else if (strcmp(token, "GENERATED_HEADER_PATH") == 0) {
+                    fprintf(fp, "generated/%s_generated.h", proj_name);
+                    substituted = true;
+                } else if (strcmp(token, "EDITOR_SOURCE_PATH") == 0) {
+                    fprintf(fp, "%s_editor.c", proj_name);
+                    substituted = true;
+                } else if (strcmp(token, "EDITOR_HEADER_PATH") == 0) {
+                    fprintf(fp, "%s_editor.h", proj_name);
+                    substituted = true;
+                } else if (strcmp(token, "EDITOR_GENERATED_SOURCE_PATH") == 0) {
+                    fprintf(fp, "generated/%s_editor_generated.c", proj_name);
+                    substituted = true;
+                } else if (strcmp(token, "EDITOR_GENERATED_HEADER_PATH") == 0) {
+                    fprintf(fp, "generated/%s_editor_generated.h", proj_name);
+                    substituted = true;
+                } else if (strcmp(token, "GS_CORE_DIR") == 0) {
+                    fprintf(fp, "%s", gs_core_root);
+                    substituted = true;
+                } else if (strcmp(token, "ROOT_DIR") == 0) {
+                    fprintf(fp, "%s", ROOT_DIR);
+                    substituted = true;
+                }
+
+                if (substituted)
+                {
+                    i += token_len + 1; // skip to after closing %
+                    continue;
+                }
+            }
+        }
+        fputc(text[i], fp);
+    }
+}
 
 void write_template_to_disk(const char* read_path, const char* write_path)
 {
@@ -542,90 +616,82 @@ void write_template_to_disk(const char* read_path, const char* write_path)
         return;
     }
 
-    /* Lex through contents, look for %% identifier to replace */
-    gs_lexer_t lex = gs_lexer_c_ctor(contents);
-    lex.skip_white_space = false;
-    while (lex.can_lex(&lex))
+    /* Raw string scanner – replaces the lexer-based loop */
+    const char* at = contents;
+    const char* end = contents + strlen(contents);
+
+    while (at < end)
     {
-        gs_token_t token = lex.next_token(&lex);
-        switch (token.type)
+        if (*at == '%')
         {
-            case GS_TOKEN_PERCENT:
+            /* Look for closing % */
+            const char* start = at + 1;
+            const char* closing = strchr(start, '%');
+            
+            if (closing && closing < end)
             {
-                gs_token_t peek = gs_lexer_peek(&lex);
+                /* Extract token between % and % */
+                size_t token_len = closing - start;
+                
+                /* Check against known tokens */
+                bool substituted = false;
+                
+                if (token_len == 3 && strncmp(start, "APP", 3) == 0) {
+                    fprintf(fp, "%s", proj_name);
+                    substituted = true;
+                }
+                else if (token_len == 15 && strncmp(start, "APP_SOURCE_PATH", 15) == 0) {
+                    fprintf(fp, "%s.c", proj_name);
+                    substituted = true;
+                }
+                else if (token_len == 15 && strncmp(start, "APP_HEADER_PATH", 15) == 0) {
+                    fprintf(fp, "%s.h", proj_name);
+                    substituted = true;
+                }
+                else if (token_len == 21 && strncmp(start, "GENERATED_SOURCE_PATH", 21) == 0) {
+                    fprintf(fp, "generated/%s_generated.c", proj_name);
+                    substituted = true;
+                }
+                else if (token_len == 21 && strncmp(start, "GENERATED_HEADER_PATH", 21) == 0) {
+                    fprintf(fp, "generated/%s_generated.h", proj_name);
+                    substituted = true;
+                }
+                else if (token_len == 18 && strncmp(start, "EDITOR_SOURCE_PATH", 18) == 0) {
+                    fprintf(fp, "%s_editor.c", proj_name);
+                    substituted = true;
+                }
+                else if (token_len == 17 && strncmp(start, "EDITOR_HEADER_PATH", 17) == 0) {
+                    fprintf(fp, "%s_editor.h", proj_name);
+                    substituted = true;
+                }
+                else if (token_len == 28 && strncmp(start, "EDITOR_GENERATED_SOURCE_PATH", 28) == 0) {
+                    fprintf(fp, "generated/%s_editor_generated.c", proj_name);
+                    substituted = true;
+                }
+                else if (token_len == 28 && strncmp(start, "EDITOR_GENERATED_HEADER_PATH", 28) == 0) {
+                    fprintf(fp, "generated/%s_editor_generated.h", proj_name);
+                    substituted = true;
+                }
+                else if (token_len == 11 && strncmp(start, "GS_CORE_DIR", 11) == 0) {
+                    fprintf(fp, "%s", gs_core_root);
+                    substituted = true;
+                }
+                else if (token_len == 8 && strncmp(start, "ROOT_DIR", 8) == 0) {
+                    fprintf(fp, "%s", ROOT_DIR);
+                    substituted = true;
+                }
 
-                /* Look for next token to be identifier */
-                if (gs_token_compare_text(&peek, "APP"))
+                if (substituted)
                 {
-                    REPLACE_TXT(proj_name, false);
+                    at = closing + 1; // skip past closing %
+                    continue;
                 }
-                else if (gs_token_compare_text(&peek, "APP_SOURCE_PATH"))
-                {
-                    char tmp[PATH_BUF_SIZE];
-                    snprintf(tmp, sizeof(tmp), "%s.c", proj_name);
-                    REPLACE_TXT(tmp, true);
-                }
-                else if (gs_token_compare_text(&peek, "APP_HEADER_PATH"))
-                {
-                    char tmp[PATH_BUF_SIZE];
-                    snprintf(tmp, sizeof(tmp), "%s.h", proj_name);
-                    REPLACE_TXT(tmp, true);
-                }
-                else if (gs_token_compare_text(&peek, "GENERATED_SOURCE_PATH"))
-                {
-                    char tmp[PATH_BUF_SIZE];
-                    snprintf(tmp, sizeof(tmp), "generated/%s_generated.c", proj_name);
-                    REPLACE_TXT(tmp, true);
-                }
-                else if (gs_token_compare_text(&peek, "GENERATED_HEADER_PATH"))
-                {
-                    char tmp[PATH_BUF_SIZE];
-                    snprintf(tmp, sizeof(tmp), "generated/%s_generated.h", proj_name);
-                    REPLACE_TXT(tmp, true);
-                }
-                else if (gs_token_compare_text(&peek, "EDITOR_SOURCE_PATH"))
-                {
-                    char tmp[PATH_BUF_SIZE];
-                    snprintf(tmp, sizeof(tmp), "%s_editor.c", proj_name);
-                    REPLACE_TXT(tmp, true);
-                }
-                else if (gs_token_compare_text(&peek, "EDITOR_HEADER_PATH"))
-                {
-                    char tmp[PATH_BUF_SIZE];
-                    snprintf(tmp, sizeof(tmp), "%s_editor.h", proj_name);
-                    REPLACE_TXT(tmp, true);
-                }
-                else if (gs_token_compare_text(&peek, "EDITOR_GENERATED_HEADER_PATH"))
-                {
-                    char tmp[PATH_BUF_SIZE];
-                    snprintf(tmp, sizeof(tmp), "generated/%s_editor_generated.h", proj_name);
-                    REPLACE_TXT(tmp, true);
-                }
-                else if (gs_token_compare_text(&peek, "EDITOR_GENERATED_SOURCE_PATH"))
-                {
-                    char tmp[PATH_BUF_SIZE];
-                    snprintf(tmp, sizeof(tmp), "generated/%s_editor_generated.c", proj_name);
-                    REPLACE_TXT(tmp, true);
-                }
-                else if (gs_token_compare_text(&peek, "GS_CORE_DIR"))
-                {
-                    REPLACE_TXT(gs_core_root, true);
-                }
-                else if (gs_token_compare_text(&peek, "ROOT_DIR"))
-                {
-                    REPLACE_TXT(ROOT_DIR, true);
-                }
-                else
-                {
-                    gs_fprintf(fp, "%.*s", token.len, token.text);
-                }
-            } break;
-
-            default:
-            {
-                gs_fprintf(fp, "%.*s", token.len, token.text);
-            } break;
+            }
         }
+        
+        /* Write literal character */
+        fputc(*at, fp);
+        at++;
     }
 
     gs_free(contents);

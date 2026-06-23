@@ -52,7 +52,7 @@
 #include "gs_core_crash.h"
 #include "core/generated/gs_core_generated.h"
 
-#define GS_CORE_REFL_CLASS_MAX     1000
+#define GS_CORE_REFL_CLASS_MAX     2000
 #define GS_CORE_CVAR_STR_MAX       256
 
 // Want a way to track all allocations and log if they've been freed

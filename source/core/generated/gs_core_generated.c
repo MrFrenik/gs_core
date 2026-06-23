@@ -92,7 +92,19 @@ gs_core_entities_component_t_info()
 GS_API_DECL void
 gs_core_entities_component_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_entities_component_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_entities_component_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_entities_component_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_entities_component_t), gs_core_entities_component_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_entities_component_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_entities_component_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_entities_component_t), gs_core_entities_component_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_entities_component_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_entities_component_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_entities_component_t);
@@ -170,7 +182,19 @@ gs_core_app_t_info()
 GS_API_DECL void
 gs_core_app_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_app_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_app_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_app_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_app_t), gs_core_app_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_app_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_app_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_app_t), gs_core_app_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_app_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_app_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_app_t);
@@ -253,7 +277,19 @@ gs_core_asset_handle_t_info()
 GS_API_DECL void
 gs_core_asset_handle_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_handle_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_asset_handle_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_asset_handle_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_asset_handle_t), gs_core_asset_handle_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_handle_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_asset_handle_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_asset_handle_t), gs_core_asset_handle_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_asset_handle_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_asset_handle_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_asset_handle_t);
@@ -331,7 +367,19 @@ gs_core_asset_texture_t_info()
 GS_API_DECL void
 gs_core_asset_texture_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_texture_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_asset_texture_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_asset_texture_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_asset_texture_t), gs_core_asset_texture_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_texture_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_asset_texture_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_asset_texture_t), gs_core_asset_texture_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_asset_texture_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_asset_texture_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_asset_texture_t);
@@ -412,7 +460,19 @@ gs_core_asset_t_info()
 GS_API_DECL void
 gs_core_asset_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_asset_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_asset_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_asset_t), gs_core_asset_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_asset_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_asset_t), gs_core_asset_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_asset_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_asset_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_asset_t);
@@ -491,7 +551,19 @@ gs_core_asset_mesh_t_info()
 GS_API_DECL void
 gs_core_asset_mesh_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_mesh_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_asset_mesh_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_asset_mesh_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_asset_mesh_t), gs_core_asset_mesh_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_mesh_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_asset_mesh_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_asset_mesh_t), gs_core_asset_mesh_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_asset_mesh_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_asset_mesh_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_asset_mesh_t);
@@ -569,7 +641,19 @@ gs_core_asset_material_t_info()
 GS_API_DECL void
 gs_core_asset_material_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_material_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_asset_material_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_asset_material_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_asset_material_t), gs_core_asset_material_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_material_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_asset_material_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_asset_material_t), gs_core_asset_material_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_asset_material_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_asset_material_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_asset_material_t);
@@ -647,7 +731,19 @@ gs_core_asset_font_t_info()
 GS_API_DECL void
 gs_core_asset_font_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_font_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_asset_font_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_asset_font_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_asset_font_t), gs_core_asset_font_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_font_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_asset_font_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_asset_font_t), gs_core_asset_font_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_asset_font_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_asset_font_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_asset_font_t);
@@ -725,7 +821,19 @@ gs_core_asset_pipeline_t_info()
 GS_API_DECL void
 gs_core_asset_pipeline_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_pipeline_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_asset_pipeline_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_asset_pipeline_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_asset_pipeline_t), gs_core_asset_pipeline_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_pipeline_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_asset_pipeline_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_asset_pipeline_t), gs_core_asset_pipeline_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_asset_pipeline_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_asset_pipeline_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_asset_pipeline_t);
@@ -803,7 +911,19 @@ gs_core_component_transform_t_info()
 GS_API_DECL void
 gs_core_component_transform_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_component_transform_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_component_transform_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_component_transform_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_component_transform_t), gs_core_component_transform_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_component_transform_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_component_transform_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_component_transform_t), gs_core_component_transform_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_component_transform_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_component_transform_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_component_transform_t);
@@ -881,7 +1001,19 @@ gs_core_network_rpc_t_info()
 GS_API_DECL void
 gs_core_network_rpc_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_network_rpc_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_network_rpc_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_network_rpc_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_network_rpc_t), gs_core_network_rpc_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_network_rpc_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_network_rpc_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_network_rpc_t), gs_core_network_rpc_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_network_rpc_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_network_rpc_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_network_rpc_t);
@@ -960,7 +1092,19 @@ gs_core_network_rpc_reliable_t_info()
 GS_API_DECL void
 gs_core_network_rpc_reliable_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_network_rpc_reliable_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_network_rpc_reliable_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_network_rpc_reliable_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_network_rpc_reliable_t), gs_core_network_rpc_reliable_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_network_rpc_reliable_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_network_rpc_reliable_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_network_rpc_reliable_t), gs_core_network_rpc_reliable_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_network_rpc_reliable_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	gs_core_network_rpc_t* rpc = gs_core_cast(obj, gs_core_network_rpc_t);
 	rpc->delivery = GS_CORE_NETWORK_DELIVERY_RELIABLE;
 	if (gs_core_instance() && gs_core_instance()->meta)
@@ -1040,7 +1184,19 @@ gs_core_entities_system_t_info()
 GS_API_DECL void
 gs_core_entities_system_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_entities_system_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_entities_system_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_entities_system_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_entities_system_t), gs_core_entities_system_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_entities_system_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_entities_system_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_entities_system_t), gs_core_entities_system_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_entities_system_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_entities_system_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_entities_system_t);
@@ -1119,7 +1275,19 @@ gs_core_obj_t_info()
 GS_API_DECL void
 gs_core_obj_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_obj_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_obj_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_obj_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_obj_t), gs_core_obj_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_obj_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_obj_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_obj_t), gs_core_obj_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_obj_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_obj_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_obj_t);
@@ -1200,7 +1368,19 @@ gs_core_asset_ui_stylesheet_t_info()
 GS_API_DECL void
 gs_core_asset_ui_stylesheet_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_ui_stylesheet_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_asset_ui_stylesheet_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_asset_ui_stylesheet_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_asset_ui_stylesheet_t), gs_core_asset_ui_stylesheet_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_ui_stylesheet_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_asset_ui_stylesheet_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_asset_ui_stylesheet_t), gs_core_asset_ui_stylesheet_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_asset_ui_stylesheet_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_asset_ui_stylesheet_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_asset_ui_stylesheet_t);
@@ -1278,7 +1458,19 @@ gs_core_component_renderable_t_info()
 GS_API_DECL void
 gs_core_component_renderable_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_component_renderable_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_component_renderable_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_component_renderable_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_component_renderable_t), gs_core_component_renderable_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_component_renderable_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_component_renderable_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_component_renderable_t), gs_core_component_renderable_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_component_renderable_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_component_renderable_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_component_renderable_t);
@@ -1359,7 +1551,19 @@ gs_core_component_tag_t_info()
 GS_API_DECL void
 gs_core_component_tag_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_component_tag_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_component_tag_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_component_tag_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_component_tag_t), gs_core_component_tag_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_component_tag_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_component_tag_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_component_tag_t), gs_core_component_tag_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_component_tag_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_component_tag_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_component_tag_t);
@@ -1437,7 +1641,19 @@ gs_core_system_renderable_t_info()
 GS_API_DECL void
 gs_core_system_renderable_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_system_renderable_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_system_renderable_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_system_renderable_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_system_renderable_t), gs_core_system_renderable_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_system_renderable_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_system_renderable_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_system_renderable_t), gs_core_system_renderable_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_system_renderable_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_system_renderable_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_system_renderable_t);
@@ -1516,7 +1732,19 @@ gs_core_asset_script_t_info()
 GS_API_DECL void
 gs_core_asset_script_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_script_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_asset_script_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_asset_script_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_asset_script_t), gs_core_asset_script_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_script_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_asset_script_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_asset_script_t), gs_core_asset_script_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_asset_script_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_asset_script_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_asset_script_t);
@@ -1594,7 +1822,19 @@ gs_core_asset_audio_t_info()
 GS_API_DECL void
 gs_core_asset_audio_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_audio_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_asset_audio_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_asset_audio_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_asset_audio_t), gs_core_asset_audio_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_asset_audio_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_asset_audio_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_asset_audio_t), gs_core_asset_audio_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_asset_audio_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_asset_audio_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_asset_audio_t);
@@ -1672,7 +1912,19 @@ gs_core_network_rpc_unreliable_t_info()
 GS_API_DECL void
 gs_core_network_rpc_unreliable_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_network_rpc_unreliable_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_network_rpc_unreliable_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_network_rpc_unreliable_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_network_rpc_unreliable_t), gs_core_network_rpc_unreliable_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_network_rpc_unreliable_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_network_rpc_unreliable_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_network_rpc_unreliable_t), gs_core_network_rpc_unreliable_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_network_rpc_unreliable_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	gs_core_network_rpc_t* rpc = gs_core_cast(obj, gs_core_network_rpc_t);
 	rpc->delivery = GS_CORE_NETWORK_DELIVERY_UNRELIABLE;
 	if (gs_core_instance() && gs_core_instance()->meta)
@@ -1752,7 +2004,19 @@ gs_core_graphics_renderpass_t_info()
 GS_API_DECL void
 gs_core_graphics_renderpass_t_init(gs_core_obj_t* obj)
 {
-	gs_core_cast(obj, gs_core_base_t)->id = gs_core_graphics_renderpass_t_class_id();
+	// DEBUG: Log init entry
+	gs_log_info("%s_init: ENTER - obj=%p, current id=%u, expected id=%u", gs_to_str(gs_core_graphics_renderpass_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, gs_core_graphics_renderpass_t_class_id());
+	// Only set ID if not already set by a derived class
+	if (gs_core_cast(obj, gs_core_base_t)->id == 0)
+	{
+		gs_log_info("%s_init: ID was 0, setting to %u", gs_to_str(gs_core_graphics_renderpass_t), gs_core_graphics_renderpass_t_class_id());
+		gs_core_cast(obj, gs_core_base_t)->id = gs_core_graphics_renderpass_t_class_id();
+	}
+	else
+	{
+		gs_log_info("%s_init: ID already set to %u (not %s_class_id=%u), skipping", gs_to_str(gs_core_graphics_renderpass_t), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(gs_core_graphics_renderpass_t), gs_core_graphics_renderpass_t_class_id());
+	}
+	gs_log_info("%s_init: EXIT - obj=%p, final id=%u", gs_to_str(gs_core_graphics_renderpass_t), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);
 	if (gs_core_instance() && gs_core_instance()->meta)
 	{
 		gs_core_graphics_renderpass_t_vtable_t* vt = gs_core_cast_vt(obj, gs_core_graphics_renderpass_t);

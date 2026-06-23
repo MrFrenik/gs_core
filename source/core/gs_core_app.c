@@ -60,6 +60,7 @@ _gs_core_app_init()
     #ifdef GS_CORE_APP_STANDALONE
 
 		app = gs_user_data(gs_core_app_t);
+		gs_log_info("gs_core_app_init: gs_user_data returned %p, app->id = %u", (void*)app, gs_core_cast(app, gs_core_base_t)->id);
 		gs_core_app_instance_set(app);
         
         // Store command-line args from gs context
@@ -67,19 +68,45 @@ _gs_core_app_init()
         app->argc = gs->ctx.app.argc;
         app->argv = gs->ctx.app.argv;
         
+        //gs_core_cast(app, gs_core_app_t)->core = gs_core_new(); 
+        //gs_core_instance_set(gs_core_cast(app, gs_core_app_t)->core);
+        //gs_log_info("gs_core_app_init: gs_core_instance_set called, core = %p", (void*)gs_core_instance()); 
+
+    // gs_log_info("here");
         gs_core_cast(app, gs_core_app_t)->core = gs_core_new(); 
         _gs_core_app_meta_register();
-
+        
         // Set to playing
         app->state = GS_CORE_APP_STATE_PLAYING;
 
         // Need to get framebuffer and window size for placing gui elements within scene view 
         gs_vec2 fbs = gs_platform_framebuffer_sizev(gs_platform_main_window());
         app->viewport = gs_v4(0.f, 0.f, fbs.x, fbs.y);
+
+        // Register meta so object info lookups work
+        // _gs_core_app_meta_register();
+        // gs_log_info("gs_core_app_init: after _gs_core_app_meta_register, gs_core_app_t_class_id() = %u", gs_core_app_t_class_id());
+
+        // Initialize the app object (sets id and vtable) - calls derived class init
+        _gs_core_app_init_obj(gs_core_cast(app, gs_core_obj_t));
+        gs_log_info("gs_core_app_init: after _gs_core_app_init_obj, app->id = %u", gs_core_cast(app, gs_core_base_t)->id);
     #endif
 
+    gs_log_info("here");
 	// Core app instance 
 	app = gs_core_app_instance();
+    gs_log_info("gs_core_app_init: g_app = %p", (void*)app);
+
+    // Debug: check gs_core_instance and meta
+    gs_core_t* core_inst = gs_core_instance();
+    gs_log_info("gs_core_app_init: gs_core_instance() = %p", (void*)core_inst);
+    if (core_inst) {
+        gs_log_info("gs_core_app_init: core_inst->meta = %p", (void*)core_inst->meta);
+        if (core_inst->meta) {
+            gs_log_info("gs_core_app_init: meta->info count = %d", (int32_t)gs_slot_array_size(core_inst->meta->info));
+            gs_log_info("gs_core_app_init: looking up id=%u for app->id=%u", gs_core_app_t_class_id(), gs_core_cast(app, gs_core_base_t)->id);
+        }
+    }
 
     // Init app
     gs_core_cast_vt(app, gs_core_app_t)->app_init();

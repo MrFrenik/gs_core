@@ -1576,7 +1576,19 @@ write_to_file(meta_t* meta, const char* dir, const char* proj_name, uint32_t id_
         gs_fprintln(fp, "GS_API_DECL void");
         gs_fprintln(fp, "%s_init(gs_core_obj_t* obj)", cls->name);
         gs_fprintln(fp, "{"); 
-        gs_fprintln(fp, "\tgs_core_cast(obj, gs_core_base_t)->id = %s_class_id();", cls->name);
+        gs_fprintln(fp, "\t// DEBUG: Log init entry");
+        gs_fprintln(fp, "\tgs_log_info(\"%%s_init: ENTER - obj=%%p, current id=%%u, expected id=%%u\", gs_to_str(%s), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id, %s_class_id());", cls->name, cls->name);
+        gs_fprintln(fp, "\t// Only set ID if not already set by a derived class");
+        gs_fprintln(fp, "\tif (gs_core_cast(obj, gs_core_base_t)->id == 0)");
+        gs_fprintln(fp, "\t{");
+        gs_fprintln(fp, "\t\tgs_log_info(\"%%s_init: ID was 0, setting to %%u\", gs_to_str(%s), %s_class_id());", cls->name, cls->name);
+        gs_fprintln(fp, "\t\tgs_core_cast(obj, gs_core_base_t)->id = %s_class_id();", cls->name);
+        gs_fprintln(fp, "\t}");
+        gs_fprintln(fp, "\telse");
+        gs_fprintln(fp, "\t{");
+        gs_fprintln(fp, "\t\tgs_log_info(\"%%s_init: ID already set to %%u (not %%s_class_id=%%u), skipping\", gs_to_str(%s), gs_core_cast(obj, gs_core_base_t)->id, gs_to_str(%s), %s_class_id());", cls->name, cls->name, cls->name);
+        gs_fprintln(fp, "\t}");
+        gs_fprintln(fp, "\tgs_log_info(\"%%s_init: EXIT - obj=%%p, final id=%%u\", gs_to_str(%s), (void*)obj, gs_core_cast(obj, gs_core_base_t)->id);", cls->name);
 
         // If is rpc, then need to init rpc info
         if (meta_class_derives_from(meta, cls, "gs_core_network_rpc_reliable_t")) 

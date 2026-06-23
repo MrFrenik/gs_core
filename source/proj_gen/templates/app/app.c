@@ -1,8 +1,8 @@
 // Includes
-#include %APP_HEADER_PATH%
+#include "%APP_HEADER_PATH%"
 
 // Reflection Includes
-#include %GENERATED_HEADER_PATH%
+#include "%GENERATED_HEADER_PATH%"
 
 GS_CORE_APP_MAIN(%APP%) 
 GS_CORE_APP_DEFINE(%APP%)

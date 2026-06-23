@@ -104,6 +104,9 @@ GS_API_DECL void
 _gs_core_app_meta_register();
 
 GS_API_DECL void 
+_gs_core_app_init_obj(gs_core_obj_t* obj);
+
+GS_API_DECL void 
 _gs_core_app_meta_unregister();
 
 #define GS_CORE_APP_DEFINE(_NAME)\
@@ -118,6 +121,12 @@ _gs_core_app_meta_unregister();
     _gs_core_app_meta_unregister()\
     {\
         _NAME##_meta_unregister();\
+    }\
+\
+    GS_API_DECL void\
+    _gs_core_app_init_obj(gs_core_obj_t* obj)\
+    {\
+        _NAME##_t_init(obj);\
     }\
 \
     GS_API_DECL void*\
@@ -143,7 +152,6 @@ _gs_core_app_meta_unregister();
         {\
             /*_NAME##_t* _app = gs_core_os_malloc_init(sizeof(_NAME##_t));*/\
             _NAME##_t* _app = calloc(1, sizeof(_NAME##_t));\
-            gs_core_cls_init(_NAME##_t, _app);\
             gs_t* inst = gs_create((gs_app_desc_t){\
                 .user_data = _app,\
                 .argc = argc,\
